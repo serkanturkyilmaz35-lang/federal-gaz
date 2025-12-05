@@ -17,7 +17,7 @@ const config: Config = {
                 "background-dark": "#1f1413",
             },
             fontFamily: {
-                display: ["var(--font-inter)", "sans-serif"],
+                display: ["Inter", "sans-serif"],
             },
             animation: {
                 marquee: 'marquee 15s linear infinite',

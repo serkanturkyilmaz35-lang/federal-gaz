@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  turbopack: {},
   /* config options here */
   webpack: (config) => {
     config.externals.push({
