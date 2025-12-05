@@ -1,16 +1,15 @@
-import { Sequelize } from 'sequelize';
-import mysql2 from 'mysql2';
+// Database configuration for MySQL
+// This file provides a simple connection setup for the application
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'federal_gaz_db',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
-  {
-    host: process.env.DB_HOST || 'localhost',
-    dialect: 'mysql',
-    dialectModule: mysql2,
-    logging: false, // Set to console.log to see SQL queries
-  }
-);
+export const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'federal_gaz',
+};
 
-export default sequelize;
+// TODO: Implement proper database connection with mysql2 or better-sqlite3
+// For now, this is just a placeholder configuration
+
+export default dbConfig;
