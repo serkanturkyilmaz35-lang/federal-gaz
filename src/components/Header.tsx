@@ -60,7 +60,7 @@ export default function Header() {
 
     const navLinkClass = (path: string, isMobile = false) => {
         const baseClass = isMobile
-            ? "block w-full rounded-lg px-4 py-3 text-lg font-bold transition-all hover:bg-primary/5 dark:hover:bg-white/10 border-l-4 border-transparent"
+            ? "block w-full rounded-lg px-4 py-3 text-lg font-bold transition-all border-l-4 border-transparent active:scale-[0.98] active:bg-gray-50"
             : "rounded-lg border-2 px-4 py-2 text-sm font-bold shadow-sm transition-all";
 
         if (isActive(path)) {
@@ -69,7 +69,7 @@ export default function Header() {
                 : `${baseClass} border-primary bg-primary text-white`;
         }
         return isMobile
-            ? `${baseClass} text-secondary dark:text-white hover:text-primary hover:border-primary/50`
+            ? `${baseClass} text-secondary dark:text-white`
             : `${baseClass} border-secondary/20 bg-white text-secondary hover:border-primary hover:bg-primary hover:text-white dark:bg-background-dark dark:text-white`;
     };
 

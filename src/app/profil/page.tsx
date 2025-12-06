@@ -388,10 +388,10 @@ export default function ProfilePage() {
                                                         </span>
                                                     </div>
                                                     <div className="p-3 text-sm text-secondary dark:text-gray-200">
-                                                        <div className="grid grid-cols-2 gap-2 mb-2">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                                                             {info['Müşteri'] && <div><span className="text-gray-500">Müşteri:</span> <span className="font-medium">{info['Müşteri']}</span></div>}
                                                             {info['Firma'] && <div><span className="text-gray-500">Firma:</span> <span className="font-medium">{info['Firma']}</span></div>}
-                                                            {info['E-posta'] && <div className="break-all"><span className="text-gray-500">E-posta:</span> {info['E-posta']}</div>}
+                                                            {info['E-posta'] && <div className="break-all md:col-span-2"><span className="text-gray-500">E-posta:</span> {info['E-posta']}</div>}
                                                             {info['Telefon'] && <div><span className="text-gray-500">Tel:</span> {info['Telefon']}</div>}
                                                         </div>
                                                         <div className="bg-primary/10 px-3 py-2 rounded mb-2">
