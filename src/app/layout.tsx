@@ -11,11 +11,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-    title: "Federal Gaz - Endüstriyel Gaz Çözümleri",
+    metadataBase: new URL('https://federalgaz.com'),
+    title: {
+        default: "Federal Gaz - Endüstriyel Gaz Çözümleri",
+        template: "%s | Federal Gaz",
+    },
     description: "Endüstriyel gaz ihtiyaçlarınız için yenilikçi, sürdürülebilir ve kaliteli hizmetler sunuyoruz.",
-    icons: {
-        icon: '/logo.jpg',
-        apple: '/logo.jpg',
+    openGraph: {
+        title: "Federal Gaz - Endüstriyel Gaz Çözümleri",
+        description: "Yenilikçi ve sürdürülebilir endüstriyel gaz hizmetleri.",
+        url: 'https://federalgaz.com',
+        siteName: 'Federal Gaz',
+        locale: 'tr_TR',
+        type: 'website',
     },
 };
 
