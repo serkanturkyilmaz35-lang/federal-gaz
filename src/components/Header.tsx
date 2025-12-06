@@ -18,7 +18,8 @@ const translations = {
         login: "Üye Girişi",
         register: "Kayıt Ol",
         language: "TR",
-        menu: "Menü"
+        menu: "Menü",
+        order: "Sipariş Ver"
     },
     EN: {
         home: "Home",
@@ -31,7 +32,8 @@ const translations = {
         login: "Login",
         register: "Register",
         language: "EN",
-        menu: "Menu"
+        menu: "Menu",
+        order: "Order Now"
     }
 };
 
@@ -58,16 +60,16 @@ export default function Header() {
 
     const navLinkClass = (path: string, isMobile = false) => {
         const baseClass = isMobile
-            ? "block w-full rounded-lg px-4 py-3 text-lg font-bold transition-all hover:bg-primary/10"
+            ? "block w-full rounded-lg px-4 py-3 text-lg font-bold transition-all hover:bg-primary/5 dark:hover:bg-white/10 border-l-4 border-transparent"
             : "rounded-lg border-2 px-4 py-2 text-sm font-bold shadow-sm transition-all";
 
         if (isActive(path)) {
             return isMobile
-                ? `${baseClass} text-primary bg-primary/5`
+                ? `${baseClass} text-primary border-primary bg-primary/5`
                 : `${baseClass} border-primary bg-primary text-white`;
         }
         return isMobile
-            ? `${baseClass} text-secondary dark:text-white`
+            ? `${baseClass} text-secondary dark:text-white hover:text-primary hover:border-primary/50`
             : `${baseClass} border-secondary/20 bg-white text-secondary hover:border-primary hover:bg-primary hover:text-white dark:bg-background-dark dark:text-white`;
     };
 
@@ -78,18 +80,37 @@ export default function Header() {
 
                     {/* Mobile Hamburger Button (Left) */}
                     <button
-                        onClick={() => setIsMobileMenuOpen(true)}
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="lg:hidden p-2 text-secondary dark:text-white hover:bg-black/5 rounded-full transition-colors"
                     >
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
+                        {isMobileMenuOpen ? (
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        ) : (
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        )}
                     </button>
 
                     {/* Logo (Centered on Mobile, Left on Desktop) */}
-                    <Link href="/" className="relative flex items-center justify-center lg:justify-start">
+                    <Link href="/" className="relative flex items-center justify-center lg:justify-start" onClick={() => setIsMobileMenuOpen(false)}>
                         <img src="/logo.jpg" alt="Federal Gaz Logo" className="h-16 lg:h-24 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} />
                     </Link>
+
+                    {/* Mobile Login Button (Right) */}
+                    <div className="lg:hidden flex items-center">
+                        {user ? (
+                            <Link href="/profil" onClick={() => setIsMobileMenuOpen(false)} className="flex h-10 items-center justify-center rounded-lg px-3 font-bold text-white text-xs whitespace-nowrap" style={{ backgroundColor: '#686868' }}>
+                                <span>{user.name.split(' ')[0]}</span>
+                            </Link>
+                        ) : (
+                            <Link href="/giris" onClick={() => setIsMobileMenuOpen(false)} className="flex h-10 items-center justify-center rounded-lg px-3 font-bold text-white text-xs whitespace-nowrap" style={{ backgroundColor: '#686868' }}>
+                                <span>{t.login}</span>
+                            </Link>
+                        )}
+                    </div>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden flex-1 items-center justify-center gap-4 lg:flex">
@@ -127,67 +148,48 @@ export default function Header() {
                     </div>
 
                     {/* Mobile Placeholder for Right Alignment (to balance Logo) */}
-                    <div className="w-8 lg:hidden"></div>
+                    {/* <div className="w-8 lg:hidden"></div> */}
                 </div>
             </div>
 
-            {/* Mobile Sidebar / Drawer */}
+            {/* Mobile Menu Dropdown (Full Width) */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-50 lg:hidden">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                    ></div>
+                <div className="fixed inset-x-0 top-[88px] bottom-0 z-40 lg:hidden bg-white dark:bg-background-dark overflow-y-auto animate-fade-in flex flex-col">
 
-                    {/* Drawer Content */}
-                    <div className="absolute left-0 top-0 h-full w-[80%] max-w-[300px] bg-white dark:bg-background-dark shadow-2xl flex flex-col animate-slide-in-left">
-
-                        {/* Drawer Header: Logo & Close */}
-                        <div className="flex items-center justify-between p-4 border-b dark:border-white/10">
-                            <img src="/logo.jpg" alt="Federal Gaz" className="h-12 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} />
-                            <button
+                    {/* Menu Links */}
+                    <div className="flex-1 p-4 flex flex-col gap-2">
+                        {navigation.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="p-2 text-secondary dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+                                className={navLinkClass(item.href, true)}
                             >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+                                {item.name}
+                            </Link>
+                        ))}
+                    </div>
 
-                        {/* Navigation Links (Middle) */}
-                        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                            {navigation.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className={navLinkClass(item.href, true)}
-                                >
-                                    {item.name}
-                                </Link>
-                            ))}
-                        </div>
+                    {/* Footer Area: Order Order & Language */}
+                    <div className="p-4 bg-gray-50 dark:bg-black/20 flex flex-col gap-4 mt-auto border-t border-gray-100 dark:border-white/10">
+                        {/* 1. Order Button (Sipariş Ver) - Red */}
+                        <Link
+                            href="/siparis"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-white text-lg font-bold shadow-lg shadow-primary/30 active:scale-95 transition-transform"
+                        >
+                            <span>{t.order}</span>
+                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </Link>
 
-                        {/* Footer Actions (Bottom: Login & Language) */}
-                        <div className="p-4 border-t dark:border-white/10 bg-gray-50 dark:bg-black/20 flex flex-col gap-3">
-                            {user ? (
-                                <Link href="/profil" onClick={() => setIsMobileMenuOpen(false)} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-secondary text-white font-bold">
-                                    <span>{user.name}</span>
-                                </Link>
-                            ) : (
-                                <Link href="/giris" onClick={() => setIsMobileMenuOpen(false)} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-white font-bold">
-                                    {t.login}
-                                </Link>
-                            )}
-
-                            <button onClick={toggleLanguage} className="flex h-12 w-full items-center justify-center gap-4 rounded-lg border-2 border-secondary/10 bg-white dark:bg-transparent">
-                                <span className={`text-lg font-bold ${language === 'TR' ? 'text-primary' : 'text-gray-400'}`}>TR</span>
-                                <span className="text-gray-300">|</span>
-                                <span className={`text-lg font-bold ${language === 'EN' ? 'text-primary' : 'text-gray-400'}`}>EN</span>
-                            </button>
-                        </div>
+                        {/* 2. Language Selector */}
+                        <button onClick={toggleLanguage} className="flex h-12 w-full items-center justify-center gap-4 rounded-lg bg-white dark:bg-background-dark border-2 border-secondary/10">
+                            <span className={`text-lg font-bold ${language === 'TR' ? 'text-primary' : 'text-gray-400'}`}>TR</span>
+                            <span className="text-gray-300">|</span>
+                            <span className={`text-lg font-bold ${language === 'EN' ? 'text-primary' : 'text-gray-400'}`}>EN</span>
+                        </button>
                     </div>
                 </div>
             )}
