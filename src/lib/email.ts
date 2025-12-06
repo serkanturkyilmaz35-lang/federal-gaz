@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface EmailOptions {
     to: string;
     subject: string;
@@ -9,6 +7,17 @@ interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
+    // Lazy initialization to prevent build-time error if env var is missing
+    const apiKey = process.env.RESEND_API_KEY;
+
+    // During build or if key is missing, return error or mock success
+    if (!apiKey) {
+        console.warn('RESEND_API_KEY is missing. Email sending skipped.');
+        return { success: false, error: 'Missing API Key' };
+    }
+
+    const resend = new Resend(apiKey);
+
     try {
         // Use verified domain email - falls back to resend.dev for testing
         const fromEmail = process.env.EMAIL_FROM || 'Federal Gaz <onboarding@resend.dev>';
