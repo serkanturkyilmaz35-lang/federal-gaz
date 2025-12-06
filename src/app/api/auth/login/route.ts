@@ -25,12 +25,15 @@ export async function POST(request: Request) {
                 await connectToDatabase();
 
                 const user = await User.findOne({ where: { email } });
+                console.log(`[Login] User found: ${!!user} for email: ${email}`);
 
                 if (!user) {
                     return { status: 404, error: 'User not found' };
                 }
 
                 const isPasswordValid = await user.comparePassword(password);
+                console.log(`[Login] Password valid: ${isPasswordValid}`);
+
                 if (!isPasswordValid) {
                     return { status: 401, error: 'Invalid credentials' };
                 }

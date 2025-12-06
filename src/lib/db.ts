@@ -12,37 +12,45 @@ const dbConfig = {
 // Singleton pattern for Sequelize instance
 let sequelize: Sequelize | null = null;
 
+// Debug logging to verify env vars are loaded (masking password)
+console.log('🔌 Initializing Database Connection...');
+console.log(`Debug Config: Host=${process.env.DB_HOST ? 'Set' : 'Missing'}, User=${process.env.DB_USER}, DB=${process.env.DB_NAME}, Port=${process.env.DB_PORT}, SSL=True`);
+
 export const getDb = (): Sequelize => {
   if (!process.env.DB_HOST) {
-    console.warn('⚠️ Database credentials not found. DB features will be disabled.');
-    // Return a dummy object or null here, but models expect a sequelize instance.
-    // We will initialize a dummy SQLite memory instance to prevent crashes if credentials are missing
+    console.error('❌ FATAL: DB_HOST is missing in environment variables! Falling back to SQLite Memory (Data will be lost).');
     if (!sequelize) {
-      sequelize = new Sequelize('sqlite::memory:', { logging: false });
+      sequelize = new Sequelize('sqlite::memory:', { logging: console.log });
     }
     return sequelize!;
   }
 
   if (!sequelize) {
-    sequelize = new Sequelize(dbConfig.database, dbConfig.user, dbConfig.password, {
-      host: dbConfig.host,
-      port: dbConfig.port,
-      dialect: 'mysql',
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false // Allows self-signed certs (common in some cloud providers)
+    try {
+      sequelize = new Sequelize(dbConfig.database, dbConfig.user, dbConfig.password, {
+        host: dbConfig.host,
+        port: dbConfig.port,
+        dialect: 'mysql',
+        dialectOptions: {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false
+          }
+        },
+        dialectModule: mysql2,
+        logging: (msg) => console.log(`[Sequelize]: ${msg}`), // Log queries to see if they fail
+        pool: {
+          max: 5,
+          min: 0,
+          acquire: 30000, // Increased timeout
+          idle: 10000
         }
-      },
-      dialectModule: mysql2, // Explicitly provide mysql2
-      logging: false, // Set to console.log to see SQL queries
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 5000,
-        idle: 10000
-      }
-    });
+      });
+      console.log('✅ Sequelize instance created with MySQL config.');
+    } catch (err) {
+      console.error('❌ Error creating Sequelize instance:', err);
+      throw err;
+    }
   }
   return sequelize;
 };
