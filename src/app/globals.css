@@ -3,10 +3,7 @@
 @tailwind utilities;
 
 @layer utilities {
-  .animate-marquee {
-    display: inline-block;
-    animation: marquee 15s linear infinite;
-  }
+
 
   .animate-slide {
     animation: slide 20s linear infinite;
@@ -17,15 +14,7 @@
   }
 }
 
-@keyframes marquee {
-  0% {
-    transform: translateX(100%);
-  }
 
-  100% {
-    transform: translateX(-100%);
-  }
-}
 
 @keyframes slide-infinite {
   0% {
