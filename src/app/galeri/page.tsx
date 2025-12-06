@@ -178,19 +178,19 @@ export default function GalleryPage() {
                                 </div>
 
                                 {/* Overlay Gradient - Always visible at bottom, expands on hover */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-90" />
 
                                 {/* Content Overlay */}
-                                <div className="absolute inset-0 flex flex-col justify-end p-6 transition-all duration-300">
-                                    <div className="transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
-                                        <span className="inline-block px-2 py-1 mb-2 text-xs font-semibold text-white bg-primary rounded-md shadow-sm">
+                                <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-6 transition-all duration-300">
+                                    <div className="transform translate-y-0 sm:translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
+                                        <span className="inline-block px-1.5 py-0.5 sm:px-2 sm:py-1 mb-1 sm:mb-2 text-[10px] sm:text-xs font-semibold text-white bg-primary rounded-md shadow-sm">
                                             {/* @ts-expect-error: Category keys are dynamic */}
                                             {t.categories[image.categoryKey]}
                                         </span>
-                                        <h3 className="text-xl font-bold text-white leading-tight">
+                                        <h3 className="text-sm sm:text-xl font-bold text-white leading-tight line-clamp-2 shadow-black/50 drop-shadow-md">
                                             {image.alt[language]}
                                         </h3>
-                                        <div className="mt-4 h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:h-auto group-hover:opacity-100">
+                                        <div className="mt-4 h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:h-auto group-hover:opacity-100 hidden sm:block">
                                             <p className="text-sm text-white/90">
                                                 Federal Gaz
                                             </p>
