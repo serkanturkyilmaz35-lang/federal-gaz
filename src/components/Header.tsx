@@ -76,7 +76,7 @@ export default function Header() {
     return (
         <header className="sticky top-0 z-50 w-full bg-background-light/95 backdrop-blur-sm dark:bg-background-dark/95 shadow-sm">
             <div className="flex justify-center px-4 lg:px-10">
-                <div className="flex w-full max-w-7xl items-center justify-between py-3">
+                <div className="relative z-50 flex w-full max-w-7xl items-center justify-between py-3">
 
                     {/* Mobile Hamburger Button (Left) */}
                     <button
