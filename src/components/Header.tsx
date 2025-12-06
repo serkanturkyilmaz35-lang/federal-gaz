@@ -154,7 +154,7 @@ export default function Header() {
 
             {/* Mobile Menu Dropdown (Full Width) */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-x-0 top-[88px] lg:top-[96px] bottom-0 z-40 lg:hidden bg-white dark:bg-background-dark overflow-y-auto animate-fade-in flex flex-col border-t border-gray-100 dark:border-white/10">
+                <div className="fixed inset-x-0 top-[88px] lg:top-[96px] bottom-0 z-40 lg:hidden bg-white dark:bg-background-dark overflow-y-auto flex flex-col border-t border-gray-100 dark:border-white/10">
 
                     {/* Menu Links */}
                     <div className="flex-1 p-4 flex flex-col gap-2">
