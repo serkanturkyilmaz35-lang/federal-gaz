@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
@@ -18,7 +18,8 @@ const translations = {
         error: "Şifre güncellenirken bir hata oluştu.",
         passwordMismatch: "Şifreler eşleşmiyor.",
         invalidToken: "Geçersiz veya süresi dolmuş bağlantı.",
-        backToLogin: "Giriş Sayfasına Dön"
+        backToLogin: "Giriş Sayfasına Dön",
+        loading: "Yükleniyor..."
     },
     EN: {
         title: "Set New Password",
@@ -32,11 +33,12 @@ const translations = {
         error: "An error occurred while updating password.",
         passwordMismatch: "Passwords do not match.",
         invalidToken: "Invalid or expired link.",
-        backToLogin: "Back to Login"
+        backToLogin: "Back to Login",
+        loading: "Loading..."
     }
 };
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
     const { language } = useLanguage();
     const t = translations[language];
     const router = useRouter();
@@ -190,5 +192,20 @@ export default function ResetPasswordPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-1 items-center justify-center py-12">
+                <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg dark:bg-secondary text-center">
+                    <div className="animate-spin text-4xl">⏳</div>
+                    <p className="mt-4 text-secondary dark:text-white">Yükleniyor...</p>
+                </div>
+            </div>
+        }>
+            <ResetPasswordForm />
+        </Suspense>
     );
 }
