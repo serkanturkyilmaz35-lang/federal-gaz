@@ -12,7 +12,7 @@ export async function GET() {
             return NextResponse.json({ user: null }, { status: 200 });
         }
 
-        const decoded = verifyToken(token) as any;
+        const decoded = verifyToken(token) as { id: number };
 
         if (!decoded || !decoded.id) {
             return NextResponse.json({ user: null }, { status: 200 });

@@ -7,7 +7,7 @@ async function getUser(req: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
     if (!token) return null;
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyToken(token) as { id: number };
     return decoded ? decoded.id : null;
 }
 

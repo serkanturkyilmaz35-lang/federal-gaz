@@ -15,6 +15,7 @@ interface UserAttributes {
     phone?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> { }
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
@@ -90,6 +91,7 @@ interface AddressAttributes {
     isDefault: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AddressCreationAttributes extends Optional<AddressAttributes, 'id' | 'isDefault'> { }
 
 export class Address extends Model<AddressAttributes, AddressCreationAttributes> implements AddressAttributes {
@@ -138,6 +140,7 @@ interface OrderAttributes {
     status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface OrderCreationAttributes extends Optional<OrderAttributes, 'id' | 'status'> { }
 
 export class Order extends Model<OrderAttributes, OrderCreationAttributes> implements OrderAttributes {

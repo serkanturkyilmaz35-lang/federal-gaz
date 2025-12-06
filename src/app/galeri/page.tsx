@@ -184,7 +184,7 @@ export default function GalleryPage() {
                                 <div className="absolute inset-0 flex flex-col justify-end p-6 transition-all duration-300">
                                     <div className="transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
                                         <span className="inline-block px-2 py-1 mb-2 text-xs font-semibold text-white bg-primary rounded-md shadow-sm">
-                                            {/* @ts-ignore */}
+                                            {/* @ts-expect-error: Category keys are dynamic */}
                                             {t.categories[image.categoryKey]}
                                         </span>
                                         <h3 className="text-xl font-bold text-white leading-tight">

@@ -18,7 +18,6 @@ export const getDb = (): Sequelize => {
     // Return a dummy object or null here, but models expect a sequelize instance.
     // We will initialize a dummy SQLite memory instance to prevent crashes if credentials are missing
     if (!sequelize) {
-      const { Sequelize } = require('sequelize');
       sequelize = new Sequelize('sqlite::memory:', { logging: false });
     }
     return sequelize!;

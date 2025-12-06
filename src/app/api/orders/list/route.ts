@@ -9,7 +9,7 @@ export async function GET(req: Request) {
         const token = cookieStore.get('auth_token')?.value;
         if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const decoded = verifyToken(token) as any;
+        const decoded = verifyToken(token) as { id: number };
         if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         await connectToDatabase();

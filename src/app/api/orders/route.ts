@@ -20,7 +20,7 @@ export async function POST(req: Request) {
             const cookieStore = await cookies();
             const token = cookieStore.get('auth_token')?.value;
             if (token) {
-                const decoded = verifyToken(token) as any;
+                const decoded = verifyToken(token) as { id: number };
                 if (decoded?.id) {
                     userId = decoded.id;
                 }

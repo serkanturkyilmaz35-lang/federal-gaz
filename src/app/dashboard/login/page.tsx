@@ -29,8 +29,8 @@ export default function LoginPage() {
             }
 
             setStep("otp");
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError((err as Error).message);
         } finally {
             setLoading(false);
         }
@@ -55,8 +55,8 @@ export default function LoginPage() {
 
             // Redirect to dashboard
             router.push("/dashboard");
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError((err as Error).message);
         } finally {
             setLoading(false);
         }

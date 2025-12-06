@@ -11,26 +11,27 @@ export default function ProfilePage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'info' | 'addresses' | 'orders'>('info');
 
-    // Additional States
-    const [addresses, setAddresses] = useState<any[]>([]);
-    const [orders, setOrders] = useState<any[]>([]);
+    // Interfaces
+    interface Address {
+        id: number;
+        title: string;
+        address: string;
+        isDefault: boolean;
+    }
+
+    interface Order {
+        id: number;
+        details: string;
+        status: string;
+        createdAt: string;
+    }
+
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
     const [newAddress, setNewAddress] = useState({ title: '', address: '' });
     const [editingAddress, setEditingAddress] = useState<{ id: number; title: string; address: string } | null>(null);
     const [orderForm, setOrderForm] = useState({ details: '' });
     const [msg, setMsg] = useState('');
-
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/giris');
-        }
-    }, [user, loading, router]);
-
-    useEffect(() => {
-        if (user) {
-            fetchAddresses();
-            fetchOrders();
-        }
-    }, [user]);
 
     const fetchAddresses = async () => {
         const res = await fetch('/api/user/address');
@@ -47,6 +48,20 @@ export default function ProfilePage() {
             setOrders(data.orders);
         }
     };
+
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/giris');
+        }
+    }, [user, loading, router]);
+
+    useEffect(() => {
+        if (user) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            fetchAddresses();
+            fetchOrders();
+        }
+    }, [user]);
 
     const handleAddAddress = async (e: React.FormEvent) => {
         e.preventDefault();
