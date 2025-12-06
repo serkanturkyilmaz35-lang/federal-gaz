@@ -13,6 +13,10 @@ const inter = Inter({
 export const metadata: Metadata = {
     title: "Federal Gaz - Endüstriyel Gaz Çözümleri",
     description: "Endüstriyel gaz ihtiyaçlarınız için yenilikçi, sürdürülebilir ve kaliteli hizmetler sunuyoruz.",
+    icons: {
+        icon: '/logo.jpg',
+        apple: '/logo.jpg',
+    },
 };
 
 import SecurityProvider from "@/components/SecurityProvider";
