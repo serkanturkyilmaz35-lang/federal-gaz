@@ -28,13 +28,14 @@ export const getDb = (): Sequelize => {
       host: dbConfig.host,
       port: dbConfig.port,
       dialect: 'mysql',
-      dialectModule: mysql2, // Explicitly provide mysql2
-      logging: false, // Set to console.log to see SQL queries
       dialectOptions: {
         ssl: {
-          rejectUnauthorized: false, // Required for some Aiven setups if CA not provided
-        },
+          require: true,
+          rejectUnauthorized: false // Allows self-signed certs (common in some cloud providers)
+        }
       },
+      dialectModule: mysql2, // Explicitly provide mysql2
+      logging: false, // Set to console.log to see SQL queries
       pool: {
         max: 5,
         min: 0,
