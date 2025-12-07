@@ -4,9 +4,10 @@ interface EmailOptions {
     to: string;
     subject: string;
     html: string;
+    replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html }: EmailOptions) {
+export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
     // Lazy initialization to prevent build-time error if env var is missing
     const apiKey = process.env.RESEND_API_KEY;
 
@@ -27,6 +28,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
             to: [to],
             subject,
             html,
+            replyTo,
         });
 
         if (error) {

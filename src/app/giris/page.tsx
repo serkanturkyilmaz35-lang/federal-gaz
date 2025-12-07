@@ -174,6 +174,9 @@ export default function LoginPage() {
                         </div>
                     </div>
 
+                    <p className="mt-8 text-center text-sm text-gray-500">
+                        &copy; 2014 Federal Gaz. Tüm hakları saklıdır.
+                    </p>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
                             <input

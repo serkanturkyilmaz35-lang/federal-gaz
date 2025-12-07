@@ -10,7 +10,7 @@ const translations = {
         subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
         infoTitle: "İletişim Bilgilerimiz",
         addressTitle: "Adres",
-        address: "İvedik OSB, 1550. Sk. No:3\n06378 Yenimahalle/Ankara",
+        address: "İvedik OSB, 1550. Cad. No:1\n06378 Yenimahalle/Ankara",
         phoneTitle: "Telefon",
         gsmTitle: "GSM",
         emailTitle: "E-posta",
@@ -34,7 +34,7 @@ const translations = {
         subtitle: "Contact us, we will be happy to assist you.",
         infoTitle: "Contact Information",
         addressTitle: "Address",
-        address: "İvedik OSB, 1550. Sk. No:3\n06378 Yenimahalle/Ankara (Turkey)",
+        address: "İvedik OSB, 1550. Cad. No:1\n06378 Yenimahalle/Ankara (Turkey)",
         phoneTitle: "Phone",
         gsmTitle: "GSM",
         emailTitle: "Email",
@@ -128,8 +128,8 @@ export default function IletisimPage() {
                                     <div>
                                         <h3 className="font-bold text-secondary dark:text-white">{t.gsmTitle}</h3>
                                         <p className="mt-1 text-secondary/70 dark:text-white/60">
-                                            <a href="tel:+905434554563" className="hover:text-primary transition-colors">(+90) 543 455 45 63</a><br />
-                                            <a href="tel:+905324224515" className="hover:text-primary transition-colors">(+90) 532 422 45 15</a>
+                                            <a href="tel:+905434554563" className="hover:text-primary transition-colors">(+90) 543 455 45 63</a> - Ziya Türkyılmaz<br />
+                                            <a href="tel:+905324224515" className="hover:text-primary transition-colors">(+90) 532 422 45 15</a> - Bayram Tıraş
                                         </p>
                                     </div>
                                 </div>
@@ -161,7 +161,7 @@ export default function IletisimPage() {
                                     ></iframe>
                                 </div>
                                 <a
-                                    href="https://www.google.com/maps/search/?api=1&query=Ivedik+OSB+1550.+Sk.+No:3+Yenimahalle+Ankara"
+                                    href="https://www.google.com/maps/search/?api=1&query=Ivedik+OSB+1550.+Cad.+No:1+Yenimahalle+Ankara"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90"

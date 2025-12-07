@@ -54,6 +54,7 @@ ${notes ? `Notlar: ${notes}` : ''}
         try {
             await sendEmail({
                 to: 'federal.gaz@hotmail.com',
+                replyTo: email,
                 subject: `🛒 Yeni Sipariş #${order.id} - ${name} (${company})`,
                 html: getOrderNotificationEmail({
                     customerName: name,

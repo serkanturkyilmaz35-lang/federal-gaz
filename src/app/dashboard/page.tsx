@@ -1,14 +1,64 @@
 "use client";
 
+import { useState, useRef } from "react";
 import StatsCard from "@/components/dashboard/StatsCard";
+import RealTimeCard from "@/components/dashboard/RealTimeCard";
+import ActivePagesCard from "@/components/dashboard/ActivePagesCard";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+} from "chart.js";
+import { Line, Doughnut } from "react-chartjs-2";
+import { robotoRegular } from "@/lib/fontRobotoRegular";
+import { robotoBold } from "@/lib/fontRobotoBold";
+
+// Register Chart.js components
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
+
+type DateRange = "today" | "7days" | "30days" | "90days" | "custom";
 
 export default function DashboardPage() {
+    const [dateRange, setDateRange] = useState<DateRange>("30days");
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [customStartDate, setCustomStartDate] = useState("");
+    const [customEndDate, setCustomEndDate] = useState("");
+    const [exporting, setExporting] = useState(false);
+    const reportRef = useRef<HTMLDivElement>(null);
+    const lineChartRef = useRef<any>(null);
+    const doughnutChartRef = useRef<any>(null);
+
     // Mock data - will be replaced with real API calls
     const stats = {
         totalOrders: 1245,
         totalQuotes: 832,
         activeUsers: 3450,
         siteVisits: 15678,
+    };
+
+    const realTimeStats = {
+        activeUsers: 87,
+        mobileUsers: 57,
+        desktopUsers: 30,
     };
 
     const activePages = [
@@ -26,184 +76,591 @@ export default function DashboardPage() {
         { name: "/iletisim", views: 980, unique: 850, bounceRate: "25%" },
     ];
 
+    // Chart data - Line Chart
+    const lineChartData = {
+        labels: ["1 Ara", "5 Ara", "10 Ara", "15 Ara", "20 Ara", "25 Ara", "30 Ara"],
+        datasets: [
+            {
+                label: "Siparişler",
+                data: [65, 78, 90, 81, 95, 110, 125],
+                borderColor: "#137fec",
+                backgroundColor: "rgba(19, 127, 236, 0.1)",
+                fill: true,
+                tension: 0.4,
+            },
+            {
+                label: "Talepler",
+                data: [45, 52, 60, 55, 70, 85, 95],
+                borderColor: "#22c55e",
+                backgroundColor: "rgba(34, 197, 94, 0.1)",
+                fill: true,
+                tension: 0.4,
+            },
+        ],
+    };
+
+    const lineChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: "top" as const,
+                labels: { color: "#9ca3af" },
+            },
+        },
+        scales: {
+            x: {
+                grid: { color: "rgba(255,255,255,0.1)" },
+                ticks: { color: "#9ca3af" },
+            },
+            y: {
+                grid: { color: "rgba(255,255,255,0.1)" },
+                ticks: { color: "#9ca3af" },
+            },
+        },
+    };
+
+    // Doughnut Chart
+    const doughnutChartData = {
+        labels: ["Anasayfa", "Ürünler", "Hakkımızda", "İletişim"],
+        datasets: [
+            {
+                data: [45, 25, 20, 10],
+                backgroundColor: ["#137fec", "#22c55e", "#eab308", "#6b7280"],
+                borderWidth: 0,
+            },
+        ],
+    };
+
+    const doughnutChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false,
+            },
+        },
+        cutout: "70%",
+    };
+
+    const getDateRangeLabel = () => {
+        switch (dateRange) {
+            case "today": return "Günlük";
+            case "7days": return "Son 7 Gün";
+            case "30days": return "Son 30 Gün";
+            case "90days": return "Son 90 Gün";
+            case "custom": return customStartDate && customEndDate
+                ? `${customStartDate} - ${customEndDate}`
+                : "Özel Tarih";
+            default: return "Son 30 Gün";
+        }
+    };
+
+    // Date label helper
+
+
+    const handleExportPDF = async () => {
+        if (typeof window === "undefined") return;
+
+        try {
+            setExporting(true);
+            const { jsPDF } = await import("jspdf");
+
+            // Create PDF (A4 size: 210mm x 297mm)
+            const pdf = new jsPDF("p", "mm", "a4");
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+
+            // --- 1. FONTS (Turkish Support - Embedded Base64) ---
+            try {
+                // Register Regular
+                pdf.addFileToVFS("Roboto-Regular.ttf", robotoRegular);
+                pdf.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+
+                // Register Bold
+                pdf.addFileToVFS("Roboto-Bold.ttf", robotoBold);
+                pdf.addFont("Roboto-Bold.ttf", "Roboto", "bold");
+
+                // Set Default
+                pdf.setFont("Roboto", "normal");
+            } catch (fontError) {
+                console.error("Font embedding failed:", fontError);
+                alert("Font yükleme hatası! Standart font kullanılacak.");
+                pdf.setFont("helvetica", "normal");
+            }
+
+            // --- 2. HEADER & LOGO ---
+            try {
+                const logoRes = await fetch("/dashboard-logo.png");
+                if (logoRes.ok) {
+                    const logoBlob = await logoRes.blob();
+                    const reader = new FileReader();
+                    const logoBase64 = await new Promise<string>((resolve) => {
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.readAsDataURL(logoBlob);
+                    });
+                    pdf.addImage(logoBase64, "PNG", margin, 15, 12, 12);
+                } else {
+                    // Fallback Logo
+                    pdf.setFillColor(177, 51, 41);
+                    pdf.roundedRect(margin, 15, 12, 12, 2, 2, "F");
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(9);
+                    pdf.text("FG", margin + 2.5, 22);
+                }
+            } catch (e) { console.warn("Logo error", e); }
+
+            // Title
+            pdf.setFont("Roboto", "bold");
+
+            pdf.setFontSize(20);
+            pdf.setTextColor(177, 51, 41); // #b13329
+            pdf.text("Federal Gaz", margin + 18, 22);
+
+            pdf.setFont("Roboto", "normal");
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text("Yönetim Paneli Özet Raporu", margin + 18, 28);
+
+            // ... (rest of function continues, but I need to handle other occurrences too) 
+            // Better to match small blocks
+
+
+            // Report Meta
+            pdf.setFontSize(9);
+            pdf.setTextColor(80, 80, 80);
+            pdf.text(`Rapor Tarihi: ${new Date().toLocaleDateString("tr-TR")}`, pageWidth - margin, 20, { align: "right" });
+            pdf.text(`Dönem: ${getDateRangeLabel()}`, pageWidth - margin, 26, { align: "right" });
+
+            let yPos = 35;
+
+            // Divider Line
+            pdf.setDrawColor(177, 51, 41);
+            pdf.setLineWidth(0.5);
+            pdf.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 10;
+
+
+            // --- 3. STATS SECTION (Grid Layout - Cards) ---
+            pdf.setFontSize(12);
+            pdf.setTextColor(30, 30, 30);
+            pdf.setFont("Roboto", "normal");
+            pdf.text("Genel İstatistikler", margin, yPos);
+            yPos += 6;
+
+            // Define 2x2 Grid for Stats to prevent overlap and mimic dashboard cards
+            // Card dimensions
+            const availableWidth = pageWidth - (margin * 2);
+            const gap = 5;
+            const cardWidth = (availableWidth - gap) / 2;
+            const cardHeight = 22;
+
+            // Helper to draw stat card
+            const drawStatCard = (x: number, y: number, label: string, value: string) => {
+                pdf.setFillColor(248, 250, 252);
+                pdf.setDrawColor(226, 232, 240);
+                pdf.roundedRect(x, y, cardWidth, cardHeight, 2, 2, "FD"); // Fill and Draw border
+
+                pdf.setFontSize(9);
+                pdf.setTextColor(100, 115, 130);
+                pdf.setFont("Roboto", "normal");
+                pdf.text(label, x + 4, y + 8);
+
+                pdf.setFontSize(12);
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFont("Roboto", "bold"); // Use BOLD for values
+                pdf.text(value, x + 4, y + 16);
+            };
+
+            // Row 1
+            drawStatCard(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"));
+            drawStatCard(margin + cardWidth + gap, yPos, "Toplam Talep", stats.totalQuotes.toLocaleString("tr-TR"));
+            yPos += cardHeight + gap;
+
+            // Row 2
+            drawStatCard(margin, yPos, "Aktif Kullanıcılar", stats.activeUsers.toLocaleString("tr-TR"));
+            drawStatCard(margin + cardWidth + gap, yPos, "Site Ziyaretleri", stats.siteVisits.toLocaleString("tr-TR"));
+            yPos += cardHeight + 10; // Extra spacing after stats
+
+
+            // --- 4. CHARTS SECTION (Side by Side) ---
+            pdf.setFont("Roboto", "normal");
+            pdf.setFontSize(12);
+            pdf.setTextColor(30, 30, 30);
+            pdf.text("Grafik Raporları", margin, yPos);
+            yPos += 8;
+
+            let maxChartHeight = 0;
+
+            // Line Chart
+            if (lineChartRef.current) {
+                try {
+                    const canvas = lineChartRef.current.canvas;
+                    const tempCanvas = document.createElement("canvas");
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const ctx = tempCanvas.getContext("2d");
+                    if (ctx) {
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        ctx.drawImage(canvas, 0, 0);
+                        const imgData = tempCanvas.toDataURL("image/jpeg", 0.95);
+
+                        // Roughly 60% width
+                        const imgWidth = 110;
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        const finalHeight = Math.min(imgHeight, 55);
+
+                        pdf.addImage(imgData, "JPEG", margin, yPos, imgWidth, finalHeight);
+                        maxChartHeight = Math.max(maxChartHeight, finalHeight);
+                    }
+                } catch (e) { console.warn("Line chart error", e); }
+            }
+
+            // Doughnut Chart & Custom Legend
+            if (doughnutChartRef.current) {
+                try {
+                    const canvas = doughnutChartRef.current.canvas;
+                    const tempCanvas = document.createElement("canvas");
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const ctx = tempCanvas.getContext("2d");
+                    if (ctx) {
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        ctx.drawImage(canvas, 0, 0);
+                        const imgData = tempCanvas.toDataURL("image/jpeg", 0.95);
+
+                        // Position metrics
+                        const chartX = margin + 125; // Increased gap (was 115)
+                        const chartWidth = 55;
+                        const chartHeight = (canvas.height * chartWidth) / canvas.width;
+                        const finalHeight = Math.min(chartHeight, 55);
+
+                        // Title for Doughnut (Centered relative to chart)
+                        pdf.setFontSize(10);
+                        pdf.setTextColor(50, 50, 50);
+                        pdf.setFont("Roboto", "bold");
+                        pdf.text("Kullanıcı Kaynakları", chartX + (chartWidth / 2), yPos - 2, { align: "center" });
+
+                        // Image
+                        pdf.addImage(imgData, "JPEG", chartX, yPos, chartWidth, finalHeight);
+                        maxChartHeight = Math.max(maxChartHeight, finalHeight);
+
+                        // Custom Legend Below
+                        let legendY = yPos + finalHeight + 5;
+                        const legendX = chartX;
+                        pdf.setFontSize(8);
+
+                        const items = [
+                            { label: "Anasayfa", val: "45%", color: [59, 130, 246] }, // blue-500
+                            { label: "Ürünler", val: "25%", color: [34, 197, 94] },   // green-500
+                            { label: "Hakkımızda", val: "20%", color: [234, 179, 8] }, // yellow-500
+                            { label: "İletişim", val: "10%", color: [100, 116, 139] }  // slate-500
+                        ];
+
+                        items.forEach(item => {
+                            pdf.setFont("Roboto", "normal"); // Ensure normal font for legend text
+                            // Dot
+                            pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
+                            pdf.circle(legendX + 2, legendY - 1, 1.5, "F");
+
+                            // Text
+                            pdf.setTextColor(80, 80, 80);
+                            pdf.text(`${item.label} ${item.val}`, legendX + 6, legendY);
+                            legendY += 4;
+                        });
+
+                        // Adjust max height to account for legend
+                        maxChartHeight = Math.max(maxChartHeight, finalHeight + 20);
+                    }
+                } catch (e) { console.warn("Doughnut chart error", e); }
+            }
+
+            yPos += maxChartHeight + 10;
+
+
+            // --- 5. TABLE SECTION ---
+            pdf.setFontSize(12);
+            pdf.setTextColor(30, 30, 30);
+            pdf.setFont("Roboto", "normal");
+            pdf.text("En Çok Görüntülenen Sayfalar", margin, yPos);
+            yPos += 6;
+
+            const colWidths = [80, 35, 35, 30];
+
+            // Header
+            pdf.setFillColor(241, 245, 249);
+            pdf.rect(margin, yPos, pageWidth - (margin * 2), 8, "F");
+
+            pdf.setFontSize(9);
+            pdf.setTextColor(71, 85, 105);
+            pdf.setFont("Roboto", "bold"); // Bold Headers
+
+            const headers = ["Sayfa Yolu", "Görüntülenme", "Tekil", "Çıkma"];
+            let tableX = margin + 2;
+            const headerY = yPos + 5.5;
+
+            headers.forEach((h, i) => {
+                pdf.text(h, tableX, headerY);
+                tableX += colWidths[i];
+            });
+
+            yPos += 8;
+
+            // Body
+            pdf.setTextColor(51, 65, 85);
+            pdf.setFont("Roboto", "normal"); // Normal Body
+
+            topPages.forEach((page, i) => {
+                if (yPos > pageHeight - 15) return;
+
+                if (i % 2 === 1) {
+                    pdf.setFillColor(248, 250, 252);
+                    pdf.rect(margin, yPos, pageWidth - (margin * 2), 8, "F");
+                }
+
+                tableX = margin + 2;
+                const rowY = yPos + 5.5;
+
+                pdf.text(page.name, tableX, rowY);
+                tableX += colWidths[0];
+
+                pdf.text(page.views.toLocaleString("tr-TR"), tableX, rowY);
+                tableX += colWidths[1];
+
+                pdf.text(page.unique.toLocaleString("tr-TR"), tableX, rowY);
+                tableX += colWidths[2];
+
+                pdf.text(`${page.bounceRate}`, tableX, rowY);
+
+                yPos += 8;
+            });
+
+
+            // --- 6. FOOTER ---
+            const footerY = pageHeight - 10;
+
+            // Divider
+            pdf.setDrawColor(177, 51, 41);
+            pdf.setLineWidth(0.5);
+            pdf.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+
+            pdf.setFontSize(8);
+            pdf.setTextColor(130, 130, 130);
+            pdf.setFont("Roboto", "normal"); // Normal Footer
+
+            pdf.text("Federal Gaz - Güvenilir Gaz Çözümleri", margin, footerY);
+
+            // Fix: Shifted to RIGHT as requested, respecting margin
+            pdf.text("© 2014 Tüm hakları saklıdır.", pageWidth - margin, footerY, { align: "right" });
+
+            pdf.save(`federal-gaz-rapor-${new Date().toISOString().split("T")[0]}.pdf`);
+
+        } catch (error) {
+            console.error("PDF export error:", error);
+            // alert("PDF oluşturulurken bir hata oluştu: " + (error instanceof Error ? error.message : String(error)));
+        } finally {
+            setExporting(false);
+        }
+    };
+
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl" ref={reportRef}>
             {/* Page Header */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-3xl font-bold leading-tight tracking-tight text-[#292828] dark:text-white">
+                    <h1 className="text-3xl font-bold leading-tight tracking-tight text-white">
                         Genel Bakış
                     </h1>
-                    <p className="text-base font-normal leading-normal text-[#94847c]">
+                    <p className="text-base font-normal leading-normal text-gray-400">
                         Web sitesi performans metriklerine hoş geldiniz.
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#b13329] pl-4 pr-3 text-white hover:bg-[#b13329]/90">
-                        <p className="text-sm font-medium leading-normal">Son 30 Gün</p>
+                    {/* Date Range Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowDatePicker(!showDatePicker)}
+                            className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#137fec] pl-4 pr-3 text-white hover:bg-[#137fec]/90 transition-colors"
+                        >
+                            <p className="text-sm font-medium leading-normal">{getDateRangeLabel()}</p>
+                            <span className="material-symbols-outlined text-lg">
+                                expand_more
+                            </span>
+                        </button>
+                        {showDatePicker && (
+                            <div className="absolute right-0 top-12 z-20 w-64 rounded-lg border border-gray-700 bg-[#1c2127] p-4 shadow-xl">
+                                <div className="space-y-2">
+                                    {[
+                                        { value: "today", label: "Günlük" },
+                                        { value: "7days", label: "Son 7 Gün" },
+                                        { value: "30days", label: "Son 30 Gün" },
+                                        { value: "90days", label: "Son 90 Gün" },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => {
+                                                setDateRange(option.value as DateRange);
+                                                setShowDatePicker(false);
+                                            }}
+                                            className={`w-full text-left px-3 py-2 rounded-lg text-sm ${dateRange === option.value
+                                                ? "bg-[#137fec] text-white"
+                                                : "text-gray-300 hover:bg-white/10"
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                    <hr className="border-gray-700 my-2" />
+                                    <p className="text-xs text-gray-400 mb-2">Özel Tarih Aralığı</p>
+                                    <input
+                                        type="date"
+                                        value={customStartDate}
+                                        onChange={(e) => setCustomStartDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/10 text-white text-sm border border-gray-700 mb-2"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/10 text-white text-sm border border-gray-700"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            if (customStartDate && customEndDate) {
+                                                setDateRange("custom");
+                                                setShowDatePicker(false);
+                                            }
+                                        }}
+                                        className="w-full mt-2 px-3 py-2 rounded-lg bg-[#137fec] text-white text-sm hover:bg-[#137fec]/90"
+                                    >
+                                        Uygula
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Export PDF Button */}
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={exporting}
+                        className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg border border-gray-700 bg-white/10 px-3 text-gray-300 hover:bg-white/20 transition-colors disabled:opacity-50"
+                    >
                         <span className="material-symbols-outlined text-lg">
-                            expand_more
+                            {exporting ? "hourglass_empty" : "download"}
                         </span>
-                    </button>
-                    <button className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg border border-gray-300 bg-white px-3 text-[#292828] hover:bg-gray-100 dark:border-[#3b4754] dark:bg-[#1c2127] dark:text-white dark:hover:bg-[#283039]">
-                        <span className="material-symbols-outlined text-lg">download</span>
-                        <p className="text-sm font-medium leading-normal">Rapor İndir</p>
+                        <p className="text-sm font-medium leading-normal">
+                            {exporting ? "İndiriliyor..." : "Rapor İndir"}
+                        </p>
                     </button>
                 </div>
             </div>
 
-            {/* Real-time Stats & Active Pages */}
-            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Real-time Tracking */}
-                <div className="flex flex-col justify-between rounded-xl border border-gray-300 bg-white p-6 dark:border-[#3b4754] dark:bg-[#1c2127] lg:col-span-1">
-                    <div className="flex items-start justify-between">
-                        <h3 className="text-lg font-bold text-[#292828] dark:text-white">
-                            Gerçek Zamanlı Takip
-                        </h3>
-                        <span className="flex items-center gap-2 text-[#b13329]">
-                            <span className="relative flex h-3 w-3">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#b13329] opacity-75"></span>
-                                <span className="relative inline-flex h-3 w-3 rounded-full bg-[#b13329]"></span>
-                            </span>
-                            <span className="text-sm font-medium">CANLI</span>
-                        </span>
-                    </div>
-                    <div className="my-4">
-                        <p className="text-6xl font-bold text-[#292828] dark:text-white">87</p>
-                        <p className="text-[#94847c]">şu anda aktif kullanıcı</p>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                            <p className="text-[#94847c]">Mobil</p>
-                            <div className="h-2 w-2/3 rounded-full bg-gray-200 dark:bg-[#283039]">
-                                <div className="h-2 rounded-full bg-[#f4b834]" style={{ width: "65%" }}></div>
-                            </div>
-                            <p className="font-medium text-[#292828] dark:text-white">57</p>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                            <p className="text-[#94847c]">Masaüstü</p>
-                            <div className="h-2 w-2/3 rounded-full bg-gray-200 dark:bg-[#283039]">
-                                <div className="h-2 rounded-full bg-[#b13329]" style={{ width: "35%" }}></div>
-                            </div>
-                            <p className="font-medium text-[#292828] dark:text-white">30</p>
-                        </div>
+            {/* Stats Cards */}
+            <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <StatsCard
+                    title="Toplam Sipariş"
+                    value={stats.totalOrders.toLocaleString("tr-TR")}
+                    change={{ value: "+5%", trend: "up" }}
+                    icon="shopping_cart"
+                />
+                <StatsCard
+                    title="Toplam Talep"
+                    value={stats.totalQuotes.toLocaleString("tr-TR")}
+                    change={{ value: "-2%", trend: "down" }}
+                    icon="chat_bubble"
+                />
+                <StatsCard
+                    title="Aktif Kullanıcılar"
+                    value={stats.activeUsers.toLocaleString("tr-TR")}
+                    change={{ value: "+12%", trend: "up" }}
+                    icon="group"
+                />
+                <StatsCard
+                    title="Site Ziyaretleri"
+                    value={stats.siteVisits.toLocaleString("tr-TR")}
+                    change={{ value: "+8%", trend: "up" }}
+                    icon="visibility"
+                />
+            </div>
+
+            {/* Charts Row */}
+            <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                {/* Line Chart */}
+                <div className="rounded-xl border border-gray-700 bg-[#151d27] p-4 lg:col-span-2">
+                    <h3 className="mb-3 text-base font-bold text-white">
+                        Sipariş ve Talep Akışı
+                    </h3>
+                    <div className="h-48">
+                        <Line ref={lineChartRef} data={lineChartData} options={lineChartOptions} />
                     </div>
                 </div>
 
-                {/* Active Pages */}
-                <div className="rounded-xl border border-gray-300 bg-white p-6 dark:border-[#3b4754] dark:bg-[#1c2127] lg:col-span-2">
-                    <h3 className="mb-4 text-lg font-bold text-[#292828] dark:text-white">
-                        Aktif Sayfalar
+                {/* Doughnut Chart */}
+                <div className="rounded-xl border border-gray-700 bg-[#151d27] p-4">
+                    <h3 className="mb-3 text-base font-bold text-white">
+                        Kullanıcı Kaynakları
                     </h3>
-                    <div className="space-y-3">
-                        {activePages.map((page, index) => (
-                            <div key={index} className="grid grid-cols-10 items-center gap-4 text-sm">
-                                <div className="col-span-6 truncate font-medium text-[#292828] dark:text-white">
-                                    {page.url}
-                                </div>
-                                <div className="col-span-2 text-[#94847c]">{page.users} kullanıcı</div>
-                                <div className="col-span-2 h-2 w-full rounded-full bg-gray-200 dark:bg-[#283039]">
-                                    <div
-                                        className="h-2 rounded-full bg-[#b13329]"
-                                        style={{ width: `${page.percentage}%` }}
-                                    ></div>
-                                </div>
+                    <div className="h-32 mb-3">
+                        <Doughnut ref={doughnutChartRef} data={doughnutChartData} options={doughnutChartOptions} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                        {[
+                            { label: "Anasayfa", color: "#137fec", value: "45%" },
+                            { label: "Ürünler", color: "#22c55e", value: "25%" },
+                            { label: "Hakkımızda", color: "#eab308", value: "20%" },
+                            { label: "İletişim", color: "#6b7280", value: "10%" },
+                        ].map((item) => (
+                            <div key={item.label} className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                                <span className="text-gray-400">{item.label}</span>
+                                <span className="text-white ml-auto">{item.value}</span>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <StatsCard
-                    title="Toplam Sipariş"
-                    value={stats.totalOrders.toLocaleString()}
-                    change={{ value: "+5%", trend: "up" }}
-                    icon="shopping_cart"
+            {/* Real-time & Active Pages Row */}
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <RealTimeCard
+                    activeUsers={realTimeStats.activeUsers}
+                    mobileUsers={realTimeStats.mobileUsers}
+                    desktopUsers={realTimeStats.desktopUsers}
                 />
-                <StatsCard
-                    title="Toplam Talep"
-                    value={stats.totalQuotes.toLocaleString()}
-                    change={{ value: "-2%", trend: "down" }}
-                    icon="chat_bubble"
-                />
-                <StatsCard
-                    title="Aktif Kullanıcılar"
-                    value={stats.activeUsers.toLocaleString()}
-                    change={{ value: "+12%", trend: "up" }}
-                    icon="group"
-                />
-                <StatsCard
-                    title="Site Ziyaretleri"
-                    value={stats.siteVisits.toLocaleString()}
-                    change={{ value: "+8%", trend: "up" }}
-                    icon="visibility"
-                />
+                <ActivePagesCard pages={activePages} />
             </div>
 
-            {/* Charts & Tables */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Chart Placeholder */}
-                <div className="rounded-xl border border-gray-300 bg-white p-6 dark:border-[#3b4754] dark:bg-[#1c2127] lg:col-span-2">
-                    <h3 className="mb-4 text-lg font-bold text-[#292828] dark:text-white">
-                        Sipariş ve Talep Akışı
-                    </h3>
-                    <div className="flex h-80 items-center justify-center rounded-lg bg-gray-100 dark:bg-[#283039]">
-                        <p className="text-[#94847c]">Grafik (Chart.js entegrasyonu yapılacak)</p>
-                    </div>
-                </div>
-
-                {/* Donut Chart Placeholder */}
-                <div className="rounded-xl border border-gray-300 bg-white p-6 dark:border-[#3b4754] dark:bg-[#1c2127]">
-                    <h3 className="mb-4 text-lg font-bold text-[#292828] dark:text-white">
-                        Kullanıcı Kaynakları
-                    </h3>
-                    <div className="flex h-80 items-center justify-center rounded-lg bg-gray-100 dark:bg-[#283039]">
-                        <p className="text-[#94847c]">Donut Chart</p>
-                    </div>
-                </div>
-
-                {/* Top Pages Table */}
-                <div className="rounded-xl border border-gray-300 bg-white p-6 dark:border-[#3b4754] dark:bg-[#1c2127] lg:col-span-3">
-                    <h3 className="mb-4 text-lg font-bold text-[#292828] dark:text-white">
-                        En Çok Görüntülenen Sayfalar
-                    </h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-[#94847c]">
-                            <thead className="bg-gray-100 text-xs uppercase text-[#292828] dark:bg-[#283039] dark:text-white">
-                                <tr>
-                                    <th className="rounded-l-lg px-6 py-3" scope="col">
-                                        Sayfa Adı
-                                    </th>
-                                    <th className="px-6 py-3" scope="col">
-                                        Görüntülenme
-                                    </th>
-                                    <th className="px-6 py-3" scope="col">
-                                        Tekil Ziyaretçi
-                                    </th>
-                                    <th className="rounded-r-lg px-6 py-3" scope="col">
-                                        Hemen Çıkma Oranı
-                                    </th>
+            {/* Top Pages Table - Compact */}
+            <div className="rounded-xl border border-gray-700 bg-[#151d27] p-4">
+                <h3 className="mb-3 text-base font-bold text-white">
+                    En Çok Görüntülenen Sayfalar
+                </h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="bg-white/5 text-xs uppercase text-gray-300">
+                            <tr>
+                                <th className="rounded-l-lg px-4 py-2" scope="col">Sayfa</th>
+                                <th className="px-4 py-2" scope="col">Görüntülenme</th>
+                                <th className="px-4 py-2" scope="col">Tekil</th>
+                                <th className="rounded-r-lg px-4 py-2" scope="col">Çıkma %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {topPages.map((page, index) => (
+                                <tr key={index} className="border-b border-gray-700/50 last:border-0">
+                                    <td className="px-4 py-2 font-medium text-white">{page.name}</td>
+                                    <td className="px-4 py-2">{page.views.toLocaleString()}</td>
+                                    <td className="px-4 py-2">{page.unique.toLocaleString()}</td>
+                                    <td className="px-4 py-2">{page.bounceRate}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {topPages.map((page, index) => (
-                                    <tr
-                                        key={index}
-                                        className="border-b border-gray-200 bg-white dark:border-[#3b4754] dark:bg-[#1c2127]"
-                                    >
-                                        <td className="px-6 py-4 font-medium text-[#292828] dark:text-white">
-                                            {page.name}
-                                        </td>
-                                        <td className="px-6 py-4">{page.views.toLocaleString()}</td>
-                                        <td className="px-6 py-4">{page.unique.toLocaleString()}</td>
-                                        <td className="px-6 py-4">{page.bounceRate}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

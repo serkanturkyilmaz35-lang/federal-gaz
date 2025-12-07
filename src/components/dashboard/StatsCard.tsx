@@ -12,18 +12,18 @@ interface StatsCardProps {
 
 export default function StatsCard({ title, value, change, icon }: StatsCardProps) {
     return (
-        <div className="flex flex-col gap-2 rounded-xl border border-gray-300 bg-white p-6 dark:border-[#3b4754] dark:bg-[#1c2127]">
+        <div className="flex flex-col gap-2 rounded-xl border border-gray-700 bg-[#151d27] p-6">
             <div className="flex items-start justify-between">
-                <p className="text-base font-medium leading-normal text-[#94847c]">
+                <p className="text-base font-medium leading-normal text-gray-400">
                     {title}
                 </p>
                 {icon && (
-                    <span className="material-symbols-outlined text-[#94847c]">
+                    <span className="material-symbols-outlined text-gray-500">
                         {icon}
                     </span>
                 )}
             </div>
-            <p className="text-3xl font-bold leading-tight tracking-tight text-[#292828] dark:text-white">
+            <p className="text-3xl font-bold leading-tight tracking-tight text-white">
                 {value}
             </p>
             {change && (

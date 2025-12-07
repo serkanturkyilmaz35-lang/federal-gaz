@@ -14,7 +14,7 @@ const translations = {
         footerContact: "İletişim",
         footerQuickLinks: "Hızlı Erişim",
         footerSocial: "Sosyal Medya",
-        rights: "© 2024 Federal Gaz. Tüm hakları saklıdır."
+        rights: "© 2014 Federal Gaz. Tüm hakları saklıdır."
     },
     EN: {
         about: "About Us",
@@ -26,7 +26,7 @@ const translations = {
         footerContact: "Contact",
         footerQuickLinks: "Quick Links",
         footerSocial: "Social Media",
-        rights: "© 2024 Federal Gaz. All rights reserved."
+        rights: "© 2014 Federal Gaz. All rights reserved."
     }
 };
 
@@ -47,7 +47,7 @@ export default function Footer() {
                     <div>
                         <h4 className="mb-4 font-semibold text-white">{t.footerContact}</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><p>İvedik OSB, 1550. Sk. No:3<br />06378 Yenimahalle/Ankara</p></li>
+                            <li><p>İvedik OSB, 1550. Cad. No:1<br />06378 Yenimahalle/Ankara</p></li>
                             <li><a href="tel:+903123953595" className="transition-colors hover:text-primary">(0312) 395 35 95</a></li>
                             <li><a href="tel:+905434554563" className="transition-colors hover:text-primary">(+90) 543 455 45 63</a></li>
                             <li><a href="tel:+905324224515" className="transition-colors hover:text-primary">(+90) 532 422 45 15</a></li>

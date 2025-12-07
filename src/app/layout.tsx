@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { headers } from "next/headers";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -31,29 +32,47 @@ import SecurityProvider from "@/components/SecurityProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    // Check if it's dashboard subdomain
+    const headersList = await headers();
+    const hostname = headersList.get('host') || '';
+    const isDashboard = hostname.startsWith('dashboard.');
+
     return (
-        <html lang="tr" className="light">
+        <html lang="tr" className={isDashboard ? "dark" : "light"}>
             <head>
+                {isDashboard ? (
+                    <>
+                        <title>Federal Gaz - Yönetim Paneli</title>
+                        <meta name="description" content="Federal Gaz Yönetim Paneli" />
+                    </>
+                ) : null}
+                <link rel="icon" href={isDashboard ? "/dashboard-logo.png" : "/favicon.ico"} type="image/png" />
                 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
             </head>
             <body className={`${inter.variable} font-display antialiased`}>
                 <LanguageProvider>
                     <AuthProvider>
                         <SecurityProvider>
-                            <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
-                                <div className="layout-container flex h-full grow flex-col">
-                                    <Header />
-                                    <main className="flex-1">
-                                        {children}
-                                    </main>
-                                    <Footer />
+                            {isDashboard ? (
+                                // Dashboard: no main site header/footer
+                                <>{children}</>
+                            ) : (
+                                // Main site: with header and footer
+                                <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
+                                    <div className="layout-container flex h-full grow flex-col">
+                                        <Header />
+                                        <main className="flex-1">
+                                            {children}
+                                        </main>
+                                        <Footer />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </SecurityProvider>
                     </AuthProvider>
                 </LanguageProvider>

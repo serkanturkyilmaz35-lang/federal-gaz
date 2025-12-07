@@ -33,6 +33,7 @@ export async function POST(req: Request) {
             await sendEmail({
                 to: 'federal.gaz@hotmail.com',
                 subject: `🛒 Yeni Sipariş #${order.id} - ${user.name}`,
+                replyTo: user.email,
                 html: getOrderNotificationEmail({
                     customerName: user.name,
                     customerEmail: user.email,
