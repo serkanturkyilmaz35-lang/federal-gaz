@@ -1,24 +1,52 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase, Order, ContactRequest, User } from "@/lib/models";
+import { connectToDatabase, Order, ContactRequest, User, NotificationRead } from "@/lib/models";
+import { verifyToken } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { Op } from "sequelize";
 
 export async function GET() {
     try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get('auth_token')?.value;
+
+        if (!token) {
+            return NextResponse.json({ success: false, error: 'Oturum bulunamadı' }, { status: 401 });
+        }
+
+        const payload = verifyToken(token) as { id: number; email: string; role: string; name: string; sessionToken?: string } | null;
+        if (!payload || !payload.id) {
+            return NextResponse.json({ success: false, error: 'Geçersiz token' }, { status: 401 });
+        }
+
         await connectToDatabase();
 
-        // 1. Fetch ALL Recent Orders (for History)
+        // Session validation - check if session token matches
+        const user = await User.findByPk(payload.id);
+        if (!user || (payload.sessionToken && user.sessionToken !== payload.sessionToken)) {
+            return NextResponse.json({
+                success: false,
+                error: 'Oturumunuz başka bir cihazda sonlandırıldı.',
+                sessionExpired: true
+            }, { status: 401 });
+        }
+
+        // Fetch recent orders
         const recentOrders = await Order.findAll({
-            // Removed status filter to allow history
             order: [['createdAt', 'DESC']],
             limit: 20
         });
 
-        // 2. Fetch ALL Recent Contact Requests
+        // Fetch recent contact requests
         const recentContacts = await ContactRequest.findAll({
-            // Removed status filter
             order: [['createdAt', 'DESC']],
             limit: 20
         });
+
+        // Get user's read notifications from DB
+        const readNotifications = await NotificationRead.findAll({
+            where: { userId: payload.id }
+        });
+        const readIds = readNotifications.map(n => n.notificationId);
 
         const notifications = [
             ...recentOrders.map(o => ({
@@ -27,7 +55,7 @@ export async function GET() {
                 title: o.status === 'PENDING' ? 'Yeni Sipariş' : `Sipariş: ${o.status}`,
                 message: `#${o.id} numaralı sipariş. Durum: ${o.status}`,
                 time: o.createdAt,
-                read: false, // Default to false, frontend will handle read status via localStorage
+                read: readIds.includes(`order-${o.id}`),
                 link: `/dashboard/orders/${o.id}`
             })),
             ...recentContacts.map(c => ({
@@ -36,7 +64,7 @@ export async function GET() {
                 title: c.status === 'new' ? 'Yeni Mesaj' : 'Mesaj (Yanıtlandı)',
                 message: `${c.name} - ${c.message.substring(0, 30)}...`,
                 time: c.createdAt,
-                read: false,
+                read: readIds.includes(`contact-${c.id}`),
                 link: `/dashboard/contacts/${c.id}`
             }))
         ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());

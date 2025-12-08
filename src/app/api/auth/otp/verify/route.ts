@@ -3,6 +3,7 @@ import { connectToDatabase, User, OTPToken } from '@/lib/models';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { Op } from 'sequelize';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
     try {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
             order: [['createdAt', 'DESC']],
         });
 
-        // 3. User Details - Check admin or editor role
+        // 2. User Details - Check admin or editor role
         const user = await User.findOne({
             where: {
                 email,
@@ -41,27 +42,29 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Bu kodun süresi dolmuş.' }, { status: 400 });
         }
 
-        // 2. Mark OTP as used (Create promise but don't blocking wait if we don't strict consistency? Better wait.)
-        // We can optimize this: Update OTP in background? 
-        // No, consistency is important. But we can await it AFTER checking user.
+        // 3. Mark OTP as used
         await validToken.update({ isUsed: true });
 
-        // 3. User Details
+        // 4. User Details
         if (!user) {
             return NextResponse.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404 });
         }
 
-        // 4. Generate JWT
+        // 5. Generate new session token (invalidates all other sessions)
+        const sessionToken = crypto.randomUUID();
+        await user.update({ sessionToken });
+
+        // 6. Generate JWT with session token
         const tokenPayload = {
             id: user.id,
             email: user.email,
             role: user.role,
             name: user.name,
+            sessionToken, // Include for session validation
         };
         const token = signToken(tokenPayload);
 
-        // 5. Set Cookie
-        // NO Max-Age/Expires = Session Cookie (expires on browser close)
+        // 7. Set Cookie
         try {
             const cookieStore = await cookies();
             cookieStore.set('auth_token', token, {
@@ -72,8 +75,6 @@ export async function POST(request: Request) {
             });
         } catch (cookieErr) {
             console.error('Cookie Set Error:', cookieErr);
-            // Don't crash, just log. Client might still work if we rely on other things? 
-            // Actually client needs cookie. But let's see if this is the cause.
             return NextResponse.json({ error: 'Çerez ayarlanamadı.' }, { status: 500 });
         }
 

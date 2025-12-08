@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
+import { useRouter } from "next/navigation";
 
 export type NotificationType = "order" | "contact" | "system" | "info" | "alert";
 
@@ -24,6 +24,7 @@ interface NotificationContextType {
     clearRead: () => void;
     playNotificationSound: () => void;
     loading: boolean;
+    sessionExpired: boolean;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -31,6 +32,9 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
+    const [sessionExpired, setSessionExpired] = useState(false);
+    const router = useRouter();
+
     // Web Audio API implementation for reliable sound
     const playNotificationSound = () => {
         try {
@@ -38,20 +42,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             if (!AudioContext) return;
 
             const ctx = new AudioContext();
-
-            // Mimic "WhatsApp" (Glass/Pop) sound
-            // Single Sine wave with rapid frequency drop
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.connect(gain);
             gain.connect(ctx.destination);
 
             osc.type = 'sine';
-            // Start high, drop low quickly to create "bloop/pop" effect
             osc.frequency.setValueAtTime(800, ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.15);
 
-            // Envelope: Fast attack, short decay
             gain.gain.setValueAtTime(0, ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.01);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
@@ -67,39 +66,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         try {
             const res = await fetch('/api/notifications');
             const data = await res.json();
+
+            if (data.sessionExpired) {
+                setSessionExpired(true);
+                router.push('/dashboard/login');
+                return;
+            }
+
             if (data.success) {
-                const readIds = JSON.parse(localStorage.getItem('notification_read_ids') || '[]');
-                const deletedIds = JSON.parse(localStorage.getItem('notification_deleted_ids') || '[]');
-
-                console.log('Fetching Notifications:', {
-                    totalFromServer: data.notifications.length,
-                    readIds,
-                    deletedIds
-                });
-
-                const validNotifications = data.notifications
-                    .filter((n: Notification) => !deletedIds.includes(n.id))
-                    .map((n: Notification) => ({
-                        ...n,
-                        read: n.read || readIds.includes(n.id)
-                    }));
-
                 setNotifications(prev => {
-                    // Check if there are NEW unread notifications compared to previous state
                     const prevUnreadCount = prev.filter(n => !n.read).length;
-                    const newUnreadCount = validNotifications.filter((n: any) => !n.read).length;
-
-                    console.log('Notification Update:', {
-                        prevUnread: prevUnreadCount,
-                        newUnread: newUnreadCount,
-                        shouldPlaySound: newUnreadCount > prevUnreadCount
-                    });
+                    const newUnreadCount = data.notifications.filter((n: Notification) => !n.read).length;
 
                     if (newUnreadCount > prevUnreadCount) {
-                        // Play sound using Web Audio API
                         playNotificationSound();
                     }
-                    return validNotifications;
+                    return data.notifications;
                 });
             }
         } catch (error) {
@@ -111,45 +93,55 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every 5 seconds for "real-time" feel
         const interval = setInterval(fetchNotifications, 5000);
         return () => clearInterval(interval);
     }, []);
 
-    const markAsRead = (id: string) => {
+    const markAsRead = async (id: string) => {
+        // Optimistic update
         setNotifications((prev) =>
             prev.map((n) => (n.id === id ? { ...n, read: true } : n))
         );
-        const readIds = JSON.parse(localStorage.getItem('notification_read_ids') || '[]');
-        if (!readIds.includes(id)) {
-            localStorage.setItem('notification_read_ids', JSON.stringify([...readIds, id]));
+
+        // Save to DB via API
+        try {
+            await fetch('/api/notifications/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notificationIds: [id] })
+            });
+        } catch (error) {
+            console.error('Failed to mark notification as read', error);
         }
     };
 
-    const markAllAsRead = () => {
+    const markAllAsRead = async () => {
+        const allIds = notifications.filter(n => !n.read).map(n => n.id);
+
+        // Optimistic update
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        const allIds = notifications.map(n => n.id);
-        const readIds = JSON.parse(localStorage.getItem('notification_read_ids') || '[]');
-        const newIds = Array.from(new Set([...readIds, ...allIds]));
-        localStorage.setItem('notification_read_ids', JSON.stringify(newIds));
+
+        // Save to DB via API
+        try {
+            await fetch('/api/notifications/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notificationIds: allIds })
+            });
+        } catch (error) {
+            console.error('Failed to mark all notifications as read', error);
+        }
     };
 
     const clearAll = () => {
-        const allIds = notifications.map(n => n.id);
-        const deletedIds = JSON.parse(localStorage.getItem('notification_deleted_ids') || '[]');
-        const newDeletedIds = Array.from(new Set([...deletedIds, ...allIds]));
-        localStorage.setItem('notification_deleted_ids', JSON.stringify(newDeletedIds));
-        setNotifications([]); // Clear current state
+        // Just clear from view (read notifications can be hidden)
+        markAllAsRead();
+        setNotifications([]);
     };
 
-    // NEW: Clear only read notifications (History)
     const clearRead = () => {
-        const readNotifications = notifications.filter(n => n.read);
-        const readIds = readNotifications.map(n => n.id);
-        const deletedIds = JSON.parse(localStorage.getItem('notification_deleted_ids') || '[]');
-        const newDeletedIds = Array.from(new Set([...deletedIds, ...readIds]));
-        localStorage.setItem('notification_deleted_ids', JSON.stringify(newDeletedIds));
-        setNotifications(prev => prev.filter(n => !n.read)); // Keep unread ones
+        // Keep only unread notifications in view
+        setNotifications(prev => prev.filter(n => !n.read));
     };
 
     const unreadCount = notifications.filter((n) => !n.read).length;
@@ -163,7 +155,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             clearAll,
             clearRead,
             playNotificationSound,
-            loading
+            loading,
+            sessionExpired
         }}>    {children}
         </NotificationContext.Provider>
     );
@@ -176,3 +169,4 @@ export function useNotification() {
     }
     return context;
 }
+

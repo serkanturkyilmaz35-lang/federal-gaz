@@ -26,6 +26,7 @@ interface UserAttributes {
     password_hash: string;
     phone?: string;
     role?: 'user' | 'admin' | 'editor';
+    sessionToken?: string; // For single session management
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -38,6 +39,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     declare password_hash: string;
     declare phone: string | undefined;
     declare role: 'user' | 'admin' | 'editor';
+    declare sessionToken: string | undefined;
 
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
@@ -78,6 +80,10 @@ User.init(
         role: {
             type: DataTypes.ENUM('user', 'admin', 'editor'),
             defaultValue: 'user',
+        },
+        sessionToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
     },
     {
@@ -668,6 +674,54 @@ SiteAnalytics.init(
         tableName: 'site_analytics',
         indexes: [
             { fields: ['date', 'pageUrl'], unique: true },
+        ],
+    }
+);
+
+// --- NotificationRead Model (Bildirim Okunma Durumu) ---
+interface NotificationReadAttributes {
+    id: number;
+    userId: number;
+    notificationId: string; // "order-123", "contact-456"
+    readAt: Date;
+}
+
+interface NotificationReadCreationAttributes extends Optional<NotificationReadAttributes, 'id' | 'readAt'> { }
+
+export class NotificationRead extends Model<NotificationReadAttributes, NotificationReadCreationAttributes> implements NotificationReadAttributes {
+    declare id: number;
+    declare userId: number;
+    declare notificationId: string;
+    declare readAt: Date;
+
+    declare readonly createdAt: Date;
+}
+
+NotificationRead.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        userId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        notificationId: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        readAt: {
+            type: DataTypes.DATE,
+            defaultValue: DataTypes.NOW,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'notification_reads',
+        indexes: [
+            { fields: ['userId', 'notificationId'], unique: true },
         ],
     }
 );
