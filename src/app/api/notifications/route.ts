@@ -48,20 +48,29 @@ export async function GET() {
             limit: 20
         });
 
-        // Get user's read notifications from DB
-        const readNotifications = await NotificationRead.findAll({
+        // Get user's notification states from DB (read and deleted)
+        const userNotificationStates = await NotificationRead.findAll({
             where: { userId: payload.id }
         });
-        const readIds = readNotifications.map(n => n.notificationId);
 
-        const notifications = [
+        // Create maps for quick lookup
+        const readMap = new Map<string, boolean>();
+        const deletedMap = new Map<string, boolean>();
+        userNotificationStates.forEach(n => {
+            readMap.set(n.notificationId, true);
+            if (n.deletedAt) {
+                deletedMap.set(n.notificationId, true);
+            }
+        });
+
+        const allNotifications = [
             ...recentOrders.map(o => ({
                 id: `order-${o.id}`,
                 type: 'order',
                 title: o.status === 'PENDING' ? 'Yeni Sipariş' : `Sipariş: ${o.status}`,
                 message: `#${o.id} numaralı sipariş. Durum: ${o.status}`,
                 time: o.createdAt,
-                read: readIds.includes(`order-${o.id}`),
+                read: readMap.has(`order-${o.id}`),
                 link: `/dashboard/orders/${o.id}`
             })),
             ...recentContacts.map(c => ({
@@ -70,10 +79,15 @@ export async function GET() {
                 title: c.status === 'new' ? 'Yeni Mesaj' : 'Mesaj (Yanıtlandı)',
                 message: `${c.name} - ${c.message.substring(0, 30)}...`,
                 time: c.createdAt,
-                read: readIds.includes(`contact-${c.id}`),
+                read: readMap.has(`contact-${c.id}`),
                 link: `/dashboard/contacts/${c.id}`
             }))
-        ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        ];
+
+        // Filter out deleted notifications for this user
+        const notifications = allNotifications
+            .filter(n => !deletedMap.has(n.id))
+            .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
         return NextResponse.json({ success: true, notifications });
     } catch (error) {

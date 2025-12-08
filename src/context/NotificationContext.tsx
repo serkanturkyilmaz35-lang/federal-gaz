@@ -133,15 +133,40 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const clearAll = () => {
-        // Just clear from view (read notifications can be hidden)
-        markAllAsRead();
+    const clearAll = async () => {
+        const allIds = notifications.map(n => n.id);
+
+        // Optimistic update
         setNotifications([]);
+
+        // Save to DB via API
+        try {
+            await fetch('/api/notifications/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notificationIds: allIds })
+            });
+        } catch (error) {
+            console.error('Failed to delete all notifications', error);
+        }
     };
 
-    const clearRead = () => {
-        // Keep only unread notifications in view
+    const clearRead = async () => {
+        const readIds = notifications.filter(n => n.read).map(n => n.id);
+
+        // Optimistic update - keep only unread
         setNotifications(prev => prev.filter(n => !n.read));
+
+        // Save to DB via API
+        try {
+            await fetch('/api/notifications/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notificationIds: readIds })
+            });
+        } catch (error) {
+            console.error('Failed to delete read notifications', error);
+        }
     };
 
     const unreadCount = notifications.filter((n) => !n.read).length;

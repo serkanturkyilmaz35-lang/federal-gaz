@@ -678,21 +678,23 @@ SiteAnalytics.init(
     }
 );
 
-// --- NotificationRead Model (Bildirim Okunma Durumu) ---
+// --- NotificationRead Model (Bildirim Okunma/Silme Durumu) ---
 interface NotificationReadAttributes {
     id: number;
     userId: number;
     notificationId: string; // "order-123", "contact-456"
     readAt: Date;
+    deletedAt: Date | null; // null = not deleted, Date = deleted by this user
 }
 
-interface NotificationReadCreationAttributes extends Optional<NotificationReadAttributes, 'id' | 'readAt'> { }
+interface NotificationReadCreationAttributes extends Optional<NotificationReadAttributes, 'id' | 'readAt' | 'deletedAt'> { }
 
 export class NotificationRead extends Model<NotificationReadAttributes, NotificationReadCreationAttributes> implements NotificationReadAttributes {
     declare id: number;
     declare userId: number;
     declare notificationId: string;
     declare readAt: Date;
+    declare deletedAt: Date | null;
 
     declare readonly createdAt: Date;
 }
@@ -715,6 +717,11 @@ NotificationRead.init(
         readAt: {
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW,
+        },
+        deletedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
         },
     },
     {
