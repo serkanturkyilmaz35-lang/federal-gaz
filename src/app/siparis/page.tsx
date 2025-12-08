@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -17,7 +17,7 @@ const translations = {
         phone: "Telefon *",
         product: "Ürün Seçimi",
         selectProduct: "Ürün Seçiniz",
-        products: ["Oksijen", "Azot", "Argon", "Karbondioksit", "Asetilen", "Propan", "Medikal Oksijen", "Diğer"],
+        products: ["Oksijen", "Karışım", "Argon", "Lpg", "Azot", "Karbondioksit", "Asetilen", "Propan", "Diğer"],
         amount: "Miktar",
         unit: "Birim",
         units: ["Adet", "m³", "kg", "Litre"],
@@ -33,7 +33,9 @@ const translations = {
         successMessage: "Siparişiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz.",
         errorMessage: "Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin.",
         maxItemsError: "Tek siparişte en fazla 5 ürün ekleyebilirsiniz.",
-        fillProductError: "Lütfen ürün, miktar ve birim seçiniz."
+        fillProductError: "Lütfen ürün, miktar ve birim seçiniz.",
+        otherProductNoteRequired: "'Diğer' seçeneği için lütfen Ek Notlar alanına hangi ürünü istediğinizi detaylı olarak yazın.",
+        otherProductNotAdded: "'Diğer' ürünü henüz sepete eklenmedi! Lütfen önce 'Ürün Ekle' butonuna tıklayın."
     },
     EN: {
         title: "Order Now",
@@ -44,7 +46,7 @@ const translations = {
         phone: "Phone *",
         product: "Product Selection",
         selectProduct: "Select Product",
-        products: ["Oxygen", "Nitrogen", "Argon", "Carbon Dioxide", "Acetylene", "Propane", "Medical Oxygen", "Other"],
+        products: ["Oxygen", "Mixture", "Argon", "Lpg", "Nitrogen", "Carbon Dioxide", "Acetylene", "Propane", "Other"],
         amount: "Amount",
         unit: "Unit",
         units: ["Piece", "m³", "kg", "Liter"],
@@ -60,7 +62,9 @@ const translations = {
         successMessage: "Your order has been received successfully. We will contact you shortly.",
         errorMessage: "An error occurred while submitting your order. Please try again.",
         maxItemsError: "You can add maximum 5 items per order.",
-        fillProductError: "Please select product, amount and unit."
+        fillProductError: "Please select product, amount and unit.",
+        otherProductNoteRequired: "For 'Other' option, please describe in detail which product you need in the Additional Notes section.",
+        otherProductNotAdded: "'Other' product has not been added to the basket yet! Please click 'Add Product' button first."
     }
 };
 
@@ -99,10 +103,13 @@ export default function SiparisPage() {
     const { user } = useAuth();
     const router = useRouter();
     const t = translations[language];
+    const notesRef = useRef<HTMLTextAreaElement>(null);
 
     // Modal States
     const [showWarningModal, setShowWarningModal] = useState(false);
     const [showAuthChoice, setShowAuthChoice] = useState(false);
+    const [showOtherNoteModal, setShowOtherNoteModal] = useState(false);
+    const [tempOtherNote, setTempOtherNote] = useState("");
 
     // Form inputs
     const [contactData, setContactData] = useState({
@@ -117,7 +124,7 @@ export default function SiparisPage() {
     // Product Helper State
     const [currentProduct, setCurrentProduct] = useState({
         product: "",
-        amount: "",
+        amount: "1",
         unit: t.units[0]
     });
 
@@ -176,6 +183,26 @@ export default function SiparisPage() {
         const { name, value } = e.target;
         let newData = { ...currentProduct, [name]: value };
 
+        // Check if "Diğer" (Other) is selected - open modal
+        if (name === "product" && (value === "Diğer" || value === "Other")) {
+            setTempOtherNote("");
+            setShowOtherNoteModal(true);
+            // Set product to "Diğer" but will only finalize if note is saved
+            setCurrentProduct({ ...currentProduct, product: value, amount: "1" });
+            return;
+        }
+
+        // Check if changing from "Diğer" with notes written but not added
+        if (name === "product") {
+            const wasOther = currentProduct.product === "Diğer" || currentProduct.product === "Other";
+            const isChangingToAnother = value !== "Diğer" && value !== "Other" && value !== "";
+            const hasOtherInBasket = basket.some(item => item.product === "Diğer" || item.product === "Other");
+            if (wasOther && isChangingToAnother && contactData.notes.trim() && !hasOtherInBasket) {
+                setError(t.otherProductNotAdded);
+                return; // Don't allow changing product
+            }
+        }
+
         // Auto-set amount to 1 when product is selected
         if (name === "product" && value) {
             newData.amount = "1";
@@ -185,10 +212,36 @@ export default function SiparisPage() {
         setError("");
     };
 
+    // Handle "Other" note modal save
+    const handleOtherNoteSave = () => {
+        if (!tempOtherNote.trim()) {
+            return; // Don't save empty note
+        }
+        setContactData(prev => ({ ...prev, notes: tempOtherNote }));
+        setShowOtherNoteModal(false);
+        setError("");
+    };
+
+    // Handle "Other" note modal cancel
+    const handleOtherNoteCancel = () => {
+        setShowOtherNoteModal(false);
+        setCurrentProduct({ product: "", amount: "1", unit: t.units[0] });
+    };
+
     // Add to Basket
     const addToBasket = () => {
         if (!currentProduct.product || !currentProduct.amount || !currentProduct.unit) {
             setError(t.fillProductError);
+            return;
+        }
+
+        // Check if "Diğer" (Other) is selected and notes are empty
+        const isOther = currentProduct.product === "Diğer" || currentProduct.product === "Other";
+        if (isOther && !contactData.notes.trim()) {
+            setError(t.otherProductNoteRequired);
+            // Scroll to notes and focus
+            notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => notesRef.current?.focus(), 300);
             return;
         }
 
@@ -217,7 +270,7 @@ export default function SiparisPage() {
         }
 
         // Reset inputs
-        setCurrentProduct({ product: "", amount: "", unit: t.units[0] });
+        setCurrentProduct({ product: "", amount: "1", unit: t.units[0] });
         setError("");
     };
 
@@ -241,6 +294,13 @@ export default function SiparisPage() {
 
         if (basket.length === 0 && (!currentProduct.product || !currentProduct.amount)) {
             setError(t.emptyBasket);
+            return;
+        }
+
+        // Check if "Diğer" is selected with notes but not added to basket
+        const isOtherSelected = currentProduct.product === "Diğer" || currentProduct.product === "Other";
+        if (isOtherSelected && contactData.notes.trim()) {
+            setError(t.otherProductNotAdded);
             return;
         }
 
@@ -321,6 +381,58 @@ export default function SiparisPage() {
                 onGuestContinue={handleGuestCheckout}
             />
 
+            {/* Other Product Note Modal */}
+            {showOtherNoteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleOtherNoteCancel} />
+                    <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                <span className="material-symbols-outlined text-2xl text-primary">edit_note</span>
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                                    {language === "TR" ? "Ürün Detayı Gerekli" : "Product Details Required"}
+                                </h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {language === "TR" ? "'Diğer' seçeneği için detay giriniz" : "Please provide details for 'Other' option"}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mb-4">
+                            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">
+                                {language === "TR" ? "Hangi ürünü istiyorsunuz? *" : "Which product do you need? *"}
+                            </label>
+                            <textarea
+                                value={tempOtherNote}
+                                onChange={(e) => setTempOtherNote(e.target.value)}
+                                placeholder={language === "TR" ? "Örn: 10 adet 50 litrelik helyum tüpü, balon dolumu için..." : "E.g: 10 x 50 liter helium cylinders for balloon filling..."}
+                                rows={4}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-white text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-white text-base focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={handleOtherNoteCancel}
+                                className="flex-1 rounded-xl border border-gray-300 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                                {language === "TR" ? "İptal" : "Cancel"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleOtherNoteSave}
+                                disabled={!tempOtherNote.trim()}
+                                className="flex-1 rounded-xl bg-primary py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                                {language === "TR" ? "Kaydet" : "Save"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Success Modal */}
             {showSuccess && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -396,7 +508,31 @@ export default function SiparisPage() {
                                     </div>
                                     <div className="md:col-span-3">
                                         <label className="text-sm font-bold text-secondary dark:text-white">{t.amount}</label>
-                                        <input type="number" name="amount" value={currentProduct.amount} onChange={handleProductInput} min="1" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-base bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white" />
+                                        <div className="mt-1 flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden h-[50px] dark:bg-gray-800 dark:border-gray-700">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const val = parseInt(currentProduct.amount) || 1;
+                                                    if (val > 1) setCurrentProduct({ ...currentProduct, amount: (val - 1).toString() });
+                                                }}
+                                                className="px-4 h-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors border-r border-gray-200 dark:border-gray-700 text-xl font-bold"
+                                            >
+                                                −
+                                            </button>
+                                            <div className="flex-1 h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-lg font-bold text-secondary dark:text-white min-w-[3rem]">
+                                                {currentProduct.amount || "1"}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const val = parseInt(currentProduct.amount) || 1;
+                                                    setCurrentProduct({ ...currentProduct, amount: (val + 1).toString() });
+                                                }}
+                                                className="px-4 h-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors border-l border-gray-200 dark:border-gray-700 text-xl font-bold"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="text-sm font-bold text-secondary dark:text-white">{t.unit}</label>
@@ -508,7 +644,7 @@ export default function SiparisPage() {
                         {/* 3. Notes */}
                         <div className="space-y-4">
                             <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{t.notes}</h3>
-                            <textarea name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                            <textarea ref={notesRef} name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
                         </div>
 
                         {error && (
