@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function ProfilePage() {
@@ -33,6 +33,15 @@ export default function ProfilePage() {
     const [orderForm, setOrderForm] = useState({ details: '' });
     const [msg, setMsg] = useState('');
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    // Derived Orders: Sorted (Newest First) & Paginated
+    const sortedOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
+    const currentOrders = sortedOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     const fetchAddresses = async () => {
         const res = await fetch('/api/user/address');
         if (res.ok) {
@@ -49,6 +58,8 @@ export default function ProfilePage() {
         }
     };
 
+    const searchParams = useSearchParams();
+
     useEffect(() => {
         if (!loading && !user) {
             router.push('/giris');
@@ -60,8 +71,16 @@ export default function ProfilePage() {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchAddresses();
             fetchOrders();
+
+            // Check for tab param
+            const tabParam = searchParams.get('tab');
+            if (tabParam === 'orders') {
+                setActiveTab('orders');
+            } else if (tabParam === 'addresses') {
+                setActiveTab('addresses');
+            }
         }
-    }, [user]);
+    }, [user, searchParams]);
 
     const handleAddAddress = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -364,52 +383,123 @@ export default function ProfilePage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                                        {orders.map((order) => {
-                                            const parseOrderDetails = (details: string) => {
-                                                const lines = details.split('\n');
-                                                const parsed: Record<string, string> = {};
-                                                lines.forEach(line => {
-                                                    const [key, ...valueParts] = line.split(':');
-                                                    if (key && valueParts.length > 0) {
-                                                        parsed[key.trim()] = valueParts.join(':').trim();
+                                    <>
+                                        <div className="space-y-3">
+                                            {currentOrders.map((order) => {
+                                                const getOrderInfo = (details: any) => {
+                                                    // Pre-parsed object from API
+                                                    if (details.customer) {
+                                                        // JSON Format
+                                                        return {
+                                                            customer: details.customer.name,
+                                                            company: details.customer.company,
+                                                            email: details.customer.email,
+                                                            phone: details.customer.phone,
+                                                            address: details.customer.address,
+                                                            items: details.items || [],
+                                                            notes: details.notes
+                                                        };
+                                                    } else if (details.raw) {
+                                                        // Legacy String
+                                                        const lines = details.raw.split('\n');
+                                                        const map: any = {};
+                                                        lines.forEach((line: string) => {
+                                                            const [key, ...valueParts] = line.split(':');
+                                                            if (key) map[key.trim()] = valueParts.join(':').trim();
+                                                        });
+                                                        return {
+                                                            customer: map['Müşteri'],
+                                                            company: map['Firma'],
+                                                            email: map['E-posta'],
+                                                            phone: map['Telefon'],
+                                                            address: map['Adres'],
+                                                            items: [{ product: map['Ürün'], amount: map['Miktar'], unit: '' }], // Fake item structure
+                                                            notes: map['Notlar']
+                                                        };
                                                     }
-                                                });
-                                                return parsed;
-                                            };
-                                            const info = parseOrderDetails(order.details);
+                                                    return {};
+                                                };
+                                                const info: any = getOrderInfo(order.details);
 
-                                            return (
-                                                <div key={order.id} className="border-2 border-primary rounded-lg bg-white dark:bg-gray-700 overflow-hidden shadow-sm">
-                                                    <div className="flex justify-between items-center px-3 py-2 bg-primary/5 border-b border-primary/20">
-                                                        <span className="font-bold text-secondary dark:text-white text-sm">🛒 Sipariş #{order.id}</span>
-                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                            {order.status === 'PENDING' ? 'Beklemede' : order.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="p-3 text-sm text-secondary dark:text-gray-200">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                                                            {info['Müşteri'] && <div><span className="text-gray-500">Müşteri:</span> <span className="font-medium">{info['Müşteri']}</span></div>}
-                                                            {info['Firma'] && <div><span className="text-gray-500">Firma:</span> <span className="font-medium">{info['Firma']}</span></div>}
-                                                            {info['E-posta'] && <div className="break-all md:col-span-2"><span className="text-gray-500">E-posta:</span> {info['E-posta']}</div>}
-                                                            {info['Telefon'] && <div><span className="text-gray-500">Tel:</span> {info['Telefon']}</div>}
+                                                return (
+                                                    <div key={order.id} className="border-2 border-primary rounded-lg bg-white dark:bg-gray-700 overflow-hidden shadow-sm">
+                                                        <div className="flex justify-between items-center px-3 py-2 bg-primary/5 border-b border-primary/20">
+                                                            <span className="font-bold text-secondary dark:text-white text-sm">🛒 Sipariş #{order.id}</span>
+                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                                                order.status === 'PREPARING' ? 'bg-blue-100 text-blue-800' :
+                                                                    order.status === 'SHIPPING' ? 'bg-purple-100 text-purple-800' :
+                                                                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                                                            'bg-red-100 text-red-800'
+                                                                }`}>
+                                                                {
+                                                                    order.status === 'PENDING' ? 'Beklemede' :
+                                                                        order.status === 'PREPARING' ? 'Hazırlanıyor' :
+                                                                            order.status === 'SHIPPING' ? 'Yola Çıktı' :
+                                                                                order.status === 'COMPLETED' ? 'Tamamlandı' :
+                                                                                    'İptal Edildi'
+                                                                }
+                                                            </span>
                                                         </div>
-                                                        <div className="bg-primary/10 px-3 py-2 rounded mb-2">
-                                                            <div className="flex flex-wrap gap-x-6">
-                                                                <div><span className="text-gray-600">Ürün:</span> <span className="font-bold text-primary">{info['Ürün'] || '-'}</span></div>
-                                                                <div><span className="text-gray-600">Miktar:</span> <span className="font-bold text-primary">{info['Miktar'] || '-'}</span></div>
+                                                        <div className="p-3 text-sm text-secondary dark:text-gray-200">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                                                                <div><span className="text-gray-500">Müşteri:</span> <span className="font-medium">{info.customer || '-'}</span></div>
+                                                                <div><span className="text-gray-500">Firma:</span> <span className="font-medium">{info.company || '-'}</span></div>
+                                                                <div className="break-all md:col-span-2"><span className="text-gray-500">E-posta:</span> {info.email || '-'}</div>
+                                                                <div><span className="text-gray-500">Tel:</span> {info.phone || '-'}</div>
                                                             </div>
+
+                                                            <div className="bg-primary/10 px-3 py-2 rounded mb-2">
+                                                                <div className="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">Sipariş İçeriği:</div>
+                                                                <ul className="list-disc list-inside">
+                                                                    {info.items && info.items.map((item: any, idx: number) => (
+                                                                        <li key={idx}>
+                                                                            <span className="font-bold text-primary">{item.product}</span>
+                                                                            {item.amount && <span className="text-gray-600"> - {item.amount} {item.unit}</span>}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+
+                                                            <div className="text-xs mb-1"><span className="text-gray-500">Adres:</span> {info.address}</div>
+                                                            {info.notes && <div className="text-xs text-gray-500"><span>Not:</span> <span className="italic">{info.notes}</span></div>}
                                                         </div>
-                                                        {info['Adres'] && <div className="text-xs mb-1"><span className="text-gray-500">Adres:</span> {info['Adres']}</div>}
-                                                        {info['Notlar'] && <div className="text-xs text-gray-500"><span>Not:</span> <span className="italic">{info['Notlar']}</span></div>}
+                                                        <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border-t border-primary/20 text-xs text-gray-500">
+                                                            {new Date(order.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
                                                     </div>
-                                                    <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border-t border-primary/20 text-xs text-gray-500">
-                                                        {new Date(order.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Pagination Controls */}
+                                        {totalPages > 1 && (
+                                            <div className="flex justify-center items-center gap-2 mt-6">
+                                                <button
+                                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                    disabled={currentPage === 1}
+                                                    className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-secondary"
+                                                >
+                                                    &lt;
+                                                </button>
+                                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => setCurrentPage(page)}
+                                                        className={`w-8 h-8 rounded flex items-center justify-center font-bold ${currentPage === page ? 'bg-primary text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                ))}
+                                                <button
+                                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                                    disabled={currentPage === totalPages}
+                                                    className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-secondary"
+                                                >
+                                                    &gt;
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}

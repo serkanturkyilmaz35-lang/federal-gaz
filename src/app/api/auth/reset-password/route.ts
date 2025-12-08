@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
-import { User, connectToDatabase } from '@/lib/models';
+import { User, OTPToken, connectToDatabase } from '@/lib/models';
 import { sendEmail, getPasswordResetEmail } from '@/lib/email';
-import crypto from 'crypto';
-
-// In-memory store for reset tokens (in production, use database)
-const resetTokens = new Map<string, { email: string; expires: Date }>();
 
 export async function POST(request: Request) {
     try {
@@ -22,12 +18,17 @@ export async function POST(request: Request) {
             const user = await User.findOne({ where: { email } });
 
             if (user) {
-                // Generate reset token
-                const token = crypto.randomBytes(32).toString('hex');
+                // Generate 6-digit reset token (compatible with OTPToken table)
+                const token = Math.floor(100000 + Math.random() * 900000).toString();
                 const expires = new Date(Date.now() + 3600000); // 1 hour
 
-                // Store token
-                resetTokens.set(token, { email, expires });
+                // Store token in Database
+                await OTPToken.create({
+                    email,
+                    token,
+                    expiresAt: expires,
+                    isUsed: false
+                });
 
                 // Create reset link
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -58,17 +59,4 @@ export async function POST(request: Request) {
         console.error('Password Reset Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
-}
-
-// Export for use in password reset confirmation
-export function getResetToken(token: string) {
-    const data = resetTokens.get(token);
-    if (data && data.expires > new Date()) {
-        return data;
-    }
-    return null;
-}
-
-export function deleteResetToken(token: string) {
-    resetTokens.delete(token);
 }

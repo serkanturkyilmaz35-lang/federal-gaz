@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import WarningModal from "@/components/WarningModal";
+import AuthChoiceModal from "@/components/AuthChoiceModal";
 
 const translations = {
     TR: {
@@ -12,20 +15,25 @@ const translations = {
         company: "Firma *",
         email: "E-posta *",
         phone: "Telefon *",
-        product: "Ürün *",
+        product: "Ürün Seçimi",
         selectProduct: "Ürün Seçiniz",
         products: ["Oksijen", "Azot", "Argon", "Karbondioksit", "Asetilen", "Propan", "Medikal Oksijen", "Diğer"],
-        amount: "Miktar *",
+        amount: "Miktar",
         unit: "Birim",
         units: ["Adet", "m³", "kg", "Litre"],
         address: "Teslimat Adresi *",
         notes: "Ek Notlar",
         notesPlaceholder: "Varsa ek taleplerinizi belirtin...",
         submitBtn: "Sipariş Ver",
+        addProductBtn: "Ürün Ekle",
+        basketTitle: "Sipariş Sepeti",
+        emptyBasket: "Henüz ürün eklenmedi.",
         submitting: "Gönderiliyor...",
         successTitle: "🎉 Siparişiniz Alındı!",
         successMessage: "Siparişiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz.",
-        errorMessage: "Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin."
+        errorMessage: "Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin.",
+        maxItemsError: "Tek siparişte en fazla 5 ürün ekleyebilirsiniz.",
+        fillProductError: "Lütfen ürün, miktar ve birim seçiniz."
     },
     EN: {
         title: "Order Now",
@@ -34,65 +42,42 @@ const translations = {
         company: "Company *",
         email: "Email *",
         phone: "Phone *",
-        product: "Product *",
+        product: "Product Selection",
         selectProduct: "Select Product",
         products: ["Oxygen", "Nitrogen", "Argon", "Carbon Dioxide", "Acetylene", "Propane", "Medical Oxygen", "Other"],
-        amount: "Amount *",
+        amount: "Amount",
         unit: "Unit",
         units: ["Piece", "m³", "kg", "Liter"],
         address: "Delivery Address *",
         notes: "Additional Notes",
         notesPlaceholder: "Specify additional requests if any...",
         submitBtn: "Order Now",
+        addProductBtn: "Add Product",
+        basketTitle: "Order Basket",
+        emptyBasket: "No items added yet.",
         submitting: "Submitting...",
         successTitle: "🎉 Order Received!",
         successMessage: "Your order has been received successfully. We will contact you shortly.",
-        errorMessage: "An error occurred while submitting your order. Please try again."
+        errorMessage: "An error occurred while submitting your order. Please try again.",
+        maxItemsError: "You can add maximum 5 items per order.",
+        fillProductError: "Please select product, amount and unit."
     }
 };
 
-// Confetti celebration function - FULL SCREEN explosion!
 const fireConfetti = async () => {
     const confetti = (await import('canvas-confetti')).default;
-
     const duration = 3000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-
-    function randomInRange(min: number, max: number) {
-        return Math.random() * (max - min) + min;
-    }
-
-    // Continuous confetti explosion
+    function randomInRange(min: number, max: number) { return Math.random() * (max - min) + min; }
     const interval = setInterval(function () {
         const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-            return clearInterval(interval);
-        }
-
+        if (timeLeft <= 0) return clearInterval(interval);
         const particleCount = 50 * (timeLeft / duration);
-
-        // Random bursts from different positions
-        confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-        });
-        confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-        });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
     }, 250);
-
-    // Initial big burst from center
-    confetti({
-        particleCount: 200,
-        spread: 100,
-        origin: { x: 0.5, y: 0.5 },
-        zIndex: 9999
-    });
+    confetti({ particleCount: 200, spread: 100, origin: { x: 0.5, y: 0.5 }, zIndex: 9999 });
 };
 
 interface SavedAddress {
@@ -102,52 +87,64 @@ interface SavedAddress {
     isDefault: boolean;
 }
 
+interface BasketItem {
+    id: number;
+    product: string;
+    amount: string;
+    unit: string;
+}
+
 export default function SiparisPage() {
     const { language } = useLanguage();
     const { user } = useAuth();
+    const router = useRouter();
     const t = translations[language];
 
-    const [formData, setFormData] = useState({
+    // Modal States
+    const [showWarningModal, setShowWarningModal] = useState(false);
+    const [showAuthChoice, setShowAuthChoice] = useState(false);
+
+    // Form inputs
+    const [contactData, setContactData] = useState({
         name: "",
         company: "",
         email: "",
         phone: "",
-        product: "",
-        amount: "",
-        unit: t.units[0],
         address: "",
         notes: ""
     });
+
+    // Product Helper State
+    const [currentProduct, setCurrentProduct] = useState({
+        product: "",
+        amount: "",
+        unit: t.units[0]
+    });
+
+    // Basket State
+    const [basket, setBasket] = useState<BasketItem[]>([]);
+
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState("");
     const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | "custom">("custom");
 
-    // Fetch saved addresses if user is logged in
+    // Fetch saved addresses
     useEffect(() => {
         if (user) {
-            fetch('/api/user/address')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.addresses && data.addresses.length > 0) {
-                        setSavedAddresses(data.addresses);
-                        // Auto-select default address
-                        const defaultAddr = data.addresses.find((a: SavedAddress) => a.isDefault);
-                        if (defaultAddr) {
-                            setSelectedAddressId(defaultAddr.id);
-                            setFormData(prev => ({ ...prev, address: defaultAddr.address }));
-                        }
+            fetch('/api/user/address').then(res => res.json()).then(data => {
+                if (data.addresses && data.addresses.length > 0) {
+                    setSavedAddresses(data.addresses);
+                    const defaultAddr = data.addresses.find((a: SavedAddress) => a.isDefault);
+                    if (defaultAddr) {
+                        setSelectedAddressId(defaultAddr.id);
+                        setContactData(prev => ({ ...prev, address: defaultAddr.address }));
                     }
-                })
-                .catch(() => { });
-        }
-    }, [user]);
+                }
+            }).catch(() => { });
 
-    // Pre-fill form with user data if logged in
-    useEffect(() => {
-        if (user) {
-            setFormData(prev => ({
+            setContactData(prev => ({
                 ...prev,
                 name: user.name || prev.name,
                 email: user.email || prev.email,
@@ -156,265 +153,380 @@ export default function SiparisPage() {
         }
     }, [user]);
 
+    const handleContactChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setContactData({ ...contactData, [e.target.name]: e.target.value });
+        setError("");
+    };
+
     const handleAddressChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         if (value === "custom") {
             setSelectedAddressId("custom");
-            setFormData(prev => ({ ...prev, address: "" }));
+            setContactData(prev => ({ ...prev, address: "" }));
         } else {
             const addrId = parseInt(value);
             setSelectedAddressId(addrId);
             const addr = savedAddresses.find(a => a.id === addrId);
-            if (addr) {
-                setFormData(prev => ({ ...prev, address: addr.address }));
-            }
+            if (addr) setContactData(prev => ({ ...prev, address: addr.address }));
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Handle Current Product Inputs
+    const handleProductInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        let newData = { ...currentProduct, [name]: value };
+
+        // Auto-set amount to 1 when product is selected
+        if (name === "product" && value) {
+            newData.amount = "1";
+        }
+
+        setCurrentProduct(newData);
         setError("");
     };
 
+    // Add to Basket
+    const addToBasket = () => {
+        if (!currentProduct.product || !currentProduct.amount || !currentProduct.unit) {
+            setError(t.fillProductError);
+            return;
+        }
+
+        // Check Unique Limit (Max 5)
+        const isUnique = !basket.some(item => item.product === currentProduct.product);
+        if (isUnique && basket.length >= 5) {
+            setShowWarningModal(true);
+            return;
+        }
+
+        // Merge Logic
+        const existingItemIndex = basket.findIndex(
+            item => item.product === currentProduct.product && item.unit === currentProduct.unit
+        );
+
+        if (existingItemIndex > -1) {
+            // Update existing
+            const newBasket = [...basket];
+            const currentAmount = parseInt(newBasket[existingItemIndex].amount) || 0;
+            const addedAmount = parseInt(currentProduct.amount) || 0;
+            newBasket[existingItemIndex].amount = (currentAmount + addedAmount).toString();
+            setBasket(newBasket);
+        } else {
+            // Add new
+            setBasket([...basket, { ...currentProduct, id: Date.now() }]);
+        }
+
+        // Reset inputs
+        setCurrentProduct({ product: "", amount: "", unit: t.units[0] });
+        setError("");
+    };
+
+    const removeFromBasket = (id: number) => {
+        setBasket(basket.filter(item => item.id !== id));
+    };
+
+    const updateBasketAmount = (id: number, newAmount: string) => {
+        setBasket(basket.map(item => item.id === id ? { ...item, amount: newAmount } : item));
+    };
+
+    // Handle Submit
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
 
-        // Client-side validation for required fields
-        const requiredFields = [
-            { key: 'name', label: 'Ad Soyad' },
-            { key: 'company', label: 'Firma' },
-            { key: 'email', label: 'E-posta' },
-            { key: 'phone', label: 'Telefon' },
-            { key: 'product', label: 'Ürün' },
-            { key: 'amount', label: 'Miktar' },
-            { key: 'address', label: 'Teslimat Adresi' }
-        ];
-
-        for (const field of requiredFields) {
-            if (!formData[field.key as keyof typeof formData]?.trim()) {
-                setError(`${field.label} alanı zorunludur.`);
-                return;
-            }
+        // Validation
+        if (!contactData.name || !contactData.phone || !contactData.address) {
+            setError(t.errorMessage);
+            return;
         }
 
+        if (basket.length === 0 && (!currentProduct.product || !currentProduct.amount)) {
+            setError(t.emptyBasket);
+            return;
+        }
+
+        // Check if user logged in
+        if (!user) {
+            setShowAuthChoice(true);
+            return;
+        }
+
+        submitOrder();
+    };
+
+    const handleGuestCheckout = () => {
+        setShowAuthChoice(false);
+        submitOrder();
+    };
+
+    const submitOrder = async () => {
         setIsLoading(true);
+        setError("");
 
         try {
+            const orderData = {
+                ...contactData,
+                items: basket.length > 0 ? basket : [{
+                    product: currentProduct.product,
+                    amount: currentProduct.amount,
+                    unit: currentProduct.unit
+                }]
+            };
+
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(orderData)
             });
 
-            const data = await res.json();
-
-            if (res.ok) {
-                // Fire confetti celebration! 🎉
-                fireConfetti();
-
-                setShowSuccess(true);
-                setFormData({
-                    name: user?.name || "",
-                    company: "",
-                    email: user?.email || "",
-                    phone: user?.phone || "",
-                    product: "",
-                    amount: "",
-                    unit: t.units[0],
-                    address: "",
-                    notes: ""
-                });
-
-                // Hide success after 5 seconds
-                setTimeout(() => setShowSuccess(false), 5000);
+            // Handle non-JSON response gracefully
+            const contentType = res.headers.get("content-type");
+            let data;
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await res.json();
             } else {
-                setError(data.error || t.errorMessage);
+                const text = await res.text();
+                console.error("Non-JSON Response:", text);
+                throw new Error("Sunucu hatası oluştu (Geçersiz yanıt).");
             }
-        } catch (err) {
+
+            if (!res.ok) {
+                throw new Error(data.error || t.errorMessage);
+            }
+
+            setShowSuccess(true);
+            setBasket([]);
+            setContactData({ ...contactData, notes: "" });
+            fireConfetti();
+
+        } catch (err: any) {
             console.error(err);
-            setError(t.errorMessage);
+            setError(err.message || t.errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <>
-            <section className="bg-secondary py-16 text-white">
-                <div className="mx-auto max-w-7xl px-4">
-                    <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">{t.title}</h1>
-                    <p className="mt-4 text-lg text-white/80">{t.subtitle}</p>
+        <div className="container mx-auto px-4 py-8">
+            <WarningModal
+                isOpen={showWarningModal}
+                onClose={() => setShowWarningModal(false)}
+                title="Limit Uyarısı"
+                message={t.maxItemsError + " Sipariş verdikten sonra tekrar sipariş ver ekranına gelip yeniden sipariş verebilirsiniz."}
+            />
+
+            <AuthChoiceModal
+                isOpen={showAuthChoice}
+                onClose={() => setShowAuthChoice(false)}
+                onGuestContinue={handleGuestCheckout}
+            />
+
+            {/* Success Modal */}
+            {showSuccess && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSuccess(false)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 text-center">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                            <span className="material-symbols-outlined text-4xl text-green-600">check_circle</span>
+                        </div>
+                        <h2 className="mb-2 text-2xl font-bold text-gray-800 dark:text-white">{t.successTitle}</h2>
+                        <p className="mb-6 text-gray-600 dark:text-gray-300">{t.successMessage}</p>
+                        <button onClick={() => setShowSuccess(false)} className="w-full rounded-xl bg-primary py-3 font-bold text-white transition-transform hover:scale-105">
+                            Tamam
+                        </button>
+                    </div>
                 </div>
-            </section>
+            )}
 
-            <section className="bg-background-light py-16 dark:bg-background-dark sm:py-24">
-                <div className="mx-auto max-w-3xl px-4">
-                    <div className="rounded-xl bg-white p-8 shadow-md dark:bg-background-dark">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.name}</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        required
-                                        className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.company}</label>
-                                    <input
-                                        type="text"
-                                        name="company"
-                                        value={formData.company}
-                                        onChange={handleChange}
-                                        required
-                                        className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.email}</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        required
-                                        className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.phone}</label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        required
-                                        className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-secondary dark:text-white">{t.product}</label>
-                                <select
-                                    name="product"
-                                    value={formData.product}
-                                    onChange={handleChange}
-                                    required
-                                    className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                >
-                                    <option value="">{t.selectProduct}</option>
-                                    {t.products.map((h, i) => (
-                                        <option key={i} value={h}>{h}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.amount}</label>
-                                    <input
-                                        type="number"
-                                        name="amount"
-                                        value={formData.amount}
-                                        onChange={handleChange}
-                                        required
-                                        min="1"
-                                        className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.unit}</label>
-                                    <select
-                                        name="unit"
-                                        value={formData.unit}
-                                        onChange={handleChange}
-                                        className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    >
-                                        {t.units.map((u, i) => (
-                                            <option key={i} value={u}>{u}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-secondary dark:text-white">{t.address}</label>
+            <div className="mx-auto max-w-4xl">
+                <div className="mb-8 text-center">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">{t.title}</h1>
+                    <p className="mt-2 text-gray-600 dark:text-gray-400">{t.subtitle}</p>
+                </div>
 
-                                {/* Saved Addresses Dropdown */}
-                                {savedAddresses.length > 0 && (
-                                    <div className="mt-1 mb-2">
-                                        <select
-                                            value={selectedAddressId}
-                                            onChange={handleAddressChange}
-                                            className="w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        >
-                                            {savedAddresses.map((addr) => (
-                                                <option key={addr.id} value={addr.id}>
-                                                    📍 {addr.title} - {addr.address.substring(0, 50)}...
-                                                </option>
-                                            ))}
-                                            <option value="custom">✏️ Yeni adres gir...</option>
+                <div className="rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 md:p-8">
+                    {/* Saved Addresses Logic */}
+                    {savedAddresses.length > 0 && user && (
+                        <div className="mb-6">
+                            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">Kayıtlı Adreslerim</label>
+                            <select
+                                value={selectedAddressId}
+                                onChange={handleAddressChange}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base"
+                            >
+                                <option value="custom">Yeni Adres Gir</option>
+                                {savedAddresses.map(addr => (
+                                    <option key={addr.id} value={addr.id}>{addr.title} - {addr.address.substring(0, 30)}...</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* 1. Contact Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">İletişim Bilgileri</h3>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <input type="text" name="name" value={contactData.name} onChange={handleContactChange} placeholder={t.name} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="text" name="company" value={contactData.company} onChange={handleContactChange} placeholder={t.company} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="email" name="email" value={contactData.email} onChange={handleContactChange} placeholder={t.email} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="tel" name="phone" value={contactData.phone} onChange={handleContactChange} placeholder={t.phone} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <div className="md:col-span-2">
+                                    <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">{t.address}</label>
+                                    <textarea name="address" value={contactData.address} onChange={e => { handleContactChange(e); setSelectedAddressId("custom"); }} required rows={2} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" placeholder="Adres giriniz..." />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Products Basket */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between border-b pb-2">
+                                <h3 className="text-xl font-bold text-secondary dark:text-white">{t.basketTitle}</h3>
+                            </div>
+
+                            {/* Add Product Area */}
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 dark:bg-white/5 dark:border-gray-700">
+                                <div className="grid gap-4 md:grid-cols-12 items-end">
+                                    <div className="md:col-span-5">
+                                        <label className="text-sm font-bold text-secondary dark:text-white">{t.product}</label>
+                                        <select name="product" value={currentProduct.product} onChange={handleProductInput} className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-base bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                                            <option value="">{t.selectProduct}</option>
+                                            {t.products.map((p, i) => <option key={i} value={p}>{p}</option>)}
                                         </select>
                                     </div>
-                                )}
-
-                                <textarea
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={(e) => {
-                                        handleChange(e);
-                                        setSelectedAddressId("custom");
-                                    }}
-                                    required
-                                    rows={3}
-                                    className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    placeholder={savedAddresses.length > 0 ? "Seçili adres veya yeni adres girin..." : "Teslimat adresinizi girin..."}
-                                ></textarea>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-secondary dark:text-white">{t.notes}</label>
-                                <textarea
-                                    name="notes"
-                                    value={formData.notes}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                    placeholder={t.notesPlaceholder}
-                                ></textarea>
+                                    <div className="md:col-span-3">
+                                        <label className="text-sm font-bold text-secondary dark:text-white">{t.amount}</label>
+                                        <input type="number" name="amount" value={currentProduct.amount} onChange={handleProductInput} min="1" className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-base bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="text-sm font-bold text-secondary dark:text-white">{t.unit}</label>
+                                        <select name="unit" value={currentProduct.unit} onChange={handleProductInput} className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-base bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                                            {t.units.map((u, i) => <option key={i} value={u}>{u}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <button
+                                            type="button"
+                                            onClick={addToBasket}
+                                            className="w-full rounded-lg bg-primary h-[50px] font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 flex items-center justify-center gap-1"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">add</span> {t.addProductBtn}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Error Message */}
-                            {error && (
-                                <div className="bg-red-100 text-red-700 p-4 rounded-lg text-center font-medium">
-                                    {error}
+                            {basket.length > 0 && (
+                                <div className="mt-4 text-right">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBasket([])}
+                                        className="text-sm text-red-500 hover:text-red-700 font-bold hover:underline transition-colors"
+                                    >
+                                        Seçimi Temizle
+                                    </button>
                                 </div>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={isLoading || showSuccess}
-                                className="w-full rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-70 disabled:hover:scale-100"
-                            >
-                                {isLoading ? t.submitting : t.submitBtn}
-                            </button>
-                        </form>
+                            {/* Basket List (Mobile Responsive) */}
+                            <div className="space-y-4">
+                                <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden dark:bg-white/5 dark:border-gray-700">
+                                    {basket.length > 0 && (
+                                        <div className="hidden sm:grid grid-cols-12 gap-4 p-3 bg-gray-100 dark:bg-white/10 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+                                            <div className="col-span-1 text-center">#</div>
+                                            <div className="col-span-5">Ürün</div>
+                                            <div className="col-span-4 text-center">Miktar</div>
+                                            <div className="col-span-2 text-right">İşlem</div>
+                                        </div>
+                                    )}
 
-                        {/* Success Message */}
-                        {showSuccess && (
-                            <div className="mt-6 bg-green-100 border-2 border-green-500 rounded-xl p-6 text-center animate-pulse">
-                                <div className="text-5xl mb-3">🎉</div>
-                                <h3 className="text-2xl font-bold text-green-700 mb-2">{t.successTitle}</h3>
-                                <p className="text-green-600">{t.successMessage}</p>
+                                    {basket.length === 0 ? (
+                                        <p className="text-center text-gray-400 italic py-8">{t.emptyBasket}</p>
+                                    ) : (
+                                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                            {basket.map((item, index) => (
+                                                <div key={item.id} className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-start sm:items-center p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+
+                                                    {/* Mobile Top Row: Index + Name */}
+                                                    <div className="w-full sm:col-span-6 flex items-center gap-3">
+                                                        <div className="h-8 w-8 flex-shrink-0 rounded-full bg-secondary text-white flex items-center justify-center text-sm font-bold">
+                                                            {index + 1}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-bold text-lg sm:text-base text-secondary dark:text-white">{item.product}</h4>
+                                                            <span className="text-xs text-gray-500 hidden sm:inline-block">Endüstriyel Gaz</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Mobile Bottom Row: Controls */}
+                                                    <div className="w-full sm:col-span-6 flex items-center justify-between sm:justify-end gap-4 mt-2 sm:mt-0">
+                                                        {/* Quantity Controls */}
+                                                        <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden h-10 sm:h-9 shadow-sm dark:bg-gray-800 dark:border-gray-600">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const val = parseInt(item.amount);
+                                                                    if (val > 1) updateBasketAmount(item.id, (val - 1).toString());
+                                                                }}
+                                                                className="px-4 sm:px-3 h-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors border-r border-gray-200 dark:border-gray-700"
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <div className="px-4 h-full flex items-center justify-center min-w-[3rem] bg-gray-50 dark:bg-gray-900 text-base font-bold text-secondary dark:text-white">
+                                                                {item.amount} <span className="text-xs font-normal text-gray-500 ml-1">{item.unit}</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const val = parseInt(item.amount);
+                                                                    updateBasketAmount(item.id, (val + 1).toString());
+                                                                }}
+                                                                className="px-4 sm:px-3 h-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors border-l border-gray-200 dark:border-gray-700"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Delete Button */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFromBasket(item.id)}
+                                                            className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-full transition-colors"
+                                                            title="Sil"
+                                                        >
+                                                            <span className="material-symbols-outlined text-xl">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Notes */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{t.notes}</h3>
+                            <textarea name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                        </div>
+
+                        {error && (
+                            <div className="rounded-lg bg-red-100 p-4 text-center text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                                {error}
                             </div>
                         )}
-                    </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full transform rounded-xl bg-primary py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
+                        >
+                            {isLoading ? t.submitting : t.submitBtn}
+                        </button>
+                    </form>
                 </div>
-            </section>
-        </>
+            </div>
+        </div>
     );
 }

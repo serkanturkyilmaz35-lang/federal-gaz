@@ -1,29 +1,45 @@
 import { Sequelize } from 'sequelize';
 import mysql2 from 'mysql2'; // Needed for dialect
 
+// Optimization: Prevent DNS lookup delay for localhost by forcing 127.0.0.1
+// If DB_HOST is missing or 'localhost', use '127.0.0.1' to avoid IPv6 timeout (5s delay)
+const getHost = (host?: string) => {
+  if (!host || host === 'localhost') return '127.0.0.1';
+  return host;
+};
+
 const dbConfig = {
-  host: process.env.DB_HOST || '',
+  host: getHost(process.env.DB_HOST),
   port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER || '',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'federal_gaz',
 };
 
-// Singleton pattern for Sequelize instance
-let sequelize: Sequelize | null = null;
+// Singleton pattern for Sequelize instance with Global caching for HMR
+/* eslint-disable no-var */
+declare global {
+  var sequelizeGlobal: Sequelize | undefined;
+}
+/* eslint-enable no-var */
+
+let sequelize: Sequelize | null = global.sequelizeGlobal || null;
 
 // Debug logging to verify env vars are loaded (masking password)
 console.log('🔌 Initializing Database Connection...');
-console.log(`Debug Config: Host=${process.env.DB_HOST ? 'Set' : 'Missing'}, User=${process.env.DB_USER}, DB=${process.env.DB_NAME}, Port=${process.env.DB_PORT}, SSL=True`);
+console.log(`Debug Config: Host=${dbConfig.host ? 'Set' : 'Missing'}, User=${dbConfig.user}, DB=${dbConfig.database}, Port=${dbConfig.port}, SSL=False`);
 
 export const getDb = (): Sequelize => {
   if (!process.env.DB_HOST) {
     console.error('❌ FATAL: DB_HOST is missing in environment variables! Falling back to SQLite Memory (Data will be lost).');
     if (!sequelize) {
-      sequelize = new Sequelize('sqlite::memory:', { logging: console.log });
+      sequelize = new Sequelize('sqlite::memory:', { logging: false });
+      global.sequelizeGlobal = sequelize;
     }
     return sequelize!;
   }
+
+  const isLocal = dbConfig.host === '127.0.0.1' || dbConfig.host === 'localhost';
 
   if (!sequelize) {
     try {
@@ -31,22 +47,23 @@ export const getDb = (): Sequelize => {
         host: dbConfig.host,
         port: dbConfig.port,
         dialect: 'mysql',
-        dialectOptions: {
+        dialectOptions: isLocal ? {} : {
           ssl: {
             require: true,
             rejectUnauthorized: false
           }
         },
         dialectModule: mysql2,
-        logging: (msg) => console.log(`[Sequelize]: ${msg}`), // Log queries to see if they fail
+        logging: false,
         pool: {
-          max: 5,
-          min: 0,
-          acquire: 30000, // Increased timeout
-          idle: 10000
+          max: 10,
+          min: 1,
+          acquire: 30000,
+          idle: 300000
         }
       });
       console.log('✅ Sequelize instance created with MySQL config.');
+      global.sequelizeGlobal = sequelize;
     } catch (err) {
       console.error('❌ Error creating Sequelize instance:', err);
       throw err;
@@ -59,9 +76,11 @@ export const connectToDatabase = async () => {
   const db = getDb();
   if (db) {
     try {
-      await db.authenticate();
-      console.log('✅ Database connection established successfully.');
-      // Note: sync removed for faster login - run migrations separately if needed
+      // Optimization: Skip explicit authenticate() check on every request for speed.
+      // The connection pool handles keep-alive. First query will fail if disconnected.
+      // await db.authenticate(); 
+
+      // console.log('✅ Database connection established successfully.');
     } catch (error) {
       console.error('❌ Unable to connect to the database:', error);
       throw error;

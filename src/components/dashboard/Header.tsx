@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useNotification } from "@/context/NotificationContext";
 
 interface DashboardHeaderProps {
@@ -17,100 +17,59 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { unreadCount } = useNotification();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [showResults, setShowResults] = useState(false);
+    const searchParams = useSearchParams();
+
+    // Initialize search from URL
+    const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
 
     const isDashboardOverview = pathname === "/dashboard";
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.length > 0) {
-            router.push(`/dashboard/orders?search=${encodeURIComponent(searchQuery)}`);
-            setShowResults(false);
-            setSearchQuery("");
-        }
-    };
+    // Update URL on search change (Debounced to avoid too many refreshes)
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (!isDashboardOverview) {
+                const params = new URLSearchParams(window.location.search);
+                if (searchQuery) {
+                    params.set("q", searchQuery);
+                } else {
+                    params.delete("q");
+                }
+                router.replace(`${pathname}?${params.toString()}`);
+            }
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery, pathname, isDashboardOverview, router]);
 
-    // Mock search data
-    const mockData = [
-        { path: "/dashboard/orders", label: "Siparişler", icon: "shopping_cart" },
-        { path: "/dashboard/users", label: "Müşteriler", icon: "group" },
-        { path: "/dashboard/content", label: "İçerik Yönetimi", icon: "article" },
-        { path: "/dashboard/settings", label: "Ayarlar", icon: "settings" },
-        { path: "/dashboard/orders/1", label: "Ahmet Yılmaz", icon: "person", detail: "#12548 - 0532 123 45 67" },
-        { path: "/dashboard/orders/2", label: "Ayşe Kaya", icon: "person", detail: "#12547 - 0533 234 56 78" },
-        { path: "/dashboard/contacts/1", label: "Murat Özkan", icon: "mail", detail: "Fiyat Teklifi" },
-    ];
-
-    const filteredResults = mockData.filter((item) => {
-        const query = searchQuery.toLowerCase();
-        return (
-            item.label.toLowerCase().includes(query) ||
-            item.detail?.toLowerCase().includes(query)
-        );
-    });
-
-    const handleResultClick = (path: string) => {
-        router.push(path);
-        setShowResults(false);
-        setSearchQuery("");
+    // Get dynamic placeholder based on current page
+    const getPlaceholder = () => {
+        if (pathname.includes("/orders")) return "Sipariş No, Müşteri, Telefon veya E-posta ara...";
+        if (pathname.includes("/users")) return "İsim veya E-posta ara...";
+        if (pathname.includes("/notifications")) return "Bildirim başlığı veya içeriği ara...";
+        if (pathname.includes("/contacts") || pathname.includes("/messages")) return "İsim, E-posta veya Mesaj ara...";
+        return "Sayfa içinde ara...";
     };
 
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-[#111418] px-6">
+        <header data-print-hide="true" className="flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-[#111418] px-6 print:hidden">
             <div className="flex items-center gap-4">
                 <h1 className="text-xl font-bold text-white">Yönetim Paneli</h1>
             </div>
 
-            {/* Search Bar - Hidden on Overview */}
+            {/* Central Search Bar - Visible on all pages EXCEPT Overview */}
             {!isDashboardOverview && (
-                <div className="relative w-full max-w-sm mx-8">
-                    <form onSubmit={handleSearch}>
+                <div className="flex-1 max-w-md mx-auto px-4">
+                    <div className="relative w-full group">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <span className="material-symbols-outlined text-gray-400">search</span>
+                            <span className="material-symbols-outlined text-gray-400 group-focus-within:text-[#137fec] transition-colors">search</span>
                         </div>
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setShowResults(e.target.value.length > 0);
-                            }}
-                            onFocus={() => searchQuery.length > 0 && setShowResults(true)}
-                            onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                            className="block w-full pl-10 pr-4 py-2 text-sm text-white bg-white/5 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-[#137fec] focus:border-transparent placeholder:text-gray-500"
-                            placeholder="Sayfa, sipariş, müşteri veya telefon ara..."
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-10 pr-4 py-2 text-sm text-white bg-white/5 border border-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-[#137fec] focus:bg-[#1c2127] placeholder:text-gray-500 transition-all hover:bg-white/10"
+                            placeholder={getPlaceholder()}
                         />
-                    </form>
-
-                    {/* Search Results Dropdown */}
-                    {showResults && filteredResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-[#1c2127] border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto">
-                            {filteredResults.map((item, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handleResultClick(item.path)}
-                                    className="w-full flex items-start gap-3 px-4 py-3 text-left text-white hover:bg-white/10 transition-colors border-b border-gray-800 last:border-0"
-                                >
-                                    <span className="material-symbols-outlined text-gray-400 mt-0.5">{item.icon}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <span className="text-sm font-medium block truncate">{item.label}</span>
-                                        {item.detail && <span className="text-xs text-gray-500 block truncate">{item.detail}</span>}
-                                    </div>
-                                    <span className="text-xs text-[#137fec] ml-2 shrink-0">Git</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {showResults && searchQuery.length > 0 && filteredResults.length === 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-[#1c2127] border border-gray-700 rounded-lg shadow-xl p-4 z-50">
-                            <p className="text-sm text-gray-400 text-center">Sonuç bulunamadı</p>
-                            <p className="text-xs text-gray-500 text-center mt-1">
-                                Enter&apos;a basarak detaylı arama yapabilirsiniz
-                            </p>
-                        </div>
-                    )}
+                    </div>
                 </div>
             )}
             {isDashboardOverview && <div className="flex-1" />}
@@ -126,21 +85,40 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                     )}
                 </Link>
 
-                <div className="h-4 w-px bg-gray-700" />
+                <div className="h-8 w-px bg-gray-700 mx-2" />
 
-                {/* Profile */}
-                <Link href="/dashboard/settings" className="flex items-center gap-3 pl-2">
-                    <div className="h-8 w-8 overflow-hidden rounded-full bg-gray-700 ring-2 ring-gray-700">
-                        {user.image ? (
-                            <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
-                        ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-[#137fec] text-sm font-medium text-white">
-                                {user.name.charAt(0).toUpperCase()}
-                            </div>
-                        )}
+                {/* Profile & Logout Section */}
+                <div className="flex items-center gap-4">
+                    {/* User Info: Avatar + Name */}
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#137fec] text-sm font-bold text-white shadow-lg ring-2 ring-[#137fec]/20">
+                            {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white">{user.name}</span>
+                        </div>
                     </div>
-                </Link>
+
+                    {/* Separator */}
+                    <div className="h-6 w-px bg-gray-700" />
+
+                    {/* Logout Button */}
+                    <button
+                        onClick={async () => {
+                            try {
+                                await fetch('/api/auth/logout', { method: 'POST' });
+                                window.location.href = '/';
+                            } catch (err) {
+                                console.error('Logout error', err);
+                            }
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200 group"
+                    >
+                        <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">logout</span>
+                        <span className="text-xs font-bold uppercase tracking-wide">Çıkış Yap</span>
+                    </button>
+                </div>
             </div>
-        </header>
+        </header >
     );
 }

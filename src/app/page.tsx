@@ -208,16 +208,18 @@ export default function HomePage() {
                 <div className="mx-auto max-w-7xl px-4">
                     <h2 className="mb-8 text-center text-3xl font-bold text-secondary dark:text-white">{t.bestSellers}</h2>
                     <div className="relative overflow-hidden">
-                        <div className="flex animate-slide-infinite gap-6">
+                        <div className="flex animate-slide-infinite gap-8">
                             {[...products, ...products].map((product, index) => (
-                                <div key={index} className="w-48 flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-lg">
-                                    <img
-                                        src={product.image}
-                                        alt={product.title}
-                                        className="h-40 w-full object-cover"
-                                    />
-                                    <div className="p-3 text-center">
-                                        <span className="text-sm font-bold text-secondary">{product.title}</span>
+                                <div key={index} className="w-64 flex-shrink-0 overflow-hidden rounded-xl bg-white shadow-sm border border-gray-100">
+                                    <div className="h-64 w-full bg-white flex items-center justify-center">
+                                        <img
+                                            src={product.image}
+                                            alt={product.title}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    </div>
+                                    <div className="py-1 text-center bg-[#b13329]">
+                                        <span className="text-sm font-bold text-white">{product.title}</span>
                                     </div>
                                 </div>
                             ))}

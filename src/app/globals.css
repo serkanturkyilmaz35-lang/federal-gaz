@@ -91,3 +91,498 @@ body {
     transform: translateX(0);
   }
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1c2127;
+  /* Visible dark track */
+  border-left: 1px solid #3b4754;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  /* Lighter, distinct thumb */
+  border-radius: 6px;
+  /* Slightly less rounded for thickness perception */
+  /* Removed border to allow full width usage */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #137fec;
+  /* Brand color on hover */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: auto;
+  /* Thicker than thin */
+  scrollbar-color: #4b5563 #1c2127;
+}
+
+/* Print Styles - Comprehensive */
+@media print {
+
+  /* ===== HIDE NON-PRINTABLE ELEMENTS ===== */
+  aside,
+  header,
+  nav,
+  footer,
+  .no-print,
+  button,
+  select,
+  input,
+  [data-no-print],
+  [data-print-hide],
+  [data-print-hide="true"],
+  .material-symbols-outlined {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* ===== PRINT HEADER (Only visible during print) ===== */
+  .print-header {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #333;
+    background: white !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    page-break-after: avoid;
+  }
+
+  .print-header img {
+    width: 50px;
+    height: 50px;
+    display: block !important;
+  }
+
+  .print-header .print-brand {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  .print-header .print-brand h2 {
+    font-size: 14pt !important;
+    font-weight: bold !important;
+    margin: 0 !important;
+    color: black !important;
+  }
+
+  .print-header .print-title {
+    flex: 1;
+    text-align: right;
+  }
+
+  .print-header h1 {
+    font-size: 18pt !important;
+    font-weight: bold !important;
+    margin: 0 !important;
+    color: black !important;
+  }
+
+  .print-header p {
+    font-size: 9pt !important;
+    color: #666 !important;
+    margin: 0 !important;
+  }
+
+  /* ===== PRINT FOOTER ===== */
+  .print-footer {
+    display: block !important;
+    text-align: center;
+    padding: 10px 0;
+    margin-top: 15px;
+    border-top: 1px solid #ccc;
+    font-size: 9pt;
+    color: #666;
+    background: white !important;
+  }
+
+  /* ===== REDUCE ALL MARGINS AND PADDINGS ===== */
+  [class*="mb-"],
+  [class*="mt-"],
+  [class*="my-"],
+  [class*="m-"] {
+    margin: 5px 0 !important;
+  }
+
+  [class*="p-6"],
+  [class*="p-8"] {
+    padding: 8px !important;
+  }
+
+  /* Main container for order detail */
+  .overflow-auto,
+  .overflow-hidden {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Remove flex-1 stretching that causes empty space */
+  .flex-1 {
+    flex: none !important;
+  }
+
+  /* Fix h-full causing page stretching */
+  .h-full,
+  [class*="h-full"],
+  [class*="h-screen"] {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Fix containers that stretch */
+  [class*="flex-col"] {
+    display: block !important;
+    height: auto !important;
+  }
+
+  /* Remove any absolute/fixed positioning */
+  .fixed,
+  .absolute {
+    position: static !important;
+  }
+
+  /* Reset all heights */
+  * {
+    max-height: none !important;
+    min-height: 0 !important;
+  }
+
+  /* Force content to flow naturally */
+  .flex {
+    display: block !important;
+  }
+
+  /* ===== PRINT-VISIBLE ELEMENTS ===== */
+  /* Show elements that should be visible in print */
+  [class*="print:inline-block"] {
+    display: inline-block !important;
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  [class*="print:block"] {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* ===== FORCE WHITE BACKGROUND ON EVERYTHING ===== */
+  *,
+  *::before,
+  *::after,
+  div,
+  section,
+  article,
+  main,
+  [class*="bg-"] {
+    background-color: white !important;
+    background: white !important;
+  }
+
+  .flex.h-screen,
+  .flex-1.flex-col,
+  [class*="h-screen"],
+  [class*="h-full"] {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* ===== RESET ALL HEIGHT CONSTRAINTS ===== */
+  html,
+  body,
+  #__next,
+  main,
+  div,
+  section,
+  article {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* ===== PAGE LAYOUT ===== */
+  html,
+  body {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ===== PAGE SETTINGS ===== */
+  @page {
+    size: auto;
+    /* Allows browser to use portrait or landscape based on user selection */
+    margin: 10mm 8mm 15mm 8mm;
+    /* Reduced margins for landscape */
+  }
+
+  /* ===== PAGE NUMBERS (CSS Counter) ===== */
+  html {
+    counter-reset: page;
+  }
+
+  /* Page number in footer area */
+  .print-footer::after {
+    content: " | Sayfa " counter(page);
+    counter-increment: page;
+  }
+
+  /* ===== SCALE CONTENT TO FIT ===== */
+  body {
+    transform-origin: top left;
+    /* Content will shrink slightly if needed to fit page width */
+  }
+
+  /* ===== LOGICAL PAGE BREAKS ===== */
+  /* Keep card sections together */
+  [class*="rounded"],
+  [class*="shadow"],
+  [class*="border"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Avoid breaking after headings */
+  h1,
+  h2,
+  h3,
+  h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Tables should stay together if small, or break at rows if large */
+  table {
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+    /* Repeat header on each page */
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* ===== REMOVE ALL OVERFLOW CONSTRAINTS ===== */
+  *,
+  *::before,
+  *::after {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Exclude height:auto from table rows to prevent breaking */
+  tr,
+  td,
+  th {
+    height: auto !important;
+  }
+
+  /* ===== MAIN CONTENT AREA ===== */
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 15px !important;
+    flex: none !important;
+  }
+
+  /* ===== TYPOGRAPHY ===== */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: black !important;
+    page-break-after: avoid;
+  }
+
+  h1 {
+    font-size: 16pt !important;
+  }
+
+  h2 {
+    font-size: 14pt !important;
+  }
+
+  h3 {
+    font-size: 12pt !important;
+  }
+
+  p,
+  span,
+  div,
+  td,
+  th,
+  li {
+    color: black !important;
+  }
+
+  /* ===== TABLES ===== */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+    font-size: 9pt !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tbody {
+    display: table-row-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  th,
+  td {
+    border: 1px solid #333 !important;
+    padding: 5px 8px !important;
+    text-align: left !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  th {
+    background: #eee !important;
+    font-weight: bold !important;
+  }
+
+  /* ===== CARDS & CONTAINERS ===== */
+  [class*="rounded"],
+  [class*="shadow"],
+  [class*="border"] {
+    border: 1px solid #999 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* ===== GRID LAYOUTS - Keep side by side for detail pages ===== */
+  .grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 15px !important;
+  }
+
+  .grid.grid-cols-1 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ===== FLEX LAYOUTS ===== */
+  .flex {
+    display: flex !important;
+  }
+
+  .flex-col {
+    display: block !important;
+  }
+
+  /* ===== XL:COL-SPAN Grid Items - Convert to single column ===== */
+  [class*="xl:col-span"],
+  [class*="col-span"] {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Reduce gap between grid items */
+  [class*="gap-"],
+  .gap-8,
+  .gap-6,
+  .gap-4 {
+    gap: 5px !important;
+  }
+
+  /* Fix h-full causing issues */
+  [class*="h-full"],
+  [class*="h-screen"] {
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* ===== BADGES & STATUS INDICATORS ===== */
+  span[class*="bg-"] {
+    border: 1px solid #333 !important;
+    padding: 2px 6px !important;
+    background: white !important;
+    display: inline !important;
+  }
+
+  /* ===== LINKS - Don't show URLs ===== */
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+
+  /* ===== PAGE BREAKS ===== */
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* ===== REMOVE FIXED POSITIONING ===== */
+  [class*="fixed"],
+  [class*="absolute"],
+  [class*="sticky"] {
+    position: static !important;
+  }
+
+  /* ===== ENSURE VISIBILITY ===== */
+  .print-header.hidden {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* ===== TRUNCATED TEXT ===== */
+  [class*="truncate"] {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  /* ===== HIDE EMPTY FLEX SPACERS ===== */
+  .flex-1:empty {
+    display: none !important;
+  }
+}

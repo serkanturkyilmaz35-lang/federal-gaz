@@ -18,7 +18,25 @@ export async function GET(req: Request) {
             order: [['createdAt', 'DESC']]
         });
 
-        return NextResponse.json({ orders });
+        // Parse 'details' if it's JSON
+        const parsedOrders = orders.map(order => {
+            let detailsObj = {};
+            try {
+                detailsObj = JSON.parse(order.details);
+            } catch (e) {
+                detailsObj = { raw: order.details };
+            }
+
+            return {
+                id: order.id,
+                status: order.status,
+                trackingNumber: order.trackingNumber,
+                createdAt: order.createdAt,
+                details: detailsObj
+            };
+        });
+
+        return NextResponse.json({ orders: parsedOrders });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

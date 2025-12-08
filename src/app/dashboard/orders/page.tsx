@@ -1,15 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useOrderNotification } from "@/hooks/useOrderNotification";
+import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
 import DataTable, { Column } from "@/components/dashboard/DataTable";
 import * as XLSX from "xlsx";
+import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
+import { filterByDate } from "@/lib/dateFilterUtils";
+import CancellationModal from "@/components/dashboard/CancellationModal";
 
-// Tab types
-type TabType = "orders" | "contacts";
+// Set page title
+const PAGE_TITLE = "Siparişler";
 
-// Order status types - matches database ENUM
-type OrderStatus = "PENDING" | "PREPARING" | "DELIVERED" | "CANCELLED";
+// Order status types
+type OrderStatus = "PENDING" | "PREPARING" | "SHIPPING" | "COMPLETED" | "CANCELLED";
 
 interface Order {
     id: number;
@@ -22,83 +27,157 @@ interface Order {
     notes?: string;
     date: string;
     status: OrderStatus;
-}
-
-interface ContactForm {
-    id: number;
-    name: string;
-    email: string;
-    subject: string;
-    date: string;
-    status: "unread" | "read" | "replied";
+    rawDetails?: any; // Keep raw for detailed view if needed
+    userId: number | null;
 }
 
 export default function OrdersPage() {
-    const [activeTab, setActiveTab] = useState<TabType>("orders");
-    const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
-    const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
-    const [newOrderAlert, setNewOrderAlert] = useState<number | null>(null);
+
     const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
     const [exporting, setExporting] = useState(false);
-    const [orders, setOrders] = useState<Order[]>([
-        { id: 1, orderNumber: "#12548", customerName: "Ahmet Yılmaz", customerEmail: "ahmet@example.com", customerPhone: "0532 123 45 67", address: "Organize Sanayi Bölgesi 2. Cadde No: 15, Ankara", products: "Oksijen Tüpü (50L) x 2, Argon Tüpü (40L) x 1", notes: "Sabah teslim", date: "15.12.2024", status: "PENDING" },
-        { id: 2, orderNumber: "#12547", customerName: "Ayşe Kaya", customerEmail: "ayse@example.com", customerPhone: "0533 234 56 78", address: "Sincan Sanayi Sitesi B Blok No: 8, Ankara", products: "Azot Tüpü (40L) x 3", date: "15.12.2024", status: "PREPARING" },
-        { id: 3, orderNumber: "#12546", customerName: "Mehmet Demir", customerEmail: "mehmet@example.com", customerPhone: "0534 345 67 89", address: "Ostim OSB 5. Sokak No: 22, Ankara", products: "Oksijen Tüpü (50L) x 5", notes: "Öğleden sonra teslimat", date: "14.12.2024", status: "DELIVERED" },
-        { id: 4, orderNumber: "#12545", customerName: "Fatma Çelik", customerEmail: "fatma@example.com", customerPhone: "0535 456 78 90", address: "Amet Sanayi Bölgesi A Blok, Ankara", products: "Argon Tüpü (40L) x 2", date: "14.12.2024", status: "DELIVERED" },
-        { id: 5, orderNumber: "#12544", customerName: "Ali Vural", customerEmail: "ali@example.com", customerPhone: "0536 567 89 01", address: "Etimesgut Sanayi Sitesi No: 45, Ankara", products: "Helyum Tüpü (50L) x 1", notes: "Müşteri iptal etti", date: "13.12.2024", status: "CANCELLED" },
-    ]);
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Order notification hook
-    useOrderNotification({
-        enabled: true,
-        onNewOrder: (count) => {
-            setNewOrderAlert(count);
-            setTimeout(() => setNewOrderAlert(null), 5000);
-        },
-    });
+    // Cancellation Modal State
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
 
-    // Mock contact forms data
-    const contactForms: ContactForm[] = [
-        { id: 1, name: "Murat Özkan", email: "murat@example.com", subject: "Fiyat Teklifi", date: "15.12.2024", status: "unread" },
-        { id: 2, name: "Zeynep Yıldız", email: "zeynep@company.com", subject: "Teslimat Sorgusu", date: "14.12.2024", status: "read" },
-        { id: 3, name: "Can Aksoy", email: "can@firma.com", subject: "Toptan Satış", date: "13.12.2024", status: "replied" },
-    ];
+    // Search & Filter State
+    const searchParams = useSearchParams();
+    const searchTerm = searchParams.get("q") || ""; // Read from URL
 
-    const statusOptions: { value: OrderStatus; label: string; color: string }[] = [
-        { value: "PENDING", label: "Beklemede", color: "bg-blue-500/20 text-blue-400" },
-        { value: "PREPARING", label: "Hazırlanıyor", color: "bg-yellow-500/20 text-yellow-400" },
-        { value: "DELIVERED", label: "Teslim Edildi", color: "bg-green-500/20 text-green-400" },
-        { value: "CANCELLED", label: "İptal Edildi", color: "bg-red-500/20 text-red-400" },
-    ];
+    // Removed local searchTerm state [const [searchTerm, setSearchTerm] = useState("");]
 
-    const getStatusBadge = (status: OrderStatus) => {
-        const option = statusOptions.find((o) => o.value === status);
-        return (
-            <span className={`inline - flex items - center px - 2.5 py - 0.5 rounded - full text - xs font - medium ${option?.color} `}>
-                {option?.label}
-            </span>
-        );
+    const [dateRange, setDateRange] = useState<DateRangeOption>("all");
+    const [customStartDate, setCustomStartDate] = useState("");
+    const [customEndDate, setCustomEndDate] = useState("");
+
+    // Fetch Orders
+    const fetchOrders = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            if (data.success) {
+                const mappedOrders: Order[] = data.orders.map((o: any) => {
+                    const details = o.details;
+                    let customerName = "Bilinmiyor";
+                    let customerEmail = "-";
+                    let customerPhone = "-";
+                    let address = "-";
+                    let products = "-";
+                    let notes = "-";
+
+                    // Logic to extract data from JSON vs Legacy String
+                    if (details.customer) {
+                        // NEW JSON FORMAT
+                        customerName = details.customer.name || "-";
+                        customerEmail = details.customer.email || "-";
+                        customerPhone = details.customer.phone || "-";
+                        address = details.customer.address || "-";
+                        notes = details.notes || "";
+
+                        if (Array.isArray(details.items)) {
+                            products = details.items.map((i: any) => `${i.product} (${i.amount} ${i.unit})`).join(', ');
+                        }
+                    } else if (details.raw) {
+                        // LEGACY STRING FORMAT
+                        // Parse manually: "Müşteri: Ahmet\n..."
+                        const lines = details.raw.split('\n');
+                        const map: any = {};
+                        lines.forEach((l: string) => {
+                            const parts = l.split(':');
+                            if (parts.length >= 2) {
+                                map[parts[0].trim()] = parts.slice(1).join(':').trim();
+                            }
+                        });
+                        customerName = map['Müşteri'] || "-";
+                        customerEmail = map['E-posta'] || "-";
+                        customerPhone = map['Telefon'] || "-";
+                        address = map['Adres'] || "-";
+                        products = `${map['Ürün'] || ''} ${map['Miktar'] || ''}`;
+                        notes = map['Notlar'] || "";
+                    } else {
+                        // Fallback mechanism if details has direct properties (unlikely based on my code, but safe)
+                        customerName = details.name || "-";
+                    }
+
+                    // Format Date Manually to ensure DD.MM.YYYY consistency
+                    const d = new Date(o.createdAt);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const formattedDate = `${day}.${month}.${year}`;
+
+                    return {
+                        id: o.id,
+                        orderNumber: `#${10000 + o.id}`,
+                        customerName,
+                        customerEmail,
+                        customerPhone,
+                        address,
+                        products,
+                        notes,
+                        date: formattedDate,
+                        status: o.status,
+                        rawDetails: details,
+                        userId: o.userId
+                    };
+                });
+                setOrders(mappedOrders);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleStatusChange = async (orderId: number, newStatus: OrderStatus) => {
-        setUpdatingOrderId(orderId);
+    useEffect(() => {
+        fetchOrders();
+    }, []);
 
+    // Set page title
+    useEffect(() => {
+        document.title = `${PAGE_TITLE} - Federal Gaz`;
+    }, []);
+
+
+
+    const statusOptions: { value: OrderStatus; label: string; color: string }[] = [
+        { value: "PENDING", label: "Beklemede", color: "bg-yellow-500/10 text-yellow-500" },
+        { value: "PREPARING", label: "Hazırlanıyor", color: "bg-blue-500/10 text-blue-500" },
+        { value: "SHIPPING", label: "Yola Çıktı", color: "bg-purple-500/10 text-purple-500" },
+        { value: "COMPLETED", label: "Tamamlandı", color: "bg-green-500/10 text-green-500" },
+        { value: "CANCELLED", label: "İptal Edildi", color: "bg-red-500/10 text-red-500" },
+    ];
+
+    const handleStatusChange = async (orderId: number, newStatus: OrderStatus) => {
+        // Intercept CANCELLED status to show modal
+        if (newStatus === "CANCELLED") {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                setOrderToCancel(order);
+                setShowCancelModal(true);
+            }
+            return;
+        }
+
+        setUpdatingOrderId(orderId);
         try {
-            const response = await fetch(`/ api / orders / ${orderId}/status`, {
+            const response = await fetch(`/api/orders/${orderId}/status`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
 
             if (response.ok) {
-                // Update local state
                 setOrders((prev) =>
                     prev.map((order) =>
                         order.id === orderId ? { ...order, status: newStatus } : order
                     )
                 );
-            } else {
-                console.error("Failed to update order status");
             }
         } catch (error) {
             console.error("Error updating order status:", error);
@@ -107,138 +186,105 @@ export default function OrdersPage() {
         }
     };
 
-    const getContactStatusBadge = (status: ContactForm["status"]) => {
-        const styles = {
-            unread: "bg-[#137fec]/20 text-[#137fec]",
-            read: "bg-yellow-500/20 text-yellow-400",
-            replied: "bg-green-500/20 text-green-400",
-        };
-        const labels = {
-            unread: "Okunmadı",
-            read: "Okundu",
-            replied: "Yanıtlandı",
-        };
+    const handleCancelOrder = async (reason: string, note: string) => {
+        if (!orderToCancel) return;
+
+        setIsCancelling(true);
+        try {
+            const response = await fetch(`/api/orders/${orderToCancel.id}/cancel`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason, note }),
+            });
+
+            if (response.ok) {
+                setOrders((prev) =>
+                    prev.map((order) =>
+                        order.id === orderToCancel.id ? { ...order, status: "CANCELLED" } : order
+                    )
+                );
+                setShowCancelModal(false);
+                setOrderToCancel(null);
+            } else {
+                const errorData = await response.json();
+                console.error("Failed to cancel order:", errorData);
+                alert(`İptal hatası: ${errorData.error || 'Bilinmeyen hata'}`);
+            }
+        } catch (error) {
+            console.error("Error cancelling order:", error);
+            alert('İptal işlemi sırasında bir hata oluştu');
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
+    // Filter Logic
+    // Filter Logic
+    const dateFilteredOrders = filterByDate(orders, "date", dateRange, customStartDate, customEndDate);
+
+    // Apply Search Filter using Turkish Locale
+    const filteredOrders = dateFilteredOrders.filter((order) => {
+        if (!searchTerm) return true;
+        const lowerTerm = searchTerm.toLocaleLowerCase('tr-TR');
         return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
-                {labels[status]}
-            </span>
+            order.orderNumber.toLocaleLowerCase('tr-TR').includes(lowerTerm) ||
+            order.customerName.toLocaleLowerCase('tr-TR').includes(lowerTerm) ||
+            order.customerEmail.toLocaleLowerCase('tr-TR').includes(lowerTerm) ||
+            order.products.toLocaleLowerCase('tr-TR').includes(lowerTerm) ||
+            (order.customerPhone || "").toLocaleLowerCase('tr-TR').includes(lowerTerm)
         );
-    };
-
-    const toggleOrderSelection = (id: number) => {
-        setSelectedOrders((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-        );
-    };
-
-    const toggleAllOrders = () => {
-        if (selectedOrders.length === orders.length) {
-            setSelectedOrders([]);
-        } else {
-            setSelectedOrders(orders.map((o) => o.id));
-        }
-    };
-
-    const toggleContactSelection = (id: number) => {
-        setSelectedContacts((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-        );
-    };
-
-    const toggleAllContacts = () => {
-        if (selectedContacts.length === contactForms.length) {
-            setSelectedContacts([]);
-        } else {
-            setSelectedContacts(contactForms.map((c) => c.id));
-        }
-    };
+    });
 
     const handleExportExcel = async () => {
         setExporting(true);
         try {
             const XLSX = await import("xlsx-js-style");
+            // Use filteredOrders for export
+            const exportData = filteredOrders.map((order) => {
+                // Use products string or reconstruct from rawDetails if available/needed
+                // order.products is already a formatted string in fetchOrders
 
-            // Prepare data based on active tab
-            let exportData: any[] = [];
-            let sheetName = "";
-            let title = "";
-            let columnWidths: { wch: number }[] = [];
-
-            if (activeTab === "orders") {
-                sheetName = "Siparişler";
-                title = "FEDERAL GAZ - SİPARİŞ RAPORU";
-
-                const statusLabels: Record<OrderStatus, string> = {
-                    PENDING: "Beklemede",
-                    PREPARING: "Hazırlanıyor",
-                    DELIVERED: "Teslim Edildi",
-                    CANCELLED: "İptal Edildi",
-                };
-
-                exportData = orders.map((order) => ({
+                return {
                     "Sipariş No": order.orderNumber,
-                    "Müşteri Adı": order.customerName,
+                    "Müşteri": order.customerName,
+                    "Üyelik": order.userId ? "ÜYE" : "MİSAFİR",
                     "E-posta": order.customerEmail,
                     "Telefon": order.customerPhone,
-                    "Adres": order.address,
                     "Ürünler": order.products,
                     "Notlar": order.notes || "-",
                     "Tarih": order.date,
-                    "Durum": statusLabels[order.status],
-                }));
+                    "Durum": getStatusLabel(order.status),
+                };
+            });
 
-                columnWidths = [
-                    { wch: 12 }, // Sipariş No
-                    { wch: 18 }, // Müşteri Adı
-                    { wch: 22 }, // E-posta
-                    { wch: 16 }, // Telefon
-                    { wch: 35 }, // Adres
-                    { wch: 30 }, // Ürünler
-                    { wch: 20 }, // Notlar
-                    { wch: 12 }, // Tarih
-                    { wch: 14 }, // Durum
-                ];
-            } else {
-                sheetName = "İletişim Formları";
-                title = "FEDERAL GAZ - İLETİŞİM FORMU RAPORU";
+            const columnWidths = [
+                { wch: 12 }, // Sipariş No
+                { wch: 20 }, // Müşteri
+                { wch: 12 }, // Üyelik
+                { wch: 25 }, // E-posta
+                { wch: 15 }, // Telefon
+                { wch: 50 }, // Ürünler
+                { wch: 30 }, // Notlar
+                { wch: 12 }, // Tarih
+                { wch: 12 }, // Durum
+            ];
 
-                exportData = contactForms.map((contact) => ({
-                    "ID": contact.id,
-                    "Gönderen": contact.name,
-                    "E-posta": contact.email,
-                    "Konu": contact.subject,
-                    "Mesaj": "-", // Mock data doesn't have message body yet
-                    "Tarih": contact.date,
-                    "Durum": contact.status === "unread" ? "Okunmadı" : contact.status === "read" ? "Okundu" : "Yanıtlandı",
-                }));
-
-                columnWidths = [
-                    { wch: 6 },  // ID
-                    { wch: 20 }, // Gönderen
-                    { wch: 25 }, // E-posta
-                    { wch: 25 }, // Konu
-                    { wch: 30 }, // Mesaj
-                    { wch: 12 }, // Tarih
-                    { wch: 12 }, // Durum
-                ];
-            }
-
-            // Create workbook
             const wb = XLSX.utils.book_new();
-
-            // Create worksheet with Title and Date initially
+            const title = "Federal Gaz Sipariş Raporu";
+            const sheetName = "Siparişler";
             const ws = XLSX.utils.aoa_to_sheet([
                 [{ v: title, s: { font: { bold: true, sz: 14 } } }],
                 [{ v: `Rapor Tarihi: ${new Date().toLocaleDateString("tr-TR")}`, s: { font: { bold: true } } }],
-                [] // Empty row
+                // Add Date Range Info to Report
+                [{ v: `Filtre: ${dateRange === 'custom' ? `${customStartDate} - ${customEndDate}` : dateRange}`, s: { font: { italic: true } } }],
+                []
             ]);
 
-            // Add Data starting from A4
-            XLSX.utils.sheet_add_json(ws, exportData, { origin: "A4", skipHeader: false });
+            // Note: origin bumped to A5 because of added filter row
+            XLSX.utils.sheet_add_json(ws, exportData, { origin: "A5", skipHeader: false });
 
-            // Apply style to header row (Row 4, index 3)
             const range = XLSX.utils.decode_range(ws["!ref"] || "A1:A1");
-            const headerRowIndex = 3; // 0-based index for Row 4
+            const headerRowIndex = 4; // Shifted to 4 (0-indexed) -> Row 5
 
             for (let C = range.s.c; C <= range.e.c; ++C) {
                 const cellRef = XLSX.utils.encode_cell({ r: headerRowIndex, c: C });
@@ -251,17 +297,9 @@ export default function OrdersPage() {
                 }
             }
 
-            // Set column widths
             ws["!cols"] = columnWidths;
-
             XLSX.utils.book_append_sheet(wb, ws, sheetName);
-
-            // Download file
-            const fileName = activeTab === "orders"
-                ? `federal-gaz-siparisler-${new Date().toISOString().split("T")[0]}.xlsx`
-                : `federal-gaz-iletisim-${new Date().toISOString().split("T")[0]}.xlsx`;
-
-            XLSX.writeFile(wb, fileName);
+            XLSX.writeFile(wb, `federal-gaz-siparisler-${new Date().toISOString().split("T")[0]}.xlsx`);
         } catch (error) {
             console.error("Export failed:", error);
             alert("Excel dışa aktarılırken bir hata oluştu");
@@ -270,177 +308,233 @@ export default function OrdersPage() {
         }
     };
 
-    const orderColumns: Column<Order>[] = [
-        { key: "orderNumber", label: "Sipariş No", sortable: true, searchable: true },
-        { key: "customerName", label: "Müşteri Adı", sortable: true, searchable: true },
-        { key: "customerEmail", label: "E-posta", sortable: true, searchable: true },
-        { key: "customerPhone", label: "Telefon", sortable: true, searchable: true },
-        { key: "date", label: "Tarih", sortable: true },
-        {
-            key: "status",
-            label: "Durum",
-            sortable: true,
-            searchable: true,
-            getValue: (order) => statusOptions.find(o => o.value === order.status)?.label || order.status,
-            render: (order: Order) => (
-                <select
-                    value={order.status}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        handleStatusChange(order.id, e.target.value as OrderStatus);
-                    }}
-                    disabled={updatingOrderId === order.id}
-                    onClick={(e) => e.stopPropagation()}
-                    className={`text-xs font-medium px-2 py-1 rounded-lg border-0 cursor-pointer focus:ring-2 focus:ring-[#137fec] ${statusOptions.find((o) => o.value === order.status)?.color
-                        } ${updatingOrderId === order.id ? "opacity-50" : ""}`}
-                    style={{ backgroundColor: "transparent" }}
-                >
-                    {statusOptions.map((option) => (
-                        <option key={option.value} value={option.value} className="bg-[#1c2127] text-white">
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
-            ),
-        },
-        {
-            key: "actions",
-            label: "İşlemler",
-            sortable: false,
-            searchable: false,
-            render: (order: Order) => (
-                <div className="text-right">
-                    <a href={`/dashboard/orders/${order.id}`} className="text-[#137fec] hover:underline text-sm font-bold">
-                        Detayları Gör
-                    </a>
-                </div>
-            ),
-        },
-    ];
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case "PENDING": return "Beklemede";
+            case "PREPARING": return "Hazırlanıyor";
+            case "SHIPPING": return "Yolda";
+            case "COMPLETED": return "Tamamlandı";
+            case "CANCELLED": return "İptal Edildi";
+            default: return status;
+        }
+    };
 
-    const contactColumns: Column<ContactForm>[] = [
-        { key: "name", label: "Ad Soyad", sortable: true, searchable: true },
-        { key: "email", label: "E-posta", sortable: true, searchable: true },
-        { key: "subject", label: "Konu", sortable: true, searchable: true },
+    const orderColumns: Column<Order>[] = [
+        { key: "orderNumber", label: "Sipariş No", sortable: true, searchable: true, width: "w-20" },
+        {
+            key: "customerName",
+            label: "Müşteri",
+            sortable: true,
+            searchable: true,
+            render: (order) => (
+                <span className="font-medium text-white">{order.customerName}</span>
+            )
+        },
+        {
+            key: "customerPhone",
+            label: "Telefon",
+            sortable: true,
+            searchable: true,
+            width: "w-28",
+            render: (order) => (
+                <span className="text-gray-300 text-xs">{order.customerPhone || "-"}</span>
+            )
+        },
+        {
+            key: "userId",
+            label: "Üyelik",
+            sortable: true,
+            width: "w-20",
+            render: (order) => (
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${order.userId
+                    ? "bg-[#137fec]/10 text-[#137fec] border-[#137fec]/20"
+                    : "bg-[#eab308]/10 text-[#eab308] border-[#eab308]/20"
+                    }`}>
+                    {order.userId ? "ÜYE" : "MİSAFİR"}
+                </span>
+            ),
+            getValue: (order) => order.userId ? "ÜYE" : "MİSAFİR"
+        },
+        { key: "customerEmail", label: "E-posta", sortable: true, searchable: true },
+        {
+            key: "products",
+            label: "Ürünler",
+            sortable: false,
+            searchable: true,
+            width: "w-64",
+            render: (order) => (
+                <div className="flex flex-col gap-1 text-xs text-gray-300">
+                    {order.rawDetails?.items?.length > 0 ? (
+                        order.rawDetails.items.map((item: any, i: number) => (
+                            <div key={i}>
+                                <span className="text-white font-medium">{item.product}</span> <span className="text-gray-500">({item.amount} {item.unit})</span>
+                            </div>
+                        ))
+                    ) : (
+                        <span>{order.products}</span>
+                    )}
+                </div>
+            )
+        },
         { key: "date", label: "Tarih", sortable: true },
         {
             key: "status",
             label: "Durum",
             sortable: true,
             searchable: true,
-            getValue: (contact) => {
-                const labels = {
-                    unread: "Okunmadı",
-                    read: "Okundu",
-                    replied: "Yanıtlandı",
-                };
-                return labels[contact.status];
+            render: (order) => {
+                const statusOptions = [
+                    { value: "PENDING", label: "Beklemede", color: "text-amber-500" },
+                    { value: "PREPARING", label: "Hazırlanıyor", color: "text-blue-500" },
+                    { value: "SHIPPING", label: "Yolda", color: "text-purple-500" },
+                    { value: "COMPLETED", label: "Tamamlandı", color: "text-green-500" },
+                    { value: "CANCELLED", label: "İptal Edildi", color: "text-red-500" },
+                ];
+                const currentStatus = statusOptions.find(opt => opt.value === order.status);
+                const isCancelled = order.status === "CANCELLED";
+
+                // If cancelled, show read-only status
+                if (isCancelled) {
+                    return (
+                        <span className={`${currentStatus?.color || 'text-white'} font-medium text-xs`}>
+                            {currentStatus?.label}
+                        </span>
+                    );
+                }
+
+                return (
+                    <div className="relative group">
+                        <select
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`appearance-none bg-transparent ${currentStatus?.color || 'text-white'} font-medium text-xs py-1 pr-6 pl-0 focus:outline-none cursor-pointer`}
+                        >
+                            {statusOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value} className="bg-[#1c2127] text-gray-300">
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                        <span className={`material-symbols-outlined text-[10px] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none ${currentStatus?.color || 'text-white'}`}>
+                            expand_more
+                        </span>
+                    </div>
+                );
             },
-            render: (contact: ContactForm) => getContactStatusBadge(contact.status),
+            getValue: (order) => getStatusLabel(order.status)
         },
         {
             key: "actions",
-            label: "İşlemler",
+            label: "",
             sortable: false,
-            searchable: false,
-            render: (contact: ContactForm) => (
-                <div className="text-right">
-                    <a href={`/dashboard/contacts/${contact.id}`} className="text-[#137fec] hover:underline text-sm font-bold">
-                        Detayları Gör
-                    </a>
-                </div>
-            ),
-        },
+            render: (order) => (
+                <Link
+                    href={`/dashboard/orders/${order.id}`}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg border border-[#137fec]/20 bg-[#137fec]/10 text-[#137fec] hover:bg-[#137fec]/20 transition-colors group"
+                >
+                    <span className="material-symbols-outlined text-xs group-hover:scale-110 transition-transform">visibility</span>
+                    <span className="text-[10px] font-bold">Detay</span>
+                </Link>
+            )
+        }
     ];
 
     return (
         <div className="h-full flex flex-col">
-            {/* New Order Alert */}
-            {newOrderAlert && (
-                <div className="mb-4 flex items-center gap-3 rounded-lg bg-green-500/20 px-4 py-3 text-green-400 animate-pulse">
-                    <span className="material-symbols-outlined">notifications_active</span>
-                    <span className="font-medium">
-                        {newOrderAlert} yeni sipariş geldi!
-                    </span>
-                    <button
-                        onClick={() => setNewOrderAlert(null)}
-                        className="ml-auto hover:text-white"
-                    >
-                        <span className="material-symbols-outlined text-lg">close</span>
-                    </button>
+            {/* Print Header - Only visible during printing */}
+            <div className="print-header hidden">
+                <img src="/dashboard-logo.png" alt="Federal Gaz" />
+                <div className="print-brand">
+                    <h2>Federal Gaz</h2>
+                    <span style={{ fontSize: '8pt', color: '#666' }}>Teknik ve Tıbbi Gaz Tedarikçiniz</span>
                 </div>
-            )}
+                <div className="print-title">
+                    <h1>Siparişler</h1>
+                    <p>Yazdırma Tarihi: {new Date().toLocaleDateString('tr-TR')}</p>
+                </div>
+            </div>
 
-            {/* Main Card */}
+
+
+            {/* Page Header */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 no-print">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-bold leading-tight tracking-tight text-white">
+                        Siparişler
+                    </h1>
+                    <p className="text-base font-normal leading-normal text-gray-400">
+                        Gelen siparişleri görüntüleyin ve yönetin.
+                    </p>
+                </div>
+            </div>
+
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
-                {/* Tabs */}
-                <div className="border-b border-[#3b4754]">
-                    <div className="flex px-4 gap-8">
-                        <button
-                            onClick={() => setActiveTab("orders")}
-                            className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 ${activeTab === "orders"
-                                ? "border-b-[#137fec] text-white"
-                                : "border-b-transparent text-[#9dabb9] hover:border-b-gray-600"
-                                }`}
-                        >
-                            <p className="text-sm font-bold leading-normal tracking-[0.015em]">
-                                Gelen Siparişler
-                            </p>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab("contacts")}
-                            className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 ${activeTab === "contacts"
-                                ? "border-b-[#137fec] text-white"
-                                : "border-b-transparent text-[#9dabb9] hover:border-b-gray-600"
-                                }`}
-                        >
-                            <p className="text-sm font-bold leading-normal tracking-[0.015em]">
-                                İletişim Formları
-                            </p>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Toolbar */}
-                <div className="flex justify-between items-center gap-2 px-4 py-3 border-b border-[#3b4754]">
-                    <div className="flex items-center gap-2">
-                        {/* Filters are now handled inside DataTable */}
-                    </div>
+                <div className="flex justify-between items-center px-5 py-3 border-b border-[#3b4754]">
+                    <h1 className="text-2xl font-bold text-white leading-normal">Toplam {orders.length} Sipariş</h1>
                     <div className="flex gap-2">
+                        {/* Date Filter */}
+                        <DateFilter
+                            dateRange={dateRange}
+                            setDateRange={setDateRange}
+                            customStartDate={customStartDate}
+                            setCustomStartDate={setCustomStartDate}
+                            customEndDate={customEndDate}
+                            setCustomEndDate={setCustomEndDate}
+                        />
+
                         <button
                             onClick={handleExportExcel}
-                            disabled={exporting}
-                            className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50"
+                            disabled={exporting || orders.length === 0}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors no-print"
                         >
-                            <span className="material-symbols-outlined text-base">
+                            <span className="material-symbols-outlined text-sm">
                                 {exporting ? "hourglass_empty" : "file_download"}
                             </span>
                             {exporting ? "İndiriliyor..." : "Dışa Aktar"}
                         </button>
+
+                        <button
+                            onClick={() => window.print()}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors no-print"
+                        >
+                            <span className="material-symbols-outlined text-sm">print</span>
+                            Yazdır
+                        </button>
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="flex-1 overflow-hidden p-4">
-                    {activeTab === "orders" ? (
-                        <DataTable
-                            data={orders}
-                            columns={orderColumns}
-                            selectable
-                            selectedIds={selectedOrders}
-                            onSelectionChange={setSelectedOrders}
-                        />
+                <div className="flex-1 overflow-auto p-4">
+                    {isLoading ? (
+                        <div className="text-white text-center py-10">Yükleniyor...</div>
+                    ) : orders.length === 0 ? (
+                        <div className="text-gray-400 text-center py-10">Henüz sipariş bulunmuyor.</div>
                     ) : (
                         <DataTable
-                            data={contactForms}
-                            columns={contactColumns}
-                            selectable
-                            selectedIds={selectedContacts}
-                            onSelectionChange={setSelectedContacts}
+                            data={filteredOrders}
+                            columns={orderColumns}
+                            totalLabel="kayıt"
                         />
                     )}
                 </div>
             </div>
-        </div>
+
+            {/* Cancellation Modal */}
+            <CancellationModal
+                isOpen={showCancelModal}
+                onClose={() => {
+                    setShowCancelModal(false);
+                    setOrderToCancel(null);
+                }}
+                onConfirm={handleCancelOrder}
+                orderNumber={orderToCancel?.orderNumber || ""}
+                loading={isCancelling}
+            />
+
+            {/* Print Footer - Only visible during printing */}
+            <div className="print-footer hidden">
+                www.federalgaz.com | federal.gaz@hotmail.com | Tel: (0312) 395 35 95
+            </div>
+        </div >
     );
 }

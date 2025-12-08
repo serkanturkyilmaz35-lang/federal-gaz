@@ -15,8 +15,28 @@ export function middleware(request: NextRequest) {
 
     // If accessing dashboard subdomain, rewrite to /dashboard routes
     if (isDashboardSubdomain) {
-        // Remove /dashboard prefix check - subdomain IS the dashboard
+        // Authenticate Dashboard User
+        const token = request.cookies.get('auth_token')?.value;
         const pathname = url.pathname;
+
+        // Determine effective path for checking (mimic the rewrite logic temporarily for check)
+        let targetPath = pathname;
+        if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
+            if (pathname === '/') targetPath = '/dashboard';
+            else targetPath = `/dashboard${pathname}`;
+        }
+
+        const isLoginPage = targetPath === '/dashboard/login' || targetPath === '/dashboard/login/verify';
+        const isApiOrStatic = targetPath.startsWith('/api') || targetPath.startsWith('/_next') || targetPath.includes('.');
+
+        if (!token && !isLoginPage && !isApiOrStatic) {
+            // Redirect unauthenticated users to login
+            url.pathname = '/login';
+            return NextResponse.redirect(url);
+        }
+
+        // Remove /dashboard prefix check - subdomain IS the dashboard
+        // const pathname = url.pathname; // (Already declared above)
 
         // If path doesn't start with /dashboard, add it for internal routing
         if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
@@ -32,6 +52,11 @@ export function middleware(request: NextRequest) {
         // Main domain - block access to /dashboard routes directly
         // They should only be accessible via dashboard subdomain
         if (url.pathname.startsWith('/dashboard')) {
+            // Check if it's the dashboard main domain access - redirect to subdomain?
+            // For now, redirect to homepage or let it fall through if we wanted to allow direct access with auth.
+            // But per previous logic, it redirects to /.
+
+            // Allow /dashboard access IF authenticated? No, stick to subdomain pattern for consistency.
             // Redirect to main site homepage
             url.pathname = '/';
             return NextResponse.redirect(url);

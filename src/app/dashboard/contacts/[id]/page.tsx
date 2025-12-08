@@ -30,20 +30,47 @@ export default function ContactDetailPage() {
     const [success, setSuccess] = useState("");
 
     useEffect(() => {
-        setTimeout(() => {
-            setContact({
-                id: parseInt(contactId),
-                name: "Murat Özkan",
-                email: "murat@example.com",
-                phone: "0532 987 65 43",
-                company: "Özkan Makina Ltd.",
-                subject: "Fiyat Teklifi",
-                message: "Merhaba,\n\nŞirketimiz için endüstriyel gaz ihtiyacımız bulunmaktadır. Oksijen tüpü (50L) - Aylık 20 adet, Argon tüpü (40L) - Aylık 10 adet için fiyat teklifi alabilir miyim?\n\nTeşekkürler,\nMurat Özkan",
-                status: "unread",
-                createdAt: "15.12.2024 10:45",
-            });
-            setLoading(false);
-        }, 300);
+        const fetchContact = async () => {
+            try {
+                const res = await fetch(`/api/contacts/${contactId}`);
+                const data = await res.json();
+
+                if (data.success && data.contact) {
+                    const c = data.contact;
+                    // Map database status to UI status
+                    let uiStatus: ContactStatus = "unread";
+                    if (c.status === "replied") uiStatus = "replied";
+                    else if (c.status === "read") uiStatus = "read";
+
+                    setContact({
+                        id: c.id,
+                        name: c.name,
+                        email: c.email,
+                        phone: c.phone,
+                        company: c.company,
+                        subject: c.company ? `${c.company} - İletişim` : "İletişim Formu",
+                        message: c.message,
+                        status: uiStatus,
+                        createdAt: new Date(c.createdAt).toLocaleString('tr-TR'),
+                    });
+
+                    // Mark as read if it was new/unread
+                    if (c.status === "new" || c.status === "unread") {
+                        await fetch(`/api/contacts/${contactId}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ status: "read" })
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch contact:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchContact();
     }, [contactId]);
 
     const handleSendReply = async () => {
@@ -114,16 +141,48 @@ export default function ContactDetailPage() {
 
     return (
         <div className="max-w-4xl mx-auto">
-            {/* Compact Header */}
-            <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Link href="/dashboard/orders" className="text-[#9dabb9] hover:text-white">
-                        <span className="material-symbols-outlined">arrow_back</span>
-                    </Link>
-                    <h1 className="text-xl font-bold text-white">{contact.subject}</h1>
-                    <span className="text-sm text-[#9dabb9]">• {contact.createdAt}</span>
+            {/* Print Header - Only visible during printing */}
+            <div className="print-header hidden">
+                <img src="/dashboard-logo.png" alt="Federal Gaz" />
+                <div className="print-brand">
+                    <h2>Federal Gaz</h2>
+                    <span style={{ fontSize: '8pt', color: '#666' }}>Teknik ve Tıbbi Gaz Tedarikçiniz</span>
                 </div>
-                {getStatusBadge(contact.status)}
+                <div className="print-title">
+                    <h1>Talep Detayı - {contact.subject}</h1>
+                    <p>Yazdırma Tarihi: {new Date().toLocaleDateString('tr-TR')}</p>
+                </div>
+            </div>
+
+            {/* Print Footer - Only visible during printing */}
+            <div className="print-footer hidden">
+                www.federalgaz.com | federal.gaz@hotmail.com | Tel: (0312) 395 35 95
+            </div>
+
+            {/* Compact Header */}
+            {/* Header */}
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-4">
+                    <h1 className="text-3xl font-bold text-white">{contact.subject}</h1>
+                    {getStatusBadge(contact.status)}
+                    <span className="text-sm text-gray-500">{contact.createdAt}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors border border-gray-600 no-print"
+                    >
+                        <span className="material-symbols-outlined text-sm">print</span>
+                        Yazdır
+                    </button>
+                    <Link
+                        href="/dashboard/quotes"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border border-gray-700 no-print"
+                    >
+                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                        Geri Dön
+                    </Link>
+                </div>
             </div>
 
             {error && (

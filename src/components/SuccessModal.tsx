@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import confetti from "canvas-confetti";
 
 interface SuccessModalProps {
     isOpen: boolean;
@@ -18,11 +19,39 @@ export default function SuccessModal({
     autoCloseDelay = 4000
 }: SuccessModalProps) {
     useEffect(() => {
-        if (isOpen && autoCloseDelay > 0) {
-            const timer = setTimeout(() => {
-                onClose();
-            }, autoCloseDelay);
-            return () => clearTimeout(timer);
+        if (isOpen) {
+            // Trigger Confetti
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                zIndex: 9999 // Above modal
+            });
+
+            // Fire a second burst for better effect
+            setTimeout(() => {
+                confetti({
+                    particleCount: 100,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    zIndex: 9999
+                });
+                confetti({
+                    particleCount: 100,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    zIndex: 9999
+                });
+            }, 250);
+
+            if (autoCloseDelay > 0) {
+                const timer = setTimeout(() => {
+                    onClose();
+                }, autoCloseDelay);
+                return () => clearTimeout(timer);
+            }
         }
     }, [isOpen, onClose, autoCloseDelay]);
 

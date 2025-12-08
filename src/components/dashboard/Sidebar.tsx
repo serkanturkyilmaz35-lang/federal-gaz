@@ -29,8 +29,9 @@ export default function DashboardSidebar() {
 
     return (
         <aside
+            data-print-hide="true"
             className={`${isCollapsed ? "w-20" : "w-64"
-                } flex-shrink-0 bg-[#151d27] p-4 transition-all duration-300 flex flex-col`}
+                } flex-shrink-0 bg-[#151d27] p-4 transition-all duration-300 flex flex-col print:hidden`}
         >
             <div className="flex h-full flex-col justify-between">
                 {/* Logo & Brand */}
@@ -107,16 +108,7 @@ export default function DashboardSidebar() {
                         )}
                     </button>
 
-                    {/* Logout */}
-                    <Link
-                        href="/dashboard/login"
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 hover:bg-white/10 transition-colors"
-                    >
-                        <span className="material-symbols-outlined text-2xl">logout</span>
-                        {!isCollapsed && (
-                            <p className="text-sm font-medium leading-normal">Çıkış Yap</p>
-                        )}
-                    </Link>
+
                 </div>
             </div>
         </aside>

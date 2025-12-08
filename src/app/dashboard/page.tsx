@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import StatsCard from "@/components/dashboard/StatsCard";
 import RealTimeCard from "@/components/dashboard/RealTimeCard";
 import ActivePagesCard from "@/components/dashboard/ActivePagesCard";
@@ -35,10 +35,14 @@ ChartJS.register(
     Filler
 );
 
-type DateRange = "today" | "7days" | "30days" | "90days" | "custom";
+import { filterByDate } from "@/lib/dateFilterUtils";
+
+// ... (keep chart imports)
+
+type DateRange = "today" | "7days" | "30days" | "90days" | "all" | "custom";
 
 export default function DashboardPage() {
-    const [dateRange, setDateRange] = useState<DateRange>("30days");
+    const [dateRange, setDateRange] = useState<DateRange>("today");
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
@@ -47,12 +51,58 @@ export default function DashboardPage() {
     const lineChartRef = useRef<any>(null);
     const doughnutChartRef = useRef<any>(null);
 
-    // Mock data - will be replaced with real API calls
+    const [orders, setOrders] = useState<any[]>([]);
+
+    // Fetch Orders for Real Data
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const res = await fetch('/api/orders');
+                const data = await res.json();
+                if (data.success) {
+                    const mappedOrders = data.orders.map((o: any) => {
+                        const d = new Date(o.createdAt);
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const year = d.getFullYear();
+                        return {
+                            id: o.id,
+                            date: `${day}.${month}.${year}`, // Format for filter
+                            status: o.status
+                        };
+                    });
+                    setOrders(mappedOrders);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard orders", error);
+            }
+        };
+        fetchOrders();
+    }, []);
+
+    // Set page title
+    useEffect(() => {
+        document.title = "Genel Bakış - Federal Gaz";
+    }, []);
+
+    const mockQuotes = [
+        { id: 1, date: new Date().toLocaleDateString('tr-TR'), status: 'replied' }, // Today
+        { id: 2, date: "06.12.2024", status: 'unread' },
+        { id: 3, date: "02.12.2024", status: 'read' },
+    ];
+
+    // Filter Logic
+    // Use REAL orders, fallback to mockQuotes for quotes
+    const filteredOrders = filterByDate(orders, "date", dateRange as any, customStartDate, customEndDate);
+    const filteredQuotes = filterByDate(mockQuotes, "date", dateRange as any, customStartDate, customEndDate);
+
+    // Calculate Stats
     const stats = {
-        totalOrders: 1245,
-        totalQuotes: 832,
-        activeUsers: 3450,
-        siteVisits: 15678,
+        totalOrders: filteredOrders.length,
+        totalQuotes: filteredQuotes.length,
+        activeUsers: 3450, // Static for now as user logic is complex
+        siteVisits: 15678, // Static
     };
 
     const realTimeStats = {
@@ -76,13 +126,16 @@ export default function DashboardPage() {
         { name: "/iletisim", views: 980, unique: 850, bounceRate: "25%" },
     ];
 
-    // Chart data - Line Chart
+    // Chart data - Dynamic based on filter (Simulated)
+    // For simplicity, we just scale the data based on filter length to show "change"
+    const factor = filteredOrders.length > 0 ? 1 : 0.5;
+
     const lineChartData = {
-        labels: ["1 Ara", "5 Ara", "10 Ara", "15 Ara", "20 Ara", "25 Ara", "30 Ara"],
+        labels: dateRange === 'today' ? ["09:00", "12:00", "15:00", "18:00"] : ["1 Ara", "5 Ara", "10 Ara", "15 Ara", "20 Ara", "25 Ara", "30 Ara"],
         datasets: [
             {
                 label: "Siparişler",
-                data: [65, 78, 90, 81, 95, 110, 125],
+                data: dateRange === 'today' ? [5, 12, 8, 15] : [65 * factor, 78 * factor, 90 * factor, 81 * factor, 95 * factor, 110 * factor, 125 * factor],
                 borderColor: "#137fec",
                 backgroundColor: "rgba(19, 127, 236, 0.1)",
                 fill: true,
@@ -90,7 +143,7 @@ export default function DashboardPage() {
             },
             {
                 label: "Talepler",
-                data: [45, 52, 60, 55, 70, 85, 95],
+                data: dateRange === 'today' ? [2, 5, 3, 6] : [45 * factor, 52 * factor, 60 * factor, 55 * factor, 70 * factor, 85 * factor, 95 * factor],
                 borderColor: "#22c55e",
                 backgroundColor: "rgba(34, 197, 94, 0.1)",
                 fill: true,
@@ -654,8 +707,8 @@ export default function DashboardPage() {
                             {topPages.map((page, index) => (
                                 <tr key={index} className="border-b border-gray-700/50 last:border-0">
                                     <td className="px-4 py-2 font-medium text-white">{page.name}</td>
-                                    <td className="px-4 py-2">{page.views.toLocaleString()}</td>
-                                    <td className="px-4 py-2">{page.unique.toLocaleString()}</td>
+                                    <td className="px-4 py-2">{page.views.toLocaleString("tr-TR")}</td>
+                                    <td className="px-4 py-2">{page.unique.toLocaleString("tr-TR")}</td>
                                     <td className="px-4 py-2">{page.bounceRate}</td>
                                 </tr>
                             ))}

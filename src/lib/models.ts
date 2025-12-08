@@ -6,6 +6,18 @@ export { connectToDatabase };
 
 const sequelize = getDb();
 
+// HMR Fix: In development, clear models to prevent "Model already defined" error on reload
+if (process.env.NODE_ENV !== 'production' && sequelize) {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (sequelize as any).modelManager.models = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (sequelize as any).models = {};
+    } catch (e) {
+        console.error("HMR maintenance error:", e);
+    }
+}
+
 // --- User Model ---
 interface UserAttributes {
     id: number;
@@ -13,6 +25,7 @@ interface UserAttributes {
     email: string;
     password_hash: string;
     phone?: string;
+    role?: 'user' | 'admin' | 'editor';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -24,6 +37,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     declare email: string;
     declare password_hash: string;
     declare phone: string | undefined;
+    declare role: 'user' | 'admin' | 'editor';
 
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
@@ -60,6 +74,10 @@ User.init(
         phone: {
             type: DataTypes.STRING,
             allowNull: true,
+        },
+        role: {
+            type: DataTypes.ENUM('user', 'admin', 'editor'),
+            defaultValue: 'user',
         },
     },
     {
@@ -170,7 +188,8 @@ Order.init(
             allowNull: false,
         },
         status: {
-            type: DataTypes.ENUM('PENDING', 'PREPARING', 'DELIVERED', 'CANCELLED'),
+            // Updated ENUM to include SHIPPING and COMPLETED
+            type: DataTypes.ENUM('PENDING', 'PREPARING', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED'),
             defaultValue: 'PENDING',
         },
         trackingNumber: {
@@ -183,6 +202,11 @@ Order.init(
         tableName: 'orders',
     }
 );
+
+// Force Sync in Dev to update ENUM (Temporary Fix Logic)
+if (process.env.NODE_ENV !== 'production') {
+    sequelize.sync({ alter: true }).catch(err => console.error('Sync Error:', err));
+}
 
 // --- AdminUser Model (Dashboard Yöneticileri) ---
 interface AdminUserAttributes {
@@ -648,15 +672,29 @@ SiteAnalytics.init(
     }
 );
 
-// Relationships
-User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
-Address.belongsTo(User, { foreignKey: 'userId' });
+// Relationships - Wrapped in Try/Catch to prevent crashes if models are not fully ready (Fixes HMR circular issues)
+try {
+    if (User && Address) {
+        User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
+        Address.belongsTo(User, { foreignKey: 'userId' });
+    }
 
-User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
-Order.belongsTo(User, { foreignKey: 'userId' });
+    if (User && Order) {
+        User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
+        Order.belongsTo(User, { foreignKey: 'userId' });
+    }
 
-AdminUser.hasMany(MediaFile, { foreignKey: 'uploadedBy', as: 'uploadedFiles' });
-MediaFile.belongsTo(AdminUser, { foreignKey: 'uploadedBy' });
+    if (AdminUser && MediaFile) {
+        AdminUser.hasMany(MediaFile, { foreignKey: 'uploadedBy', as: 'uploadedFiles' });
+        MediaFile.belongsTo(AdminUser, { foreignKey: 'uploadedBy' });
+    }
 
-AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
-ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
+    if (AdminUser && ContentPage) {
+        AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
+        ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
+    }
+
+    console.log('✅ Model associations initialized.');
+} catch (error) {
+    console.error('❌ Error initializing model associations:', error);
+}

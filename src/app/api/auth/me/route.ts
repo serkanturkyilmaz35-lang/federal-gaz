@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { User, connectToDatabase } from '@/lib/models';
+import { AdminUser, connectToDatabase } from '@/lib/models'; // Import AdminUser
 
 export async function GET() {
     try {
@@ -19,15 +19,27 @@ export async function GET() {
         }
 
         await connectToDatabase();
-        const user = await User.findByPk(decoded.id);
+
+        let user = null;
+
+        // Check for role to distinguish User vs AdminUser
+        // @ts-ignore
+        if (decoded.role === 'user') {
+            // Customer
+            const { User } = await import('@/lib/models');
+            user = await User.findByPk(decoded.id);
+        } else {
+            // Admin (Dashboard) or Legacy without role
+            const { AdminUser } = await import('@/lib/models');
+            user = await AdminUser.findByPk(decoded.id);
+        }
 
         if (!user) {
             return NextResponse.json({ user: null }, { status: 200 });
         }
 
-        const { password_hash, ...userWithoutPassword } = user.toJSON();
-
-        return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
+        // Return user data (AdminUser typically has no password field, but we return toJSON)
+        return NextResponse.json({ user: user.toJSON() }, { status: 200 });
 
     } catch (error) {
         console.error('Session Check Error:', error);

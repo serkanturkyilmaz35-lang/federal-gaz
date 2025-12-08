@@ -14,8 +14,23 @@ export default function DashboardLoginPage() {
     const [otpSent, setOtpSent] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [timeLeft, setTimeLeft] = useState(0); // Timer state
     const router = useRouter();
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    // Timer logic
+    useEffect(() => {
+        if (timeLeft > 0) {
+            const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+            return () => clearTimeout(timerId);
+        }
+    }, [timeLeft]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const handleRequestOtp = async () => {
         if (!email) {
@@ -38,6 +53,7 @@ export default function DashboardLoginPage() {
             }
 
             setOtpSent(true);
+            setTimeLeft(120); // Start 2 minute timer
             setTimeout(() => inputRefs.current[0]?.focus(), 100);
         } catch (err: unknown) {
             setError((err as Error).message);
@@ -75,6 +91,7 @@ export default function DashboardLoginPage() {
         }
     };
 
+    // ... (Existing OTP Handler functions: handleOtpChange, handleOtpKeyDown, handleOtpPaste)
     const handleOtpChange = (index: number, value: string) => {
         if (!/^\d*$/.test(value)) return;
 
@@ -106,13 +123,15 @@ export default function DashboardLoginPage() {
         }
     };
 
+
     return (
         <div className="relative flex h-screen w-full flex-col bg-[#292828] font-display overflow-hidden">
             <div className="layout-container flex h-full grow flex-col">
-                {/* Header - Logo only, no user info */}
                 <header className="flex items-center justify-between px-6 py-4 sm:px-8">
-                    <div className="flex items-center gap-3">
-                        {/* Site Logo - high resolution */}
+                    <div
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => window.location.reload()}
+                    >
                         <img
                             src="/dashboard-logo.png"
                             alt="Federal Gaz Logo"
@@ -120,13 +139,10 @@ export default function DashboardLoginPage() {
                         />
                         <span className="text-lg font-bold text-[#ece6e4]">Federal Gaz</span>
                     </div>
-                    {/* No user info - not logged in */}
                 </header>
 
-                {/* Main Content */}
                 <main className="flex flex-1 items-center justify-center p-4 overflow-hidden">
                     <div className="flex w-full max-w-lg flex-col items-center justify-center rounded-xl bg-[#1C2127] shadow-lg overflow-hidden">
-                        {/* Banner Image - User's provided image */}
                         <div className="w-full aspect-[3/1] overflow-hidden rounded-t-xl">
                             <Image
                                 src="/dashboard-banner.png"
@@ -138,7 +154,6 @@ export default function DashboardLoginPage() {
                             />
                         </div>
 
-                        {/* Form Content */}
                         <div className="flex w-full flex-col items-center gap-4 p-6">
                             <div className="flex w-full flex-col gap-2 text-center">
                                 <p className="text-2xl font-black leading-tight tracking-[-0.033em] text-white">
@@ -149,92 +164,83 @@ export default function DashboardLoginPage() {
                                 </p>
                             </div>
 
-                            {error && (
-                                <div className="w-full max-w-md bg-red-900/30 text-red-400 p-3 rounded-lg text-sm text-center border border-red-500/30">
-                                    {error}
-                                </div>
-                            )}
-
-                            <div className="w-full max-w-md space-y-4">
-                                <label className="flex flex-col flex-1">
-                                    <p className="text-sm font-medium leading-normal pb-1 text-white">
-                                        E-posta Adresi
-                                    </p>
+                            <div className="w-full space-y-4">
+                                {/* Email Field */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-[#ece6e4]">E-posta Adresi</label>
                                     <input
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="ornek@federalgaz.com"
-                                        style={{ height: '56px', minHeight: '56px' }}
-                                        className="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg border border-[#94847c]/50 bg-transparent px-4 text-base font-normal leading-normal text-white placeholder:text-[#94847c] focus:border-[#b13329] focus:outline-0 focus:ring-0"
+                                        disabled={loading}
+                                        className={`w-full rounded-lg border bg-[#111418] p-3 text-white placeholder:text-[#9dabb9] focus:outline-none focus:ring-1 focus:ring-[#137fec] ${otpSent ? 'border-[#137fec]' : 'border-[#3b4754]'
+                                            }`}
+                                        onKeyDown={(e) => !otpSent && e.key === "Enter" && handleRequestOtp()}
+                                        autoFocus
                                     />
-                                </label>
+                                </div>
 
-                                {/* OTP Gönder Button - Red */}
-                                <div className="flex">
-                                    <button
-                                        type="button"
-                                        onClick={handleRequestOtp}
-                                        disabled={loading || !email}
-                                        className="flex h-14 min-w-[84px] max-w-full flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-[#b13329] px-5 text-base font-bold leading-normal tracking-[0.015em] text-white transition-colors hover:bg-[#b13329]/90 disabled:opacity-50"
-                                    >
-                                        <span className="truncate">
-                                            {loading && !otpSent ? "Gönderiliyor..." : otpSent ? "OTP Tekrar Gönder" : "OTP Gönder"}
+                                {/* Send Code Button */}
+                                <button
+                                    onClick={handleRequestOtp}
+                                    disabled={loading || (otpSent && timeLeft > 0)}
+                                    className={`w-full rounded-lg p-3 font-bold text-white transition-colors disabled:opacity-50 ${otpSent ? 'bg-[#3b4754] hover:bg-[#3b4754]/90' : 'bg-[#b13329] hover:bg-[#b13329]/90'
+                                        }`}
+                                >
+                                    {loading ? "İşleniyor..." : otpSent ? (timeLeft > 0 ? `Tekrar Gönder (${timeLeft})` : "Tekrar Kod Gönder") : "OTP Gönder"}
+                                </button>
+
+                                {/* Divider */}
+                                <div className="relative py-2">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <span className="w-full border-t border-[#3b4754]"></span>
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-[#1C2127] px-2 text-gray-500">
+                                            OTP KODUNU GİRİN
+                                            {otpSent && timeLeft > 0 && <span className="ml-2 text-[#137fec]">({formatTime(timeLeft)})</span>}
                                         </span>
-                                    </button>
+                                    </div>
                                 </div>
 
-                                {/* OTP Divider */}
-                                <div className="relative flex items-center">
-                                    <div className="flex-grow border-t border-[#94847c]/30" />
-                                    <span className="mx-4 flex-shrink text-sm text-[#94847c]">
-                                        OTP Kodunu Girin
-                                    </span>
-                                    <div className="flex-grow border-t border-[#94847c]/30" />
+                                {/* OTP Inputs */}
+                                <div className={`flex justify-center gap-2 transition-opacity duration-300 ${otpSent ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                                    {otp.map((digit, index) => (
+                                        <input
+                                            key={index}
+                                            ref={(el) => { inputRefs.current[index] = el }}
+                                            type="text"
+                                            maxLength={1}
+                                            value={digit}
+                                            onChange={(e) => handleOtpChange(index, e.target.value)}
+                                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                            onPaste={handleOtpPaste}
+                                            disabled={!otpSent}
+                                            className="h-12 w-12 rounded-lg border border-[#3b4754] bg-[#111418] text-center text-xl font-bold text-white focus:border-[#137fec] focus:outline-none focus:ring-1 focus:ring-[#137fec] disabled:cursor-not-allowed"
+                                        />
+                                    ))}
                                 </div>
 
-                                {/* OTP Input Fields */}
-                                <div className="flex flex-col items-center gap-3">
-                                    <fieldset className="relative flex gap-2 sm:gap-4">
-                                        {otp.map((digit, index) => (
-                                            <input
-                                                key={index}
-                                                ref={(el) => { inputRefs.current[index] = el; }}
-                                                type="text"
-                                                inputMode="numeric"
-                                                maxLength={1}
-                                                value={digit}
-                                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleOtpChange(index, e.target.value)}
-                                                onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                                onPaste={handleOtpPaste}
-                                                className="flex h-14 w-10 text-center text-lg font-semibold text-white [appearance:textfield] focus:outline-0 focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none rounded-md border border-[#94847c]/50 bg-transparent focus:border-[#b13329]"
-                                            />
-                                        ))}
-                                    </fieldset>
-
-                                    {/* Giriş Yap Button - WHITE background */}
-                                    <button
-                                        type="button"
-                                        onClick={handleVerifyOtp}
-                                        disabled={loading || otp.join("").length !== 6}
-                                        className="flex h-12 min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-white px-5 text-base font-bold leading-normal tracking-[0.015em] text-[#292828] transition-colors hover:bg-gray-100 disabled:opacity-50"
-                                    >
-                                        <span className="truncate">
-                                            {loading && otpSent ? "Doğrulanıyor..." : "Giriş Yap"}
-                                        </span>
-                                    </button>
-                                </div>
+                                {/* Login Button */}
+                                <button
+                                    onClick={handleVerifyOtp}
+                                    disabled={!otpSent || loading}
+                                    className={`w-full rounded-lg p-3 font-bold transition-colors ${otpSent ? 'bg-white text-[#111418] hover:bg-gray-100' : 'bg-[#737373] text-[#1C2127] cursor-not-allowed opacity-50'
+                                        }`}
+                                >
+                                    {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
+                                </button>
                             </div>
+
+                            {error && (
+                                <div className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-500 w-full text-center">
+                                    {error}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </main>
-
-                {/* Footer */}
-                <footer className="py-4 text-center">
-                    <p className="text-xs text-[#94847c]">
-                        © 2014 Federal Gaz. Tüm hakları saklıdır.
-                    </p>
-                </footer>
             </div>
         </div>
     );

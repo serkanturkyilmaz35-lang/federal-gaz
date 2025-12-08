@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 import SecurityProvider from "@/components/SecurityProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 
 export default async function RootLayout({
     children,
@@ -57,23 +58,25 @@ export default async function RootLayout({
             <body className={`${inter.variable} font-display antialiased`}>
                 <LanguageProvider>
                     <AuthProvider>
-                        <SecurityProvider>
-                            {isDashboard ? (
-                                // Dashboard: no main site header/footer
-                                <>{children}</>
-                            ) : (
-                                // Main site: with header and footer
-                                <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
-                                    <div className="layout-container flex h-full grow flex-col">
-                                        <Header />
-                                        <main className="flex-1">
-                                            {children}
-                                        </main>
-                                        <Footer />
+                        <NotificationProvider>
+                            <SecurityProvider>
+                                {isDashboard ? (
+                                    // Dashboard: no main site header/footer
+                                    <>{children}</>
+                                ) : (
+                                    // Main site: with header and footer
+                                    <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
+                                        <div className="layout-container flex h-full grow flex-col">
+                                            <Header />
+                                            <main className="flex-1">
+                                                {children}
+                                            </main>
+                                            <Footer />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </SecurityProvider>
+                                )}
+                            </SecurityProvider>
+                        </NotificationProvider>
                     </AuthProvider>
                 </LanguageProvider>
             </body>

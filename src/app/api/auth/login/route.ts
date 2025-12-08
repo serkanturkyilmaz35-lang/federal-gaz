@@ -52,7 +52,12 @@ export async function POST(request: Request) {
         }
 
         // Success - set cookie and return user
-        const token = signToken({ id: result.user!.id, email: result.user!.email, name: result.user!.name });
+        const token = signToken({
+            id: result.user!.id,
+            email: result.user!.email,
+            name: result.user!.name,
+            role: result.user!.role || 'user' // Default to user if undefined 
+        });
 
         const cookieStore = await cookies();
         cookieStore.set('auth_token', token, {
