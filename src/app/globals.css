@@ -14,6 +14,13 @@
   }
 }
 
+/* Marquee hızı - mobilde daha hızlı (25s), web'de yavaş (60s - Tailwind'den) */
+@media (max-width: 768px) {
+  .animate-marquee {
+    animation: marquee 25s linear infinite !important;
+  }
+}
+
 
 
 @keyframes slide-infinite {
