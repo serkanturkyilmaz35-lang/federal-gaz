@@ -52,33 +52,64 @@ export default function DashboardPage() {
     const doughnutChartRef = useRef<any>(null);
 
     const [orders, setOrders] = useState<any[]>([]);
+    const [realTimeStats, setRealTimeStats] = useState({ activeUsers: 0, mobileUsers: 0, desktopUsers: 0 });
+    const [activePages, setActivePages] = useState<any[]>([]);
+    const [topPages, setTopPages] = useState<any[]>([]);
+    const [dbStats, setDbStats] = useState({ totalOrders: 0, totalUsers: 0, totalContacts: 0 });
 
     // Fetch Orders for Real Data
+    const fetchOrders = async () => {
+        try {
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            if (data.success) {
+                const mappedOrders = data.orders.map((o: any) => {
+                    const d = new Date(o.createdAt);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    return {
+                        id: o.id,
+                        date: `${day}.${month}.${year}`,
+                        status: o.status
+                    };
+                });
+                setOrders(mappedOrders);
+            }
+        } catch (error) {
+            console.error("Failed to fetch dashboard orders", error);
+        }
+    };
+
+    // Fetch Analytics for Real-time Data
+    const fetchAnalytics = async () => {
+        try {
+            const res = await fetch('/api/dashboard/analytics');
+            const data = await res.json();
+            if (data.success) {
+                setRealTimeStats(data.realTime);
+                setActivePages(data.activePages);
+                setTopPages(data.topPages);
+                setDbStats({
+                    totalOrders: data.stats.totalOrders,
+                    totalUsers: data.stats.totalUsers,
+                    totalContacts: data.stats.totalContacts
+                });
+            }
+        } catch (error) {
+            console.error("Failed to fetch analytics", error);
+        }
+    };
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const res = await fetch('/api/orders');
-                const data = await res.json();
-                if (data.success) {
-                    const mappedOrders = data.orders.map((o: any) => {
-                        const d = new Date(o.createdAt);
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const month = String(d.getMonth() + 1).padStart(2, '0');
-                        const year = d.getFullYear();
-                        return {
-                            id: o.id,
-                            date: `${day}.${month}.${year}`, // Format for filter
-                            status: o.status
-                        };
-                    });
-                    setOrders(mappedOrders);
-                }
-            } catch (error) {
-                console.error("Failed to fetch dashboard orders", error);
-            }
-        };
         fetchOrders();
+        fetchAnalytics();
+        // Real-time refresh every 5 seconds
+        const interval = setInterval(() => {
+            fetchOrders();
+            fetchAnalytics();
+        }, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     // Set page title
@@ -97,34 +128,14 @@ export default function DashboardPage() {
     const filteredOrders = filterByDate(orders, "date", dateRange as any, customStartDate, customEndDate);
     const filteredQuotes = filterByDate(mockQuotes, "date", dateRange as any, customStartDate, customEndDate);
 
-    // Calculate Stats
+    // Stats - use real DB data
     const stats = {
-        totalOrders: filteredOrders.length,
+        totalOrders: dbStats.totalOrders || filteredOrders.length,
         totalQuotes: filteredQuotes.length,
-        activeUsers: 3450, // Static for now as user logic is complex
-        siteVisits: 15678, // Static
+        activeUsers: dbStats.totalUsers || 0,
+        siteVisits: dbStats.totalContacts || 0,
     };
 
-    const realTimeStats = {
-        activeUsers: 87,
-        mobileUsers: 57,
-        desktopUsers: 30,
-    };
-
-    const activePages = [
-        { url: "/urunler/endustriyel-gazlar/oksijen", users: 18, percentage: 20.6 },
-        { url: "/anasayfa", users: 15, percentage: 17.2 },
-        { url: "/cozumler/kaynak-teknolojileri", users: 11, percentage: 12.6 },
-        { url: "/iletisim", users: 9, percentage: 10.3 },
-        { url: "/hakkimizda", users: 7, percentage: 8.0 },
-    ];
-
-    const topPages = [
-        { name: "/anasayfa", views: 4290, unique: 3985, bounceRate: "45%" },
-        { name: "/urunler/gaz-sensoru", views: 2150, unique: 1820, bounceRate: "32%" },
-        { name: "/hakkimizda", views: 1890, unique: 1600, bounceRate: "60%" },
-        { name: "/iletisim", views: 980, unique: 850, bounceRate: "25%" },
-    ];
 
     // Chart data - Dynamic based on filter (Simulated)
     // For simplicity, we just scale the data based on filter length to show "change"
