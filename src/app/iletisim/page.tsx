@@ -198,13 +198,14 @@ export default function IletisimPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.formPhone}</label>
+                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.formPhone} *</label>
                                     <input
                                         type="tel"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
                                         placeholder={t.formPhonePlaceholder}
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        required
                                     />
                                 </div>
                                 <div className="flex flex-1 flex-col">

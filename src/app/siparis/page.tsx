@@ -6,6 +6,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import WarningModal from "@/components/WarningModal";
 import AuthChoiceModal from "@/components/AuthChoiceModal";
+import OrderSummaryModal from "@/components/OrderSummaryModal";
 
 const translations = {
     TR: {
@@ -132,7 +133,9 @@ export default function SiparisPage() {
     const [basket, setBasket] = useState<BasketItem[]>([]);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [showOrderSummary, setShowOrderSummary] = useState(false);
+    const [completedOrderId, setCompletedOrderId] = useState<number | null>(null);
+    const [completedOrderDetails, setCompletedOrderDetails] = useState<any>(null);
     const [error, setError] = useState("");
     const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | "custom">("custom");
@@ -335,14 +338,17 @@ export default function SiparisPage() {
         setIsLoading(true);
         setError("");
 
+        // Prepare order items
+        const orderItems = basket.length > 0 ? basket : [{
+            product: currentProduct.product,
+            amount: currentProduct.amount,
+            unit: currentProduct.unit
+        }];
+
         try {
             const orderData = {
                 ...contactData,
-                items: basket.length > 0 ? basket : [{
-                    product: currentProduct.product,
-                    amount: currentProduct.amount,
-                    unit: currentProduct.unit
-                }]
+                items: orderItems
             };
 
             const res = await fetch('/api/orders', {
@@ -366,10 +372,19 @@ export default function SiparisPage() {
                 throw new Error(data.error || t.errorMessage);
             }
 
-            setShowSuccess(true);
+            // Save order details for summary modal
+            setCompletedOrderId(data.orderId);
+            setCompletedOrderDetails({
+                name: contactData.name,
+                company: contactData.company,
+                email: contactData.email,
+                phone: contactData.phone,
+                address: contactData.address,
+                notes: contactData.notes,
+                items: orderItems
+            });
+            setShowOrderSummary(true);
             setBasket([]);
-            setContactData({ ...contactData, notes: "" });
-            fireConfetti();
 
         } catch (err: any) {
             console.error(err);
@@ -446,21 +461,14 @@ export default function SiparisPage() {
                 </div>
             )}
 
-            {/* Success Modal */}
-            {showSuccess && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSuccess(false)} />
-                    <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 text-center">
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                            <span className="material-symbols-outlined text-4xl text-green-600">check_circle</span>
-                        </div>
-                        <h2 className="mb-2 text-2xl font-bold text-gray-800 dark:text-white">{t.successTitle}</h2>
-                        <p className="mb-6 text-gray-600 dark:text-gray-300">{t.successMessage}</p>
-                        <button onClick={() => setShowSuccess(false)} className="w-full rounded-xl bg-primary py-3 font-bold text-white transition-transform hover:scale-105">
-                            Tamam
-                        </button>
-                    </div>
-                </div>
+            {/* Order Summary Modal */}
+            {showOrderSummary && completedOrderId && completedOrderDetails && (
+                <OrderSummaryModal
+                    isOpen={showOrderSummary}
+                    orderId={completedOrderId}
+                    orderDetails={completedOrderDetails}
+                    language={language}
+                />
             )}
 
             <div className="mx-auto max-w-4xl">
