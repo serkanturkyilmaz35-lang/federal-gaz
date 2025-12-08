@@ -458,21 +458,21 @@ export default function OrdersPage() {
 
 
             {/* Page Header */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 no-print">
+            <div className="mb-4 lg:mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4 no-print">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-3xl font-bold leading-tight tracking-tight text-white">
+                    <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">
                         Siparişler
                     </h1>
-                    <p className="text-base font-normal leading-normal text-gray-400">
+                    <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
                         Gelen siparişleri görüntüleyin ve yönetin.
                     </p>
                 </div>
             </div>
 
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center px-5 py-3 border-b border-[#3b4754]">
-                    <h1 className="text-2xl font-bold text-white leading-normal">Toplam {orders.length} Sipariş</h1>
-                    <div className="flex gap-2">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 lg:px-5 py-3 border-b border-[#3b4754] gap-3">
+                    <h1 className="text-xl lg:text-2xl font-bold text-white leading-normal">Toplam {orders.length} Sipariş</h1>
+                    <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                         {/* Date Filter */}
                         <DateFilter
                             dateRange={dateRange}
@@ -486,20 +486,20 @@ export default function OrdersPage() {
                         <button
                             onClick={handleExportExcel}
                             disabled={exporting || orders.length === 0}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors no-print"
+                            className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 text-xs font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors no-print"
                         >
                             <span className="material-symbols-outlined text-sm">
                                 {exporting ? "hourglass_empty" : "file_download"}
                             </span>
-                            {exporting ? "İndiriliyor..." : "Dışa Aktar"}
+                            <span className="hidden sm:inline">{exporting ? "İndiriliyor..." : "Dışa Aktar"}</span>
                         </button>
 
                         <button
                             onClick={() => window.print()}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors no-print"
+                            className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors no-print"
                         >
                             <span className="material-symbols-outlined text-sm">print</span>
-                            Yazdır
+                            <span className="hidden sm:inline">Yazdır</span>
                         </button>
                     </div>
                 </div>
