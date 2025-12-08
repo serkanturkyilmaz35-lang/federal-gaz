@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase, AdminUser, OTPToken } from '@/lib/models';
+import { connectToDatabase, AdminUser, OTPToken, NotificationRead, User } from '@/lib/models';
 import { getDb } from '@/lib/db';
 
 export async function GET() {
