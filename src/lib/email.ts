@@ -36,7 +36,9 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
     }
 
     try {
-        const fromEmail = process.env.EMAIL_FROM || 'Federal Gaz <federal.gaz@hotmail.com>';
+        // Domain onaylı olduğu için kendi domainimizden göndermeliyiz
+        // noreply veya bilgi kullanılabilir. Yanıtlar replyTo'ya gider.
+        const fromEmail = process.env.EMAIL_FROM || 'Federal Gaz <noreply@federalgaz.com>';
 
         // Use hosted logo URL
         const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
