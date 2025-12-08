@@ -34,8 +34,9 @@ export async function GET() {
             return NextResponse.json({ user: null }, { status: 200 });
         }
 
-        // Session token validation: if token has sessionToken, check it matches DB
-        if (decoded.sessionToken && user.sessionToken !== decoded.sessionToken) {
+        // Session token validation: ONLY if BOTH have sessionToken
+        // Legacy users who logged in before sessionToken feature won't have it in their JWT
+        if (decoded.sessionToken && user.sessionToken && decoded.sessionToken !== user.sessionToken) {
             // Session invalidated - another device logged in
             return NextResponse.json({
                 user: null,

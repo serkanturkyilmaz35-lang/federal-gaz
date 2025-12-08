@@ -10,19 +10,25 @@ export async function GET() {
         const token = cookieStore.get('auth_token')?.value;
 
         if (!token) {
-            return NextResponse.json({ success: false, error: 'Oturum bulunamadı' }, { status: 401 });
+            // No token = not logged in, return empty notifications (not error)
+            return NextResponse.json({ success: true, notifications: [] });
         }
 
         const payload = verifyToken(token) as { id: number; email: string; role: string; name: string; sessionToken?: string } | null;
         if (!payload || !payload.id) {
-            return NextResponse.json({ success: false, error: 'Geçersiz token' }, { status: 401 });
+            return NextResponse.json({ success: true, notifications: [] });
         }
 
         await connectToDatabase();
 
-        // Session validation - check if session token matches
         const user = await User.findByPk(payload.id);
-        if (!user || (payload.sessionToken && user.sessionToken !== payload.sessionToken)) {
+        if (!user) {
+            return NextResponse.json({ success: true, notifications: [] });
+        }
+
+        // Session validation ONLY if BOTH have sessionToken
+        // If user logged in before sessionToken feature, they won't have it in JWT
+        if (payload.sessionToken && user.sessionToken && payload.sessionToken !== user.sessionToken) {
             return NextResponse.json({
                 success: false,
                 error: 'Oturumunuz başka bir cihazda sonlandırıldı.',
