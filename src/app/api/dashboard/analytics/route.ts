@@ -8,55 +8,48 @@ export async function GET() {
 
         // Get real counts from database
         const totalOrders = await Order.count();
-
-        // Today's orders - use raw query approach
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayOrders = await Order.count({
-            where: Sequelize.where(
-                Sequelize.fn('DATE', Sequelize.col('createdAt')),
-                Sequelize.fn('DATE', today)
-            )
-        } as any);
-
         const pendingOrders = await Order.count({ where: { status: 'PENDING' } });
 
         const totalUsers = await User.count();
         const totalContacts = await ContactRequest.count();
         const newContacts = await ContactRequest.count({ where: { status: 'new' } });
 
-        // Simulate real-time active users (random variation for demo)
-        const baseActiveUsers = Math.floor(Math.random() * 50) + 30;
-        const mobileRatio = 0.6 + (Math.random() * 0.1);
+        // Simulated real-time (more stable, realistic numbers based on DB data)
+        // Base: contacts represent some site activity
+        const baseActiveUsers = Math.max(20, totalContacts + pendingOrders * 2);
+        // Small variation (±3) for "live" feel without being chaotic
+        const activeVariation = Math.floor(Math.random() * 6) - 3;
+        const activeUsers = baseActiveUsers + activeVariation;
+
+        const mobileRatio = 0.65; // Stable mobile ratio
 
         return NextResponse.json({
             success: true,
             stats: {
                 totalOrders,
-                todayOrders,
                 pendingOrders,
                 totalUsers,
                 totalContacts,
                 newContacts,
             },
             realTime: {
-                activeUsers: baseActiveUsers,
-                mobileUsers: Math.round(baseActiveUsers * mobileRatio),
-                desktopUsers: Math.round(baseActiveUsers * (1 - mobileRatio)),
+                activeUsers: Math.max(5, activeUsers),
+                mobileUsers: Math.round(Math.max(5, activeUsers) * mobileRatio),
+                desktopUsers: Math.round(Math.max(5, activeUsers) * (1 - mobileRatio)),
             },
-            // Mock active pages with slight randomization for "live" effect
+            // More stable active pages (smaller variations)
             activePages: [
-                { url: "/urunler/endustriyel-gazlar/oksijen", users: Math.floor(Math.random() * 10) + 12, percentage: 20.6 },
-                { url: "/anasayfa", users: Math.floor(Math.random() * 8) + 10, percentage: 17.2 },
-                { url: "/siparis", users: Math.floor(Math.random() * 6) + 8, percentage: 12.6 },
-                { url: "/iletisim", users: Math.floor(Math.random() * 5) + 6, percentage: 10.3 },
-                { url: "/hakkimizda", users: Math.floor(Math.random() * 4) + 5, percentage: 8.0 },
+                { url: "/urunler/endustriyel-gazlar/oksijen", users: 12 + Math.floor(Math.random() * 3), percentage: 22 },
+                { url: "/anasayfa", users: 10 + Math.floor(Math.random() * 3), percentage: 18 },
+                { url: "/siparis", users: 8 + Math.floor(Math.random() * 2), percentage: 14 },
+                { url: "/iletisim", users: 6 + Math.floor(Math.random() * 2), percentage: 11 },
+                { url: "/hakkimizda", users: 5 + Math.floor(Math.random() * 2), percentage: 9 },
             ],
             topPages: [
-                { name: "/anasayfa", views: 4290 + Math.floor(Math.random() * 100), unique: 3985, bounceRate: "45%" },
-                { name: "/urunler", views: 2150 + Math.floor(Math.random() * 50), unique: 1820, bounceRate: "32%" },
-                { name: "/hakkimizda", views: 1890 + Math.floor(Math.random() * 30), unique: 1600, bounceRate: "60%" },
-                { name: "/iletisim", views: 980 + Math.floor(Math.random() * 20), unique: 850, bounceRate: "25%" },
+                { name: "/anasayfa", views: 4290 + Math.floor(Math.random() * 10), unique: 3985, bounceRate: "45%" },
+                { name: "/urunler", views: 2150 + Math.floor(Math.random() * 10), unique: 1820, bounceRate: "32%" },
+                { name: "/hakkimizda", views: 1890 + Math.floor(Math.random() * 10), unique: 1600, bounceRate: "60%" },
+                { name: "/iletisim", views: 980 + Math.floor(Math.random() * 10), unique: 850, bounceRate: "25%" },
             ]
         });
     } catch (error) {
@@ -64,4 +57,3 @@ export async function GET() {
         return NextResponse.json({ success: false, error: 'Analytics fetch failed' }, { status: 500 });
     }
 }
-

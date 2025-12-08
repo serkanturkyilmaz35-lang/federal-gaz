@@ -29,8 +29,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const refreshUser = async () => {
         try {
             const res = await fetch('/api/auth/me');
-            if (res.ok) {
-                const data = await res.json();
+            const data = await res.json();
+
+            // Check for session expired (another device logged in)
+            if (data.sessionExpired) {
+                setUser(null);
+                // If on dashboard, redirect to login
+                if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+                    router.push('/dashboard/login');
+                }
+                return;
+            }
+
+            if (res.ok && data.user) {
                 setUser(data.user);
             } else {
                 setUser(null);
@@ -45,6 +56,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         refreshUser();
+
+        // Periodic session check when on dashboard (every 10 seconds)
+        const interval = setInterval(() => {
+            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+                refreshUser();
+            }
+        }, 10000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const login = (userData: User) => {
