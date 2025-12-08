@@ -1,6 +1,4 @@
-import { Resend } from 'resend';
-import fs from 'fs';
-import path from 'path';
+import nodemailer from 'nodemailer';
 
 interface EmailOptions {
     to: string;
@@ -9,41 +7,51 @@ interface EmailOptions {
     replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
-    // Lazy initialization to prevent build-time error if env var is missing
-    const apiKey = process.env.RESEND_API_KEY;
+// Brevo SMTP transporter
+const createTransporter = () => {
+    const smtpUser = process.env.BREVO_SMTP_USER;
+    const smtpPass = process.env.BREVO_SMTP_PASS;
 
-    // During build or if key is missing, return error or mock success
-    if (!apiKey) {
-        console.warn('RESEND_API_KEY is missing. Email sending skipped.');
-        return { success: false, error: 'Missing API Key' };
+    if (!smtpUser || !smtpPass) {
+        console.warn('BREVO_SMTP_USER or BREVO_SMTP_PASS is missing. Email sending will be skipped.');
+        return null;
     }
 
-    const resend = new Resend(apiKey);
+    return nodemailer.createTransport({
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: smtpUser,
+            pass: smtpPass,
+        },
+    });
+};
+
+export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        return { success: false, error: 'Missing SMTP credentials' };
+    }
 
     try {
-        // Use verified domain email - falls back to resend.dev for testing
-        const fromEmail = process.env.EMAIL_FROM || 'Federal Gaz <onboarding@resend.dev>';
+        const fromEmail = process.env.EMAIL_FROM || 'Federal Gaz <federal.gaz@hotmail.com>';
 
-        // Use hosted logo URL (Verified to exist)
+        // Use hosted logo URL
         const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
         const finalHtml = html.replace(/cid:logo/g, logoUrl);
 
-        const { data, error } = await resend.emails.send({
+        const info = await transporter.sendMail({
             from: fromEmail,
-            to: [to],
+            to,
             subject,
             html: finalHtml,
             replyTo,
         });
 
-        if (error) {
-            console.error('Email send error:', error);
-            return { success: false, error };
-        }
-
-        console.log('Email sent successfully:', data);
-        return { success: true, data };
+        console.log('Email sent successfully:', info.messageId);
+        return { success: true, data: { id: info.messageId } };
     } catch (error) {
         console.error('Email error:', error);
         return { success: false, error };
