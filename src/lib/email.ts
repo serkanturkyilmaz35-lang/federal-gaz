@@ -42,12 +42,21 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
         const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
         const finalHtml = html.replace(/cid:logo/g, logoUrl);
 
+        // Create text version from HTML (simple strip tags)
+        const textVersion = html.replace(/<[^>]*>?/gm, '');
+
         const info = await transporter.sendMail({
             from: fromEmail,
             to,
             subject,
             html: finalHtml,
+            text: textVersion, // Fallback for clients that don't support HTML
             replyTo,
+            headers: {
+                'X-Entity-Ref-ID': new Date().getTime().toString(), // Unique ID
+                'List-Unsubscribe': `<mailto:${fromEmail}?subject=unsubscribe>`, // Anti-spam signal
+                'Precedence': 'bulk',
+            }
         });
 
         console.log('Email sent successfully:', info.messageId);
