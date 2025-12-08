@@ -403,12 +403,12 @@ export default function OrdersPage() {
                 }
 
                 return (
-                    <div className="relative group">
+                    <div className="relative">
                         <select
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
                             onClick={(e) => e.stopPropagation()}
-                            className={`appearance-none bg-transparent ${currentStatus?.color || 'text-white'} font-medium text-xs py-1 pr-6 pl-0 focus:outline-none cursor-pointer`}
+                            className={`appearance-none bg-transparent ${currentStatus?.color || 'text-white'} font-medium text-xs py-2 pr-8 pl-2 focus:outline-none cursor-pointer hover:bg-white/10 rounded-lg transition-colors w-full min-w-[120px]`}
                         >
                             {statusOptions.map((opt) => (
                                 <option key={opt.value} value={opt.value} className="bg-[#1c2127] text-gray-300">
@@ -416,7 +416,7 @@ export default function OrdersPage() {
                                 </option>
                             ))}
                         </select>
-                        <span className={`material-symbols-outlined text-[10px] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none ${currentStatus?.color || 'text-white'}`}>
+                        <span className={`material-symbols-outlined text-sm absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${currentStatus?.color || 'text-white'}`}>
                             expand_more
                         </span>
                     </div>

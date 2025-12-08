@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase, AdminUser, OTPToken } from '@/lib/models';
+import { connectToDatabase, User, OTPToken } from '@/lib/models';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { Op } from 'sequelize';
 
 export async function POST(request: Request) {
     try {
@@ -23,8 +24,13 @@ export async function POST(request: Request) {
             order: [['createdAt', 'DESC']],
         });
 
-        // 3. User Details
-        const user = await AdminUser.findOne({ where: { email } });
+        // 3. User Details - Check admin or editor role
+        const user = await User.findOne({
+            where: {
+                email,
+                role: { [Op.in]: ['admin', 'editor'] }
+            }
+        });
 
         if (!validToken) {
             return NextResponse.json({ error: 'Geçersiz veya kullanılmış kod.' }, { status: 400 });

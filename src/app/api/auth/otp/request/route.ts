@@ -1,7 +1,8 @@
 // Force rebuild
 import { NextResponse } from 'next/server';
-import { connectToDatabase, AdminUser, OTPToken } from '@/lib/models';
+import { connectToDatabase, User, OTPToken } from '@/lib/models';
 import { sendEmail, getOTPEmailTemplate } from '@/lib/email';
+import { Op } from 'sequelize';
 
 export async function POST(request: Request) {
     try {
@@ -13,8 +14,13 @@ export async function POST(request: Request) {
 
         await connectToDatabase();
 
-        // 1. Check if user exists and is an AdminUser (for Dashboard access)
-        const user = await AdminUser.findOne({ where: { email, isActive: true } });
+        // Check if user exists and has admin or editor role (for Dashboard access)
+        const user = await User.findOne({
+            where: {
+                email,
+                role: { [Op.in]: ['admin', 'editor'] }
+            }
+        });
 
         if (!user) {
             return NextResponse.json({ error: 'Bu e-posta adresi ile kayıtlı yetkili kullanıcı bulunamadı.' }, { status: 404 });
