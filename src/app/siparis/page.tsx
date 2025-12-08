@@ -275,6 +275,11 @@ export default function SiparisPage() {
     };
 
     const removeFromBasket = (id: number) => {
+        const itemToRemove = basket.find(item => item.id === id);
+        // If removing "Diğer" product, clear the notes
+        if (itemToRemove && (itemToRemove.product === "Diğer" || itemToRemove.product === "Other")) {
+            setContactData(prev => ({ ...prev, notes: "" }));
+        }
         setBasket(basket.filter(item => item.id !== id));
     };
 
@@ -292,8 +297,16 @@ export default function SiparisPage() {
             return;
         }
 
-        if (basket.length === 0 && (!currentProduct.product || !currentProduct.amount)) {
-            setError(t.emptyBasket);
+        if (basket.length === 0) {
+            // If basket is empty and no product is currently selected, show empty basket error
+            if (!currentProduct.product || !currentProduct.amount) {
+                setError(t.emptyBasket);
+                return;
+            }
+            // If there's a product selected but not added, remind user to add it first
+            setError(language === "TR"
+                ? "Lütfen önce ürünü sepete ekleyin veya sepetiniz boş."
+                : "Please add the product to basket first or your basket is empty.");
             return;
         }
 
