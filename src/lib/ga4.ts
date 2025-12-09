@@ -29,16 +29,22 @@ export async function getRealtimeUsers(): Promise<{ activeUsers: number; mobileU
     const client = getAnalyticsClient();
     const propertyId = process.env.GA_PROPERTY_ID;
 
+    console.log('GA4 getRealtimeUsers: client exists:', !!client, 'propertyId:', propertyId);
+
     if (!client || !propertyId) {
+        console.log('GA4 getRealtimeUsers: Missing client or propertyId');
         return { activeUsers: 0, mobileUsers: 0, desktopUsers: 0 };
     }
 
     try {
+        console.log('GA4 getRealtimeUsers: Calling runRealtimeReport for property:', propertyId);
         const [response] = await client.runRealtimeReport({
             property: `properties/${propertyId}`,
             metrics: [{ name: 'activeUsers' }],
             dimensions: [{ name: 'deviceCategory' }],
         });
+
+        console.log('GA4 getRealtimeUsers: Got response with', response.rows?.length || 0, 'rows');
 
         let totalUsers = 0;
         let mobileUsers = 0;
@@ -56,8 +62,9 @@ export async function getRealtimeUsers(): Promise<{ activeUsers: number; mobileU
         });
 
         return { activeUsers: totalUsers, mobileUsers, desktopUsers };
-    } catch (error) {
-        console.error('GA4 Realtime Error:', error);
+    } catch (error: any) {
+        console.error('GA4 Realtime Error:', error?.message || error);
+        console.error('GA4 Realtime Error Details:', JSON.stringify(error?.details || error?.code || 'no details'));
         return { activeUsers: 0, mobileUsers: 0, desktopUsers: 0 };
     }
 }
