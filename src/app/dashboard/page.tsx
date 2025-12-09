@@ -354,19 +354,31 @@ export default function DashboardPage() {
                 pdf.text(value, x + 4, y + 16);
             };
 
-            // Row 1
-            drawStatCard(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"));
-            drawStatCard(margin + cardWidth + gap, yPos, "Günlük Sipariş", stats.dailyOrders.toLocaleString("tr-TR"));
+            // Row 1: Toplam Sipariş, Günlük Sipariş, Toplam Üye
+            const cardWidth3 = (availableWidth - gap * 2) / 3;
+            const drawStatCard3 = (x: number, y: number, label: string, value: string) => {
+                pdf.setFillColor(248, 250, 252);
+                pdf.setDrawColor(226, 232, 240);
+                pdf.roundedRect(x, y, cardWidth3, cardHeight, 2, 2, "FD");
+                pdf.setFontSize(8);
+                pdf.setTextColor(100, 115, 130);
+                pdf.setFont("Roboto", "normal");
+                pdf.text(label, x + 3, y + 7);
+                pdf.setFontSize(11);
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFont("Roboto", "bold");
+                pdf.text(value, x + 3, y + 15);
+            };
+
+            drawStatCard3(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"));
+            drawStatCard3(margin + cardWidth3 + gap, yPos, "Günlük Sipariş", stats.dailyOrders.toLocaleString("tr-TR"));
+            drawStatCard3(margin + (cardWidth3 + gap) * 2, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
             yPos += cardHeight + gap;
 
-            // Row 2
-            drawStatCard(margin, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"));
-            drawStatCard(margin + cardWidth + gap, yPos, "Günlük Talep", stats.dailyContacts.toLocaleString("tr-TR"));
-            yPos += cardHeight + gap;
-
-            // Row 3
-            drawStatCard(margin, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
-            drawStatCard(margin + cardWidth + gap, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
+            // Row 2: Toplam Talep, Günlük Talep, Günlük Ziyaret
+            drawStatCard3(margin, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"));
+            drawStatCard3(margin + cardWidth3 + gap, yPos, "Günlük Talep", stats.dailyContacts.toLocaleString("tr-TR"));
+            drawStatCard3(margin + (cardWidth3 + gap) * 2, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
             yPos += cardHeight + 10; // Extra spacing after stats
 
 
@@ -647,6 +659,7 @@ export default function DashboardPage() {
 
             {/* Stats Cards - 6 cards in 3x2 on large screens, 2x3 on small */}
             <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+                {/* Row 1: Toplam Sipariş, Günlük Sipariş, Toplam Üye */}
                 <StatsCard
                     title="Toplam Sipariş"
                     value={stats.totalOrders.toLocaleString("tr-TR")}
@@ -658,6 +671,12 @@ export default function DashboardPage() {
                     icon="add_shopping_cart"
                 />
                 <StatsCard
+                    title="Toplam Üye"
+                    value={stats.totalUsers.toLocaleString("tr-TR")}
+                    icon="group"
+                />
+                {/* Row 2: Toplam Talep, Günlük Talep, Günlük Ziyaret */}
+                <StatsCard
                     title="Toplam Talep"
                     value={stats.totalContacts.toLocaleString("tr-TR")}
                     icon="chat_bubble"
@@ -666,11 +685,6 @@ export default function DashboardPage() {
                     title="Günlük Talep"
                     value={stats.dailyContacts.toLocaleString("tr-TR")}
                     icon="mark_chat_unread"
-                />
-                <StatsCard
-                    title="Toplam Üye"
-                    value={stats.totalUsers.toLocaleString("tr-TR")}
-                    icon="group"
                 />
                 <StatsCard
                     title="Günlük Ziyaret"
