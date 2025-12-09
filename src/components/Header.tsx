@@ -50,12 +50,12 @@ export default function Header() {
     };
 
     const navigation = [
-        { name: t.home, href: "/" },
-        { name: t.about, href: "/hakkimizda" },
-        { name: t.services, href: "/hizmetler" },
-        { name: t.products, href: "/urunler" },
-        { name: t.gallery, href: "/galeri" },
-        { name: t.contact, href: "/iletisim" },
+        { name: t.home, href: "/", title: language === 'TR' ? 'Federal Gaz Ana Sayfa' : 'Federal Gaz Home' },
+        { name: t.about, href: "/hakkimizda", title: language === 'TR' ? 'Federal Gaz Hakkında' : 'About Federal Gaz' },
+        { name: t.services, href: "/hizmetler", title: language === 'TR' ? 'Federal Gaz Hizmetleri' : 'Federal Gaz Services' },
+        { name: t.products, href: "/urunler", title: language === 'TR' ? 'Endüstriyel Gaz Ürünleri' : 'Industrial Gas Products' },
+        { name: t.gallery, href: "/galeri", title: language === 'TR' ? 'Federal Gaz Galeri' : 'Federal Gaz Gallery' },
+        { name: t.contact, href: "/iletisim", title: language === 'TR' ? 'Federal Gaz İletişim' : 'Contact Federal Gaz' },
     ];
 
     const navLinkClass = (path: string, isMobile = false) => {
@@ -97,20 +97,19 @@ export default function Header() {
                         {/* Mobile Login Button (Right) */}
                         <div className="lg:hidden flex items-center">
                             {user ? (
-                                <Link href="/profil" className="flex h-10 items-center justify-center rounded-lg px-3 font-bold text-white text-xs whitespace-nowrap" style={{ backgroundColor: '#686868' }}>
+                                <Link href="/profil" rel="nofollow" className="flex h-10 items-center justify-center rounded-lg px-3 font-bold text-white text-xs whitespace-nowrap" style={{ backgroundColor: '#686868' }}>
                                     <span>{user.name.split(' ')[0]}</span>
                                 </Link>
                             ) : (
-                                <Link href="/giris" className="flex h-10 items-center justify-center rounded-lg px-3 font-bold text-white text-xs whitespace-nowrap" style={{ backgroundColor: '#686868' }}>
+                                <Link href="/giris" rel="nofollow" className="flex h-10 items-center justify-center rounded-lg px-3 font-bold text-white text-xs whitespace-nowrap" style={{ backgroundColor: '#686868' }}>
                                     <span>{t.login}</span>
                                 </Link>
                             )}
                         </div>
 
-                        {/* Desktop Navigation */}
                         <nav className="hidden flex-1 items-center justify-center gap-4 lg:flex">
                             {navigation.map((item) => (
-                                <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                                <Link key={item.href} href={item.href} title={item.title} className={navLinkClass(item.href)}>
                                     {item.name}
                                 </Link>
                             ))}
@@ -121,14 +120,14 @@ export default function Header() {
                             {loading ? (
                                 <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
                             ) : user ? (
-                                <Link href="/profil" className="flex h-10 items-center gap-2 rounded-lg px-4 font-bold text-white transition-transform hover:scale-105" style={{ backgroundColor: '#686868' }}>
+                                <Link href="/profil" rel="nofollow" className="flex h-10 items-center gap-2 rounded-lg px-4 font-bold text-white transition-transform hover:scale-105" style={{ backgroundColor: '#686868' }}>
                                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     <span>{user.name}</span>
                                 </Link>
                             ) : (
-                                <Link href="/giris" className="flex h-10 items-center gap-2 rounded-lg px-4 font-bold text-white transition-transform hover:scale-105" style={{ backgroundColor: '#686868' }}>
+                                <Link href="/giris" rel="nofollow" className="flex h-10 items-center gap-2 rounded-lg px-4 font-bold text-white transition-transform hover:scale-105" style={{ backgroundColor: '#686868' }}>
                                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
@@ -187,6 +186,7 @@ export default function Header() {
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                title={item.title}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={navLinkClass(item.href, true)}
                             >

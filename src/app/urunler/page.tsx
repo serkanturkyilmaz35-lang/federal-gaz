@@ -124,6 +124,7 @@ export default function UrunlerPage() {
                                     <p className="text-secondary/70 dark:text-white/60">{product.desc}</p>
                                     <Link
                                         href={`/urunler/${product.slug}`}
+                                        title={product.title}
                                         className="mt-4 inline-block text-sm font-bold text-primary hover:underline"
                                     >
                                         {t.moreInfo}
