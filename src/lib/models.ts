@@ -786,6 +786,102 @@ SiteSettings.init(
     }
 );
 
+// --- Product Model (Ürün Kategorileri) ---
+interface ProductAttributes {
+    id: number;
+    slug: string;
+    slugEN: string;
+    titleTR: string;
+    titleEN: string;
+    descTR: string;
+    descEN: string;
+    contentTR: string; // Detaylı açıklama
+    contentEN: string;
+    image: string;
+    sortOrder: number;
+    isActive: boolean;
+}
+
+interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'sortOrder' | 'isActive' | 'contentTR' | 'contentEN'> { }
+
+export class Product extends Model<ProductAttributes, ProductCreationAttributes> implements ProductAttributes {
+    declare id: number;
+    declare slug: string;
+    declare slugEN: string;
+    declare titleTR: string;
+    declare titleEN: string;
+    declare descTR: string;
+    declare descEN: string;
+    declare contentTR: string;
+    declare contentEN: string;
+    declare image: string;
+    declare sortOrder: number;
+    declare isActive: boolean;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+Product.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        slug: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        slugEN: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        titleTR: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        titleEN: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        descTR: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+        },
+        descEN: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+        },
+        contentTR: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        contentEN: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        image: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        sortOrder: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+        isActive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'products',
+    }
+);
+
 // Relationships - Wrapped in Try/Catch to prevent crashes if models are not fully ready (Fixes HMR circular issues)
 try {
     if (User && Address) {
