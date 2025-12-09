@@ -230,7 +230,7 @@ export default function QuotesPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                     <h2 className="text-xl font-bold text-white">
-                        Toplam {allContacts.length} Talep
+                        Toplam {contactForms.length} Talep
                     </h2>
                     {selectedContacts.length > 0 && (
                         <button

@@ -55,7 +55,7 @@ export default function DashboardPage() {
     const [realTimeStats, setRealTimeStats] = useState({ activeUsers: 0, mobileUsers: 0, desktopUsers: 0 });
     const [activePages, setActivePages] = useState<any[]>([]);
     const [topPages, setTopPages] = useState<any[]>([]);
-    const [dbStats, setDbStats] = useState({ totalOrders: 0, totalUsers: 0, totalContacts: 0 });
+    const [dbStats, setDbStats] = useState({ totalOrders: 0, totalUsers: 0, totalContacts: 0, totalPageViews: 0 });
 
     // Fetch Orders for Real Data
     const fetchOrders = async () => {
@@ -93,7 +93,8 @@ export default function DashboardPage() {
                 setDbStats({
                     totalOrders: data.stats.totalOrders,
                     totalUsers: data.stats.totalUsers,
-                    totalContacts: data.stats.totalContacts
+                    totalContacts: data.stats.totalContacts,
+                    totalPageViews: data.stats.totalPageViews || 0
                 });
             }
         } catch (error) {
@@ -133,7 +134,7 @@ export default function DashboardPage() {
         totalOrders: dbStats.totalOrders || filteredOrders.length,
         totalQuotes: filteredQuotes.length,
         activeUsers: dbStats.totalUsers || 0,
-        siteVisits: dbStats.totalContacts || 0,
+        siteVisits: dbStats.totalPageViews || 0,
     };
 
 

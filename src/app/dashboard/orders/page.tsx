@@ -471,7 +471,7 @@ export default function OrdersPage() {
 
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 lg:px-5 py-3 border-b border-[#3b4754] gap-3">
-                    <h1 className="text-xl lg:text-2xl font-bold text-white leading-normal">Toplam {orders.length} Sipariş</h1>
+                    <h1 className="text-xl lg:text-2xl font-bold text-white leading-normal">Toplam {filteredOrders.length} Sipariş</h1>
                     <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                         {/* Date Filter */}
                         <DateFilter
