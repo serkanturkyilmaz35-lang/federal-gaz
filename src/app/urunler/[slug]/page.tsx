@@ -119,19 +119,32 @@ const productData: Record<string, { TR: ProductContent; EN: ProductContent }> = 
     }
 };
 
-// Helper for bidirectional slug mapping (simple version)
-// In a real app, we might handle English slugs in URL, but for now we rely on the main page linking to these keys
-// Since links in the main page are hardcoded to these keys (e.g. /urunler/medikal-gazlar), this works for both languages if we just use the key to look up content.
+// English to Turkish slug mapping
+const slugMapping: Record<string, string> = {
+    // English slugs -> Turkish keys
+    'medical-gases': 'medikal-gazlar',
+    'industrial-gases': 'endustriyel-gazlar',
+    'welding-gases': 'kaynak-gazlari',
+    'food-gases': 'gida-gazlari',
+    'special-gases': 'ozel-gazlar',
+    'cryogenic-liquids': 'kriyojenik-sivilar',
+    // Turkish slugs map to themselves
+    'medikal-gazlar': 'medikal-gazlar',
+    'endustriyel-gazlar': 'endustriyel-gazlar',
+    'kaynak-gazlari': 'kaynak-gazlari',
+    'gida-gazlari': 'gida-gazlari',
+    'ozel-gazlar': 'ozel-gazlar',
+    'kriyojenik-sivilar': 'kriyojenik-sivilar',
+};
 
 export default function ProductDetailPage() {
     const { language } = useLanguage();
     const params = useParams();
     const slug = params.slug as string;
 
-    // Handle mapping if english slugs were used, but currently page.tsx uses Turkish style slugs for both. 
-    // We will just look up by slug.
-
-    const product = productData[slug];
+    // Map English slugs to Turkish keys, or use the slug directly if it's already Turkish
+    const productKey = slugMapping[slug] || slug;
+    const product = productData[productKey];
 
     if (!product) {
         return (
