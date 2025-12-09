@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { User, connectToDatabase } from '@/lib/models';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Timeout wrapper function
 const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
@@ -12,6 +13,14 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
 };
 
 export async function POST(request: Request) {
+    // Rate limiting check
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(`login:${clientIP}`, RATE_LIMITS.login);
+
+    if (rateLimitResult.limited) {
+        return rateLimitResponse(rateLimitResult.resetIn);
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
