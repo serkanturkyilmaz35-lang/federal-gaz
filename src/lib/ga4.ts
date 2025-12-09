@@ -11,8 +11,12 @@ function getAnalyticsClient(): BetaAnalyticsDataClient | null {
         return null;
     }
 
+    // Debug: log first 50 chars to verify env var is loaded
+    console.log('GA4: Credentials JSON starts with:', credentialsJson.substring(0, 50));
+
     try {
         const credentials = JSON.parse(credentialsJson);
+        console.log('GA4: Parsed credentials, project_id:', credentials.project_id);
         analyticsClient = new BetaAnalyticsDataClient({ credentials });
         return analyticsClient;
     } catch (error) {
