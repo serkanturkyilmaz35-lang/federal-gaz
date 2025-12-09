@@ -15,15 +15,23 @@ interface Address {
     isDefault: boolean;
 }
 
+interface OrderItem {
+    id: number;
+    status: string;
+    createdAt: string;
+    details: any;
+}
+
 interface Member {
     id: number;
     name: string;
     email: string;
     phone: string;
-    role: "admin" | "editor" | "user";
-    status: "active" | "inactive";
+    isActive: boolean;
     joinDate: string;
     addresses: Address[];
+    orders: OrderItem[];
+    totalOrders: number;
 }
 
 export default function MembersPage() {
@@ -53,10 +61,11 @@ export default function MembersPage() {
                     name: u.name,
                     email: u.email,
                     phone: u.phone || "-",
-                    role: u.role || 'user',
-                    status: 'active',
+                    isActive: u.isActive !== false, // Default to true
                     joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR'),
-                    addresses: u.addresses || []
+                    addresses: u.addresses || [],
+                    orders: u.orders || [],
+                    totalOrders: u.totalOrders || 0
                 }));
                 setMembers(formattedMembers);
             }
@@ -136,6 +145,28 @@ export default function MembersPage() {
         }
     };
 
+    const getStatusLabel = (status: string) => {
+        const labels: Record<string, string> = {
+            'PENDING': 'Beklemede',
+            'PREPARING': 'Hazırlanıyor',
+            'SHIPPING': 'Yolda',
+            'COMPLETED': 'Tamamlandı',
+            'CANCELLED': 'İptal'
+        };
+        return labels[status] || status;
+    };
+
+    const getStatusColor = (status: string) => {
+        const colors: Record<string, string> = {
+            'PENDING': 'text-yellow-400',
+            'PREPARING': 'text-blue-400',
+            'SHIPPING': 'text-purple-400',
+            'COMPLETED': 'text-green-400',
+            'CANCELLED': 'text-red-400'
+        };
+        return colors[status] || 'text-gray-400';
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -153,7 +184,7 @@ export default function MembersPage() {
                         Üyeler
                     </h1>
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
-                        Web sitesine kayıtlı tüm üyeleri yönetin.
+                        Web sitesine kayıtlı tüm müşterileri yönetin.
                     </p>
                 </div>
             </div>
@@ -169,7 +200,7 @@ export default function MembersPage() {
             {/* Main Card */}
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 lg:px-5 py-3 border-b border-[#3b4754] gap-3">
-                    <h2 className="text-xl font-bold text-white">Toplam {filteredMembers.length} Üye</h2>
+                    <h2 className="text-xl font-bold text-white">Toplam {filteredMembers.length} Müşteri</h2>
                     <DateFilter
                         dateRange={dateRange}
                         setDateRange={setDateRange}
@@ -184,11 +215,12 @@ export default function MembersPage() {
                     <table className="w-full">
                         <thead className="bg-[#1c2127] border-b border-[#3b4754] sticky top-0">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Üye</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Müşteri</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Telefon</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Rol</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Sipariş</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Adres</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Kayıt</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Üyelik</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Durum</th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">İşlemler</th>
                             </tr>
                         </thead>
@@ -210,13 +242,8 @@ export default function MembersPage() {
                                         <span className="text-gray-300">{member.phone}</span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.role === 'admin'
-                                                ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                                : member.role === 'editor'
-                                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                    : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-                                            }`}>
-                                            {member.role === 'admin' ? 'Yönetici' : member.role === 'editor' ? 'Editör' : 'Üye'}
+                                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-[#137fec]/10 text-[#137fec] border border-[#137fec]/20">
+                                            {member.totalOrders} sipariş
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
@@ -229,6 +256,14 @@ export default function MembersPage() {
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className="text-gray-400 text-sm">{member.joinDate}</span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.isActive
+                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                                : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            }`}>
+                                            {member.isActive ? 'Aktif' : 'Pasif'}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-4 text-right">
                                         <button
@@ -257,12 +292,12 @@ export default function MembersPage() {
                             ))}
                             {filteredMembers.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                                    <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
                                         <div className="flex flex-col items-center gap-4">
                                             <span className="material-symbols-outlined text-6xl text-gray-600">group</span>
                                             <div>
-                                                <p className="text-lg font-medium text-gray-300">Henüz üye yok</p>
-                                                <p className="text-sm">Web sitesine kayıt olan üyeler burada görünecek.</p>
+                                                <p className="text-lg font-medium text-gray-300">Henüz müşteri yok</p>
+                                                <p className="text-sm">Web sitesine kayıt olan müşteriler burada görünecek.</p>
                                             </div>
                                         </div>
                                     </td>
@@ -276,9 +311,9 @@ export default function MembersPage() {
             {/* Detail Modal */}
             {isModalOpen && editingMember && isDetailModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-2xl m-4 border border-[#3b4754] max-h-[90vh] overflow-y-auto">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-3xl m-4 border border-[#3b4754] max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white">Üye Detayı</h2>
+                            <h2 className="text-xl font-bold text-white">Müşteri Detayı</h2>
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="text-gray-400 hover:text-white"
@@ -296,41 +331,70 @@ export default function MembersPage() {
                                 <div>
                                     <h3 className="text-xl font-bold text-white">{editingMember.name}</h3>
                                     <p className="text-gray-400">{editingMember.email}</p>
+                                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-[#137fec]/10 text-[#137fec] border border-[#137fec]/20 mt-1 inline-block">
+                                        Müşteri
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Info Grid */}
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                                 <div className="bg-[#111418] p-4 rounded-lg">
                                     <p className="text-sm text-gray-400 mb-1">Telefon</p>
                                     <p className="text-white font-medium">{editingMember.phone}</p>
                                 </div>
                                 <div className="bg-[#111418] p-4 rounded-lg">
-                                    <p className="text-sm text-gray-400 mb-1">Kayıt Tarihi</p>
+                                    <p className="text-sm text-gray-400 mb-1">Üyelik Tarihi</p>
                                     <p className="text-white font-medium">{editingMember.joinDate}</p>
                                 </div>
                                 <div className="bg-[#111418] p-4 rounded-lg">
-                                    <p className="text-sm text-gray-400 mb-1">Rol</p>
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${editingMember.role === 'admin'
-                                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                            : editingMember.role === 'editor'
-                                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-                                        }`}>
-                                        {editingMember.role === 'admin' ? 'Yönetici' : editingMember.role === 'editor' ? 'Editör' : 'Üye'}
-                                    </span>
+                                    <p className="text-sm text-gray-400 mb-1">Toplam Sipariş</p>
+                                    <p className="text-white font-medium">{editingMember.totalOrders}</p>
                                 </div>
                                 <div className="bg-[#111418] p-4 rounded-lg">
-                                    <p className="text-sm text-gray-400 mb-1">Adres Sayısı</p>
-                                    <p className="text-white font-medium">{editingMember.addresses.length} adres</p>
+                                    <p className="text-sm text-gray-400 mb-1">Hesap Durumu</p>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${editingMember.isActive
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                        }`}>
+                                        {editingMember.isActive ? 'Aktif' : 'Pasif'}
+                                    </span>
                                 </div>
+                            </div>
+
+                            {/* Last 5 Orders */}
+                            <div className="mb-6">
+                                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[#137fec]">shopping_cart</span>
+                                    Son Siparişler
+                                </h4>
+                                {editingMember.orders.length === 0 ? (
+                                    <div className="bg-[#111418] p-6 rounded-lg text-center text-gray-400">
+                                        <span className="material-symbols-outlined text-4xl mb-2">shopping_cart</span>
+                                        <p>Henüz sipariş bulunmuyor</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {editingMember.orders.map((order) => (
+                                            <div key={order.id} className="bg-[#111418] p-4 rounded-lg border border-[#3b4754] flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-gray-400 font-mono">#{10000 + order.id}</span>
+                                                    <span className="text-gray-500">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</span>
+                                                </div>
+                                                <span className={`${getStatusColor(order.status)} font-medium text-sm`}>
+                                                    {getStatusLabel(order.status)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Addresses */}
                             <div>
                                 <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[#137fec]">location_on</span>
-                                    Kayıtlı Adresler
+                                    Kayıtlı Adresler ({editingMember.addresses.length})
                                 </h4>
                                 {editingMember.addresses.length === 0 ? (
                                     <div className="bg-[#111418] p-6 rounded-lg text-center text-gray-400">
@@ -394,7 +458,7 @@ export default function MembersPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
                     <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-md m-4 border border-[#3b4754]">
                         <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white">Üye Bilgilerini Düzenle</h2>
+                            <h2 className="text-xl font-bold text-white">Müşteri Bilgilerini Düzenle</h2>
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="text-gray-400 hover:text-white"
