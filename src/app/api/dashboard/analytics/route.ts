@@ -1,17 +1,35 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase, Order, User, ContactRequest } from '@/lib/models';
 import { getRealtimeUsers, getActivePages, getTopPages, getTotalPageViews } from '@/lib/ga4';
+import { Op } from 'sequelize';
 
 export async function GET() {
     try {
         await connectToDatabase();
 
+        // Today's date range
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
         // Get real counts from database
         const totalOrders = await Order.count();
-        const pendingOrders = await Order.count({ where: { status: 'PENDING' } });
+        const dailyOrders = await Order.count({
+            where: {
+                createdAt: { [Op.between]: [todayStart, todayEnd] }
+            } as any
+        });
         const totalUsers = await User.count();
         const totalContacts = await ContactRequest.count();
-        const newContacts = await ContactRequest.count({ where: { status: 'new' } });
+        const dailyContacts = await ContactRequest.count({
+            where: {
+                createdAt: { [Op.between]: [todayStart, todayEnd] }
+            } as any
+        });
+
+        // Last 7 days chart data
+        const chartData = await getLast7DaysData();
 
         // Try to get real GA4 data
         const [realTimeData, activePagesData, topPagesData, totalPageViews] = await Promise.all([
@@ -40,12 +58,13 @@ export async function GET() {
             gaConfigured,
             stats: {
                 totalOrders,
-                pendingOrders,
+                dailyOrders,
                 totalUsers,
                 totalContacts,
-                newContacts,
+                dailyContacts,
                 totalPageViews: totalPageViews || 0,
             },
+            chartData,
             realTime,
             activePages,
             topPages,
@@ -56,3 +75,42 @@ export async function GET() {
     }
 }
 
+// Helper function to get last 7 days data for charts
+async function getLast7DaysData() {
+    const labels: string[] = [];
+    const ordersData: number[] = [];
+    const contactsData: number[] = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        // Format label as "5 Ara"
+        const day = date.getDate();
+        const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+        const monthLabel = months[date.getMonth()];
+        labels.push(`${day} ${monthLabel}`);
+
+        // Count orders for this day
+        const orderCount = await Order.count({
+            where: {
+                createdAt: { [Op.between]: [date, nextDate] }
+            } as any
+        });
+        ordersData.push(orderCount);
+
+        // Count contacts for this day
+        const contactCount = await ContactRequest.count({
+            where: {
+                createdAt: { [Op.between]: [date, nextDate] }
+            } as any
+        });
+        contactsData.push(contactCount);
+    }
+
+    return { labels, ordersData, contactsData };
+}

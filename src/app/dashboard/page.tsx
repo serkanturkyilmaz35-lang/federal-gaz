@@ -55,7 +55,19 @@ export default function DashboardPage() {
     const [realTimeStats, setRealTimeStats] = useState({ activeUsers: 0, mobileUsers: 0, desktopUsers: 0 });
     const [activePages, setActivePages] = useState<any[]>([]);
     const [topPages, setTopPages] = useState<any[]>([]);
-    const [dbStats, setDbStats] = useState({ totalOrders: 0, totalUsers: 0, totalContacts: 0, totalPageViews: 0 });
+    const [dbStats, setDbStats] = useState({
+        totalOrders: 0,
+        dailyOrders: 0,
+        totalUsers: 0,
+        totalContacts: 0,
+        dailyContacts: 0,
+        totalPageViews: 0
+    });
+    const [chartData, setChartData] = useState<{ labels: string[], ordersData: number[], contactsData: number[] }>({
+        labels: [],
+        ordersData: [],
+        contactsData: []
+    });
 
     // Fetch Orders for Real Data
     const fetchOrders = async () => {
@@ -92,10 +104,15 @@ export default function DashboardPage() {
                 setTopPages(data.topPages);
                 setDbStats({
                     totalOrders: data.stats.totalOrders,
+                    dailyOrders: data.stats.dailyOrders || 0,
                     totalUsers: data.stats.totalUsers,
                     totalContacts: data.stats.totalContacts,
+                    dailyContacts: data.stats.dailyContacts || 0,
                     totalPageViews: data.stats.totalPageViews || 0
                 });
+                if (data.chartData) {
+                    setChartData(data.chartData);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch analytics", error);
@@ -131,23 +148,21 @@ export default function DashboardPage() {
 
     // Stats - use real DB data
     const stats = {
-        totalOrders: dbStats.totalOrders || filteredOrders.length,
-        totalQuotes: filteredQuotes.length,
-        activeUsers: dbStats.totalUsers || 0,
-        siteVisits: dbStats.totalPageViews || 0,
+        totalOrders: dbStats.totalOrders,
+        dailyOrders: dbStats.dailyOrders,
+        totalContacts: dbStats.totalContacts,
+        dailyContacts: dbStats.dailyContacts,
+        totalUsers: dbStats.totalUsers,
+        dailyPageViews: dbStats.totalPageViews,
     };
 
-
-    // Chart data - Dynamic based on filter (Simulated)
-    // For simplicity, we just scale the data based on filter length to show "change"
-    const factor = filteredOrders.length > 0 ? 1 : 0.5;
-
+    // Chart data - Use REAL data from API
     const lineChartData = {
-        labels: dateRange === 'today' ? ["09:00", "12:00", "15:00", "18:00"] : ["1 Ara", "5 Ara", "10 Ara", "15 Ara", "20 Ara", "25 Ara", "30 Ara"],
+        labels: chartData.labels.length > 0 ? chartData.labels : ["Veri Yok"],
         datasets: [
             {
                 label: "Siparişler",
-                data: dateRange === 'today' ? [5, 12, 8, 15] : [65 * factor, 78 * factor, 90 * factor, 81 * factor, 95 * factor, 110 * factor, 125 * factor],
+                data: chartData.ordersData.length > 0 ? chartData.ordersData : [0],
                 borderColor: "#137fec",
                 backgroundColor: "rgba(19, 127, 236, 0.1)",
                 fill: true,
@@ -155,7 +170,7 @@ export default function DashboardPage() {
             },
             {
                 label: "Talepler",
-                data: dateRange === 'today' ? [2, 5, 3, 6] : [45 * factor, 52 * factor, 60 * factor, 55 * factor, 70 * factor, 85 * factor, 95 * factor],
+                data: chartData.contactsData.length > 0 ? chartData.contactsData : [0],
                 borderColor: "#22c55e",
                 backgroundColor: "rgba(34, 197, 94, 0.1)",
                 fill: true,
@@ -341,12 +356,17 @@ export default function DashboardPage() {
 
             // Row 1
             drawStatCard(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"));
-            drawStatCard(margin + cardWidth + gap, yPos, "Toplam Talep", stats.totalQuotes.toLocaleString("tr-TR"));
+            drawStatCard(margin + cardWidth + gap, yPos, "Günlük Sipariş", stats.dailyOrders.toLocaleString("tr-TR"));
             yPos += cardHeight + gap;
 
             // Row 2
-            drawStatCard(margin, yPos, "Aktif Kullanıcılar", stats.activeUsers.toLocaleString("tr-TR"));
-            drawStatCard(margin + cardWidth + gap, yPos, "Site Ziyaretleri", stats.siteVisits.toLocaleString("tr-TR"));
+            drawStatCard(margin, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"));
+            drawStatCard(margin + cardWidth + gap, yPos, "Günlük Talep", stats.dailyContacts.toLocaleString("tr-TR"));
+            yPos += cardHeight + gap;
+
+            // Row 3
+            drawStatCard(margin, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
+            drawStatCard(margin + cardWidth + gap, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
             yPos += cardHeight + 10; // Extra spacing after stats
 
 
@@ -625,30 +645,36 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {/* Stats Cards - 6 cards in 3x2 on large screens, 2x3 on small */}
+            <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
                 <StatsCard
                     title="Toplam Sipariş"
                     value={stats.totalOrders.toLocaleString("tr-TR")}
-                    change={{ value: "+5%", trend: "up" }}
                     icon="shopping_cart"
                 />
                 <StatsCard
+                    title="Günlük Sipariş"
+                    value={stats.dailyOrders.toLocaleString("tr-TR")}
+                    icon="add_shopping_cart"
+                />
+                <StatsCard
                     title="Toplam Talep"
-                    value={stats.totalQuotes.toLocaleString("tr-TR")}
-                    change={{ value: "-2%", trend: "down" }}
+                    value={stats.totalContacts.toLocaleString("tr-TR")}
                     icon="chat_bubble"
                 />
                 <StatsCard
-                    title="Aktif Kullanıcılar"
-                    value={stats.activeUsers.toLocaleString("tr-TR")}
-                    change={{ value: "+12%", trend: "up" }}
+                    title="Günlük Talep"
+                    value={stats.dailyContacts.toLocaleString("tr-TR")}
+                    icon="mark_chat_unread"
+                />
+                <StatsCard
+                    title="Toplam Üye"
+                    value={stats.totalUsers.toLocaleString("tr-TR")}
                     icon="group"
                 />
                 <StatsCard
-                    title="Site Ziyaretleri"
-                    value={stats.siteVisits.toLocaleString("tr-TR")}
-                    change={{ value: "+8%", trend: "up" }}
+                    title="Günlük Ziyaret"
+                    value={stats.dailyPageViews.toLocaleString("tr-TR")}
                     icon="visibility"
                 />
             </div>
