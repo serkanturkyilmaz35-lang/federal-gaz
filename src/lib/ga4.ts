@@ -114,7 +114,7 @@ export async function getTopPages(): Promise<Array<{ name: string; views: number
     try {
         const [response] = await client.runReport({
             property: `properties/${propertyId}`,
-            dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+            dateRanges: [{ startDate: 'today', endDate: 'today' }],
             metrics: [
                 { name: 'screenPageViews' },
                 { name: 'activeUsers' },
@@ -148,7 +148,7 @@ export async function getTotalPageViews(): Promise<number> {
     try {
         const [response] = await client.runReport({
             property: `properties/${propertyId}`,
-            dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+            dateRanges: [{ startDate: 'today', endDate: 'today' }],
             metrics: [{ name: 'screenPageViews' }],
         });
 
