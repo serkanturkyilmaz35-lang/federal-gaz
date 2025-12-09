@@ -21,6 +21,9 @@ export async function GET() {
             getTotalPageViews(),
         ]);
 
+        // Check if GA is configured based on credentials existence
+        const gaConfigured = !!(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON && process.env.GA_PROPERTY_ID);
+
         // Use GA data if available, otherwise fallback to estimates
         const hasGAData = realTimeData.activeUsers > 0 || activePagesData.length > 0;
 
@@ -48,7 +51,7 @@ export async function GET() {
 
         return NextResponse.json({
             success: true,
-            gaConfigured: hasGAData,
+            gaConfigured,
             stats: {
                 totalOrders,
                 pendingOrders,
