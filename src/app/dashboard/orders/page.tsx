@@ -49,7 +49,7 @@ export default function OrdersPage() {
 
     // Removed local searchTerm state [const [searchTerm, setSearchTerm] = useState("");]
 
-    const [dateRange, setDateRange] = useState<DateRangeOption>("all");
+    const [dateRange, setDateRange] = useState<DateRangeOption>("today");
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
 

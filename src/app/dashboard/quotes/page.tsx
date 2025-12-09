@@ -29,7 +29,7 @@ export default function QuotesPage() {
     const [isBulkDelete, setIsBulkDelete] = useState(false);
 
     // Date Filter State
-    const [dateRange, setDateRange] = useState<DateRangeOption>("all");
+    const [dateRange, setDateRange] = useState<DateRangeOption>("today");
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
 

@@ -39,6 +39,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
+    const [initialItems, setInitialItems] = useState<OrderItem[]>([]); // Track initial state for dirty check
 
     // Cancellation Modal State
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -61,6 +62,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             if (res.ok) {
                 const data = await res.json();
                 setOrder(data.order);
+                setInitialItems(data.order.details?.items || []);
             } else if (res.status === 401) {
                 // API rejected -> Not logged in as Admin
                 router.push('/login');
@@ -135,6 +137,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const customerAddress = customer.address || details.address || '-';
     const notes = details.notes || '-';
     const items = details.items || [];
+
+    // Check if items have changed
+    const isDirty = JSON.stringify(items) !== JSON.stringify(initialItems);
 
     const handleStatusChange = async (newStatus: string) => {
         if (!order) return;
@@ -443,7 +448,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 <td colSpan={4} className="px-6 py-4 text-right">
                                                     <button
                                                         onClick={handleSave}
-                                                        disabled={saving || items.length === 0}
+                                                        disabled={saving || items.length === 0 || isCancelled || !isDirty}
                                                         className="bg-[#137fec] text-white px-6 py-2.5 rounded-lg font-bold shadow-lg hover:bg-[#137fec]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-2"
                                                     >
                                                         {saving ? (
