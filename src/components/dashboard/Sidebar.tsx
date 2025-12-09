@@ -16,6 +16,7 @@ const menuItems: MenuItem[] = [
     { icon: "shopping_cart", label: "Siparişler", href: "/dashboard/orders" },
     { icon: "chat_bubble", label: "Talepler", href: "/dashboard/quotes" },
     { icon: "group", label: "Kullanıcılar", href: "/dashboard/users" },
+    { icon: "person", label: "Üyeler", href: "/dashboard/members" },
     { icon: "inventory_2", label: "Ürünler", href: "/dashboard/products" },
     { icon: "build", label: "Hizmetler", href: "/dashboard/services" },
     { icon: "article", label: "İçerik Yönetimi", href: "/dashboard/content" },
