@@ -733,6 +733,59 @@ NotificationRead.init(
     }
 );
 
+// --- SiteSettings Model (Site Ayarları) ---
+interface SiteSettingsAttributes {
+    id: number;
+    key: string; // e.g., 'site_name', 'contact_phone', 'instagram_url'
+    value: string;
+    category: 'general' | 'contact' | 'social' | 'seo';
+    description?: string;
+}
+
+interface SiteSettingsCreationAttributes extends Optional<SiteSettingsAttributes, 'id' | 'description'> { }
+
+export class SiteSettings extends Model<SiteSettingsAttributes, SiteSettingsCreationAttributes> implements SiteSettingsAttributes {
+    declare id: number;
+    declare key: string;
+    declare value: string;
+    declare category: 'general' | 'contact' | 'social' | 'seo';
+    declare description: string | undefined;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+SiteSettings.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        key: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        value: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+        },
+        category: {
+            type: DataTypes.ENUM('general', 'contact', 'social', 'seo'),
+            allowNull: false,
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'site_settings',
+    }
+);
+
 // Relationships - Wrapped in Try/Catch to prevent crashes if models are not fully ready (Fixes HMR circular issues)
 try {
     if (User && Address) {
