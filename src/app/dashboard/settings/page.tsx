@@ -63,13 +63,11 @@ export default function SettingsPage() {
         setSuccessMessage("");
 
         try {
-            // Convert settings object to array format
             const settingsArray = Object.entries(settings).map(([key, value]) => {
                 let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
                 if (key.startsWith('contact_')) category = 'contact';
                 else if (key.includes('_url') && !key.startsWith('seo_')) category = 'social';
                 else if (key.startsWith('seo_')) category = 'seo';
-                else if (['site_name', 'site_slogan', 'logo_url', 'favicon_url'].includes(key)) category = 'general';
 
                 return { key, value, category };
             });
@@ -96,118 +94,112 @@ export default function SettingsPage() {
     };
 
     const tabs = [
-        { id: 'general', label: 'Genel', icon: '⚙️' },
-        { id: 'contact', label: 'İletişim', icon: '📞' },
-        { id: 'social', label: 'Sosyal Medya', icon: '🌐' },
-        { id: 'seo', label: 'SEO', icon: '🔍' },
+        { id: 'general', label: 'Genel', icon: 'settings' },
+        { id: 'contact', label: 'İletişim', icon: 'phone' },
+        { id: 'social', label: 'Sosyal Medya', icon: 'public' },
+        { id: 'seo', label: 'SEO', icon: 'search' },
     ];
 
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#137fec]"></div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Ayarlar</h1>
-                    <p className="text-sm text-gray-500 mt-1">Site ayarlarını yönetin</p>
+        <div className="h-full flex flex-col">
+            {/* Page Header */}
+            <div className="mb-4 lg:mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">
+                        Ayarlar
+                    </h1>
+                    <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
+                        Site ayarlarını yönetin.
+                    </p>
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-6 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors"
                 >
-                    {saving ? (
-                        <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                            Kaydediliyor...
-                        </>
-                    ) : (
-                        <>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Kaydet
-                        </>
-                    )}
+                    <span className="material-symbols-outlined text-sm">
+                        {saving ? "hourglass_empty" : "save"}
+                    </span>
+                    {saving ? "Kaydediliyor..." : "Kaydet"}
                 </button>
             </div>
 
             {/* Success Message */}
             {successMessage && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined">check_circle</span>
                     {successMessage}
                 </div>
             )}
 
-            {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="border-b border-gray-100">
+            {/* Main Card */}
+            <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
+                {/* Tabs */}
+                <div className="border-b border-[#3b4754]">
                     <nav className="flex">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
-                                        ? 'text-primary border-b-2 border-primary bg-primary/5'
-                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === tab.id
+                                        ? 'text-[#137fec] border-b-2 border-[#137fec] bg-[#137fec]/5'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
-                                <span className="mr-2">{tab.icon}</span>
-                                {tab.label}
+                                <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+                                <span className="hidden sm:inline">{tab.label}</span>
                             </button>
                         ))}
                     </nav>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 overflow-y-auto flex-1">
                     {/* General Settings */}
                     {activeTab === 'general' && (
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Site Adı</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Site Adı</label>
                                 <input
                                     type="text"
                                     value={settings.site_name}
                                     onChange={(e) => updateSetting('site_name', e.target.value)}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Slogan</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Slogan</label>
                                 <input
                                     type="text"
                                     value={settings.site_slogan}
                                     onChange={(e) => updateSetting('site_slogan', e.target.value)}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Logo URL</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Logo URL</label>
                                     <input
                                         type="text"
                                         value={settings.logo_url}
                                         onChange={(e) => updateSetting('logo_url', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Favicon URL</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Favicon URL</label>
                                     <input
                                         type="text"
                                         value={settings.favicon_url}
                                         onChange={(e) => updateSetting('favicon_url', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                             </div>
@@ -218,61 +210,61 @@ export default function SettingsPage() {
                     {activeTab === 'contact' && (
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Adres</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Adres</label>
                                 <textarea
                                     value={settings.contact_address}
                                     onChange={(e) => updateSetting('contact_address', e.target.value)}
                                     rows={2}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
-                            <div className="grid grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefon 1</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 1</label>
                                     <input
                                         type="text"
                                         value={settings.contact_phone}
                                         onChange={(e) => updateSetting('contact_phone', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefon 2 (GSM)</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 2 (GSM)</label>
                                     <input
                                         type="text"
                                         value={settings.contact_phone_2}
                                         onChange={(e) => updateSetting('contact_phone_2', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefon 3 (GSM)</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 3 (GSM)</label>
                                     <input
                                         type="text"
                                         value={settings.contact_phone_3}
                                         onChange={(e) => updateSetting('contact_phone_3', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">E-posta</label>
                                     <input
                                         type="email"
                                         value={settings.contact_email}
                                         onChange={(e) => updateSetting('contact_email', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Numarası</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">WhatsApp Numarası</label>
                                     <input
                                         type="text"
                                         value={settings.contact_whatsapp}
                                         onChange={(e) => updateSetting('contact_whatsapp', e.target.value)}
                                         placeholder="+905xxxxxxxxx"
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     />
                                 </div>
                             </div>
@@ -283,63 +275,63 @@ export default function SettingsPage() {
                     {activeTab === 'social' && (
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <span className="mr-2">📸</span> Instagram
+                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-pink-500">photo_camera</span> Instagram
                                 </label>
                                 <input
                                     type="url"
                                     value={settings.instagram_url}
                                     onChange={(e) => updateSetting('instagram_url', e.target.value)}
                                     placeholder="https://instagram.com/..."
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <span className="mr-2">📘</span> Facebook
+                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-500">facebook</span> Facebook
                                 </label>
                                 <input
                                     type="url"
                                     value={settings.facebook_url}
                                     onChange={(e) => updateSetting('facebook_url', e.target.value)}
                                     placeholder="https://facebook.com/..."
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <span className="mr-2">🐦</span> Twitter / X
+                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sky-400">tag</span> Twitter / X
                                 </label>
                                 <input
                                     type="url"
                                     value={settings.twitter_url}
                                     onChange={(e) => updateSetting('twitter_url', e.target.value)}
                                     placeholder="https://twitter.com/..."
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <span className="mr-2">💼</span> LinkedIn
+                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-600">work</span> LinkedIn
                                 </label>
                                 <input
                                     type="url"
                                     value={settings.linkedin_url}
                                     onChange={(e) => updateSetting('linkedin_url', e.target.value)}
                                     placeholder="https://linkedin.com/..."
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <span className="mr-2">🎬</span> YouTube
+                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-red-500">play_circle</span> YouTube
                                 </label>
                                 <input
                                     type="url"
                                     value={settings.youtube_url}
                                     onChange={(e) => updateSetting('youtube_url', e.target.value)}
                                     placeholder="https://youtube.com/..."
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
                         </div>
@@ -349,41 +341,39 @@ export default function SettingsPage() {
                     {activeTab === 'seo' && (
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Meta Title</label>
                                 <input
                                     type="text"
                                     value={settings.seo_title}
                                     onChange={(e) => updateSetting('seo_title', e.target.value)}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
-                                <p className="text-xs text-gray-400 mt-1">
+                                <p className="text-xs text-gray-500 mt-1">
                                     {settings.seo_title.length}/60 karakter (önerilen)
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Meta Description</label>
                                 <textarea
                                     value={settings.seo_description}
                                     onChange={(e) => updateSetting('seo_description', e.target.value)}
                                     rows={3}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
-                                <p className="text-xs text-gray-400 mt-1">
+                                <p className="text-xs text-gray-500 mt-1">
                                     {settings.seo_description.length}/160 karakter (önerilen)
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Keywords</label>
                                 <textarea
                                     value={settings.seo_keywords}
                                     onChange={(e) => updateSetting('seo_keywords', e.target.value)}
                                     rows={2}
                                     placeholder="keyword1, keyword2, keyword3"
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Virgülle ayırarak yazın
-                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
                             </div>
                         </div>
                     )}

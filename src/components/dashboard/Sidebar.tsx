@@ -17,6 +17,7 @@ const menuItems: MenuItem[] = [
     { icon: "chat_bubble", label: "Talepler", href: "/dashboard/quotes" },
     { icon: "group", label: "Kullanıcılar", href: "/dashboard/users" },
     { icon: "inventory_2", label: "Ürünler", href: "/dashboard/products" },
+    { icon: "build", label: "Hizmetler", href: "/dashboard/services" },
     { icon: "article", label: "İçerik Yönetimi", href: "/dashboard/content" },
     { icon: "image", label: "Medya", href: "/dashboard/media" },
     { icon: "mail", label: "Mailing", href: "/dashboard/mailing" },
