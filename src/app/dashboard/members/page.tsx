@@ -10,6 +10,7 @@ interface Member {
     name: string;
     email: string;
     phone: string;
+    role: "admin" | "editor" | "user";
     status: "active" | "inactive";
     joinDate: string;
     ordersCount: number;
@@ -33,7 +34,7 @@ export default function MembersPage() {
     const fetchMembers = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/users?role=user');
+            const res = await fetch('/api/users');
             const data = await res.json();
             if (data.success) {
                 const formattedMembers = data.users.map((u: any) => ({
@@ -41,9 +42,10 @@ export default function MembersPage() {
                     name: u.name,
                     email: u.email,
                     phone: u.phone || "-",
+                    role: u.role || 'user',
                     status: 'active',
                     joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR'),
-                    ordersCount: 0 // TODO: Count orders
+                    ordersCount: 0
                 }));
                 setMembers(formattedMembers);
             }
@@ -166,6 +168,7 @@ export default function MembersPage() {
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Üye</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Telefon</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Rol</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Kayıt Tarihi</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Durum</th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">İşlemler</th>
@@ -189,12 +192,22 @@ export default function MembersPage() {
                                         <span className="text-gray-300">{member.phone}</span>
                                     </td>
                                     <td className="px-4 py-4">
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.role === 'admin'
+                                                ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                                : member.role === 'editor'
+                                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                    : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                                            }`}>
+                                            {member.role === 'admin' ? 'Yönetici' : member.role === 'editor' ? 'Editör' : 'Üye'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-4">
                                         <span className="text-gray-400">{member.joinDate}</span>
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.status === 'active'
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
                                             }`}>
                                             {member.status === 'active' ? 'Aktif' : 'Pasif'}
                                         </span>
@@ -219,7 +232,7 @@ export default function MembersPage() {
                             ))}
                             {filteredMembers.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-12 text-center text-gray-400">
+                                    <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
                                         <div className="flex flex-col items-center gap-4">
                                             <span className="material-symbols-outlined text-6xl text-gray-600">group</span>
                                             <div>
