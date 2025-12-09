@@ -5,6 +5,16 @@ import { useSearchParams } from "next/navigation";
 import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
 import { filterByDate } from "@/lib/dateFilterUtils";
 
+interface Address {
+    id: number;
+    title: string;
+    fullAddress: string;
+    city: string;
+    district: string;
+    phone: string;
+    isDefault: boolean;
+}
+
 interface Member {
     id: number;
     name: string;
@@ -13,7 +23,7 @@ interface Member {
     role: "admin" | "editor" | "user";
     status: "active" | "inactive";
     joinDate: string;
-    ordersCount: number;
+    addresses: Address[];
 }
 
 export default function MembersPage() {
@@ -21,6 +31,7 @@ export default function MembersPage() {
     const [loading, setLoading] = useState(true);
     const [editingMember, setEditingMember] = useState<Member | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDetailModal, setIsDetailModal] = useState(false);
     const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
     const [successMessage, setSuccessMessage] = useState("");
 
@@ -34,10 +45,10 @@ export default function MembersPage() {
     const fetchMembers = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/users');
+            const res = await fetch('/api/members');
             const data = await res.json();
             if (data.success) {
-                const formattedMembers = data.users.map((u: any) => ({
+                const formattedMembers = data.members.map((u: any) => ({
                     id: u.id,
                     name: u.name,
                     email: u.email,
@@ -45,7 +56,7 @@ export default function MembersPage() {
                     role: u.role || 'user',
                     status: 'active',
                     joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR'),
-                    ordersCount: 0
+                    addresses: u.addresses || []
                 }));
                 setMembers(formattedMembers);
             }
@@ -72,6 +83,12 @@ export default function MembersPage() {
         );
     });
 
+    const handleViewDetail = (member: Member) => {
+        setEditingMember(member);
+        setIsDetailModal(true);
+        setIsModalOpen(true);
+    };
+
     const handleEdit = (member: Member) => {
         setEditingMember(member);
         setFormData({
@@ -79,6 +96,7 @@ export default function MembersPage() {
             email: member.email,
             phone: member.phone === "-" ? "" : member.phone,
         });
+        setIsDetailModal(false);
         setIsModalOpen(true);
     };
 
@@ -135,7 +153,7 @@ export default function MembersPage() {
                         Üyeler
                     </h1>
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
-                        Web sitesine kayıtlı üyeleri yönetin.
+                        Web sitesine kayıtlı tüm üyeleri yönetin.
                     </p>
                 </div>
             </div>
@@ -169,8 +187,8 @@ export default function MembersPage() {
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Üye</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Telefon</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Rol</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Kayıt Tarihi</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Durum</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Adres</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Kayıt</th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">İşlemler</th>
                             </tr>
                         </thead>
@@ -202,17 +220,24 @@ export default function MembersPage() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className="text-gray-400">{member.joinDate}</span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.status === 'active'
-                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.addresses.length > 0
+                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                                : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
                                             }`}>
-                                            {member.status === 'active' ? 'Aktif' : 'Pasif'}
+                                            {member.addresses.length} adres
                                         </span>
                                     </td>
+                                    <td className="px-4 py-4">
+                                        <span className="text-gray-400 text-sm">{member.joinDate}</span>
+                                    </td>
                                     <td className="px-4 py-4 text-right">
+                                        <button
+                                            onClick={() => handleViewDetail(member)}
+                                            className="text-gray-400 hover:text-white p-2"
+                                            title="Detay"
+                                        >
+                                            <span className="material-symbols-outlined">visibility</span>
+                                        </button>
                                         <button
                                             onClick={() => handleEdit(member)}
                                             className="text-[#137fec] hover:text-[#137fec]/80 p-2"
@@ -248,8 +273,124 @@ export default function MembersPage() {
                 </div>
             </div>
 
+            {/* Detail Modal */}
+            {isModalOpen && editingMember && isDetailModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-2xl m-4 border border-[#3b4754] max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-white">Üye Detayı</h2>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            {/* Member Info */}
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#137fec]/10 text-[#137fec] font-bold text-2xl">
+                                    {editingMember.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">{editingMember.name}</h3>
+                                    <p className="text-gray-400">{editingMember.email}</p>
+                                </div>
+                            </div>
+
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className="bg-[#111418] p-4 rounded-lg">
+                                    <p className="text-sm text-gray-400 mb-1">Telefon</p>
+                                    <p className="text-white font-medium">{editingMember.phone}</p>
+                                </div>
+                                <div className="bg-[#111418] p-4 rounded-lg">
+                                    <p className="text-sm text-gray-400 mb-1">Kayıt Tarihi</p>
+                                    <p className="text-white font-medium">{editingMember.joinDate}</p>
+                                </div>
+                                <div className="bg-[#111418] p-4 rounded-lg">
+                                    <p className="text-sm text-gray-400 mb-1">Rol</p>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${editingMember.role === 'admin'
+                                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                            : editingMember.role === 'editor'
+                                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                                        }`}>
+                                        {editingMember.role === 'admin' ? 'Yönetici' : editingMember.role === 'editor' ? 'Editör' : 'Üye'}
+                                    </span>
+                                </div>
+                                <div className="bg-[#111418] p-4 rounded-lg">
+                                    <p className="text-sm text-gray-400 mb-1">Adres Sayısı</p>
+                                    <p className="text-white font-medium">{editingMember.addresses.length} adres</p>
+                                </div>
+                            </div>
+
+                            {/* Addresses */}
+                            <div>
+                                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[#137fec]">location_on</span>
+                                    Kayıtlı Adresler
+                                </h4>
+                                {editingMember.addresses.length === 0 ? (
+                                    <div className="bg-[#111418] p-6 rounded-lg text-center text-gray-400">
+                                        <span className="material-symbols-outlined text-4xl mb-2">location_off</span>
+                                        <p>Kayıtlı adres bulunmuyor</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {editingMember.addresses.map((addr) => (
+                                            <div key={addr.id} className="bg-[#111418] p-4 rounded-lg border border-[#3b4754]">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="font-medium text-white flex items-center gap-2">
+                                                            {addr.title}
+                                                            {addr.isDefault && (
+                                                                <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[#137fec]/10 text-[#137fec] border border-[#137fec]/20">
+                                                                    Varsayılan
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        <p className="text-sm text-gray-400 mt-1">{addr.fullAddress}</p>
+                                                        <p className="text-sm text-gray-500">{addr.district}, {addr.city}</p>
+                                                        {addr.phone && <p className="text-sm text-gray-500 mt-1">Tel: {addr.phone}</p>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-[#3b4754] flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
+                            >
+                                Kapat
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsDetailModal(false);
+                                    setFormData({
+                                        name: editingMember.name,
+                                        email: editingMember.email,
+                                        phone: editingMember.phone === "-" ? "" : editingMember.phone,
+                                    });
+                                }}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-sm">edit</span>
+                                Düzenle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Edit Modal */}
-            {isModalOpen && editingMember && (
+            {isModalOpen && editingMember && !isDetailModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
                     <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-md m-4 border border-[#3b4754]">
                         <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
