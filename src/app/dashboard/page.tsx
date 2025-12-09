@@ -58,9 +58,11 @@ export default function DashboardPage() {
     const [dbStats, setDbStats] = useState({
         totalOrders: 0,
         dailyOrders: 0,
+        filteredOrders: 0,
         totalUsers: 0,
         totalContacts: 0,
         dailyContacts: 0,
+        filteredContacts: 0,
         totalPageViews: 0
     });
     const [chartData, setChartData] = useState<{ labels: string[], ordersData: number[], contactsData: number[] }>({
@@ -96,7 +98,15 @@ export default function DashboardPage() {
     // Fetch Analytics for Real-time Data
     const fetchAnalytics = async () => {
         try {
-            const res = await fetch('/api/dashboard/analytics');
+            // Build query string with date filter
+            const params = new URLSearchParams();
+            params.set('dateRange', dateRange);
+            if (dateRange === 'custom' && customStartDate && customEndDate) {
+                params.set('customStart', customStartDate);
+                params.set('customEnd', customEndDate);
+            }
+
+            const res = await fetch(`/api/dashboard/analytics?${params.toString()}`);
             const data = await res.json();
             if (data.success) {
                 setRealTimeStats(data.realTime);
@@ -105,9 +115,11 @@ export default function DashboardPage() {
                 setDbStats({
                     totalOrders: data.stats.totalOrders,
                     dailyOrders: data.stats.dailyOrders || 0,
+                    filteredOrders: data.stats.filteredOrders || 0,
                     totalUsers: data.stats.totalUsers,
                     totalContacts: data.stats.totalContacts,
                     dailyContacts: data.stats.dailyContacts || 0,
+                    filteredContacts: data.stats.filteredContacts || 0,
                     totalPageViews: data.stats.totalPageViews || 0
                 });
                 if (data.chartData) {
@@ -122,13 +134,13 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchOrders();
         fetchAnalytics();
-        // Real-time refresh every 5 seconds
+        // Real-time refresh every 30 seconds
         const interval = setInterval(() => {
             fetchOrders();
             fetchAnalytics();
-        }, 5000);
+        }, 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, [dateRange, customStartDate, customEndDate]); // Re-fetch when date filter changes
 
     // Set page title
     useEffect(() => {
@@ -146,12 +158,13 @@ export default function DashboardPage() {
     const filteredOrders = filterByDate(orders, "date", dateRange as any, customStartDate, customEndDate);
     const filteredQuotes = filterByDate(mockQuotes, "date", dateRange as any, customStartDate, customEndDate);
 
-    // Stats - use real DB data
+    // Stats - use filtered data based on date range
+    const isToday = dateRange === 'today';
     const stats = {
         totalOrders: dbStats.totalOrders,
-        dailyOrders: dbStats.dailyOrders,
+        dailyOrders: isToday ? dbStats.dailyOrders : dbStats.filteredOrders, // Show filtered when not 'today'
         totalContacts: dbStats.totalContacts,
-        dailyContacts: dbStats.dailyContacts,
+        dailyContacts: isToday ? dbStats.dailyContacts : dbStats.filteredContacts, // Show filtered when not 'today'
         totalUsers: dbStats.totalUsers,
         dailyPageViews: dbStats.totalPageViews,
     };
