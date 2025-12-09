@@ -14,19 +14,71 @@ const inter = Inter({
 export const metadata: Metadata = {
     metadataBase: new URL('https://federalgaz.com'),
     title: {
-        default: "Federal Gaz - Endüstriyel Gaz Çözümleri",
+        default: "Federal Gaz - Endüstriyel Gaz Çözümleri | Oksijen, Argon, Azot, Tüp Satış",
         template: "%s | Federal Gaz",
     },
-    description: "Endüstriyel gaz ihtiyaçlarınız için yenilikçi, sürdürülebilir ve kaliteli hizmetler sunuyoruz.",
+    description: "Federal Gaz, endüstriyel gaz sektöründe Türkiye genelinde oksijen, argon, azot, karbondioksit ve medikal gaz çözümleri sunan güvenilir tedarikçiniz. Tüp satış, dolum ve dağıtım hizmetleri.",
+    keywords: [
+        "federal gaz",
+        "endüstriyel gaz",
+        "oksijen",
+        "argon",
+        "azot",
+        "karbondioksit",
+        "medikal gaz",
+        "gaz tüpü",
+        "tüp dolum",
+        "kaynak gazı",
+        "gaz tedarik",
+        "gaz satış",
+        "sanayi gazları",
+        "istanbul gaz",
+        "türkiye gaz",
+    ],
+    authors: [{ name: "Federal Gaz" }],
+    creator: "Federal Gaz",
+    publisher: "Federal Gaz",
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
     openGraph: {
         title: "Federal Gaz - Endüstriyel Gaz Çözümleri",
-        description: "Yenilikçi ve sürdürülebilir endüstriyel gaz hizmetleri.",
+        description: "Oksijen, argon, azot ve medikal gaz çözümleri. Türkiye'nin güvenilir gaz tedarikçisi.",
         url: 'https://federalgaz.com',
         siteName: 'Federal Gaz',
         locale: 'tr_TR',
         type: 'website',
+        images: [
+            {
+                url: '/logo-clean.png',
+                width: 512,
+                height: 512,
+                alt: 'Federal Gaz Logo',
+            },
+        ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Federal Gaz - Endüstriyel Gaz Çözümleri',
+        description: 'Oksijen, argon, azot ve medikal gaz çözümleri. Türkiye\'nin güvenilir gaz tedarikçisi.',
+        images: ['/logo-clean.png'],
+    },
+    alternates: {
+        canonical: 'https://federalgaz.com',
+    },
+    verification: {
+        google: process.env.GOOGLE_SITE_VERIFICATION,
     },
 };
+
 
 import SecurityProvider from "@/components/SecurityProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -75,6 +127,87 @@ export default async function RootLayout({
                 )}
                 <link rel="icon" href={isDashboard ? "/dashboard-logo.png" : "/favicon.ico"} type="image/png" />
                 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+                {/* JSON-LD Structured Data for SEO */}
+                {!isDashboard && (
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{
+                            __html: JSON.stringify({
+                                "@context": "https://schema.org",
+                                "@graph": [
+                                    {
+                                        "@type": "Organization",
+                                        "@id": "https://federalgaz.com/#organization",
+                                        "name": "Federal Gaz",
+                                        "alternateName": "Federal Gaz Endüstriyel Gaz",
+                                        "url": "https://federalgaz.com",
+                                        "logo": {
+                                            "@type": "ImageObject",
+                                            "url": "https://federalgaz.com/logo-clean.png",
+                                            "width": 512,
+                                            "height": 512
+                                        },
+                                        "description": "Federal Gaz, endüstriyel gaz sektöründe Türkiye genelinde oksijen, argon, azot ve medikal gaz çözümleri sunan güvenilir tedarikçiniz.",
+                                        "contactPoint": {
+                                            "@type": "ContactPoint",
+                                            "telephone": "+90-212-XXX-XXXX",
+                                            "contactType": "customer service",
+                                            "areaServed": "TR",
+                                            "availableLanguage": ["Turkish", "English"]
+                                        },
+                                        "sameAs": []
+                                    },
+                                    {
+                                        "@type": "WebSite",
+                                        "@id": "https://federalgaz.com/#website",
+                                        "url": "https://federalgaz.com",
+                                        "name": "Federal Gaz",
+                                        "description": "Endüstriyel gaz çözümleri ve tüp satış hizmetleri",
+                                        "publisher": {
+                                            "@id": "https://federalgaz.com/#organization"
+                                        },
+                                        "potentialAction": {
+                                            "@type": "SearchAction",
+                                            "target": "https://federalgaz.com/urunler?q={search_term_string}",
+                                            "query-input": "required name=search_term_string"
+                                        }
+                                    },
+                                    {
+                                        "@type": "SiteNavigationElement",
+                                        "name": "Ana Sayfa",
+                                        "url": "https://federalgaz.com"
+                                    },
+                                    {
+                                        "@type": "SiteNavigationElement",
+                                        "name": "Hakkımızda",
+                                        "url": "https://federalgaz.com/hakkimizda"
+                                    },
+                                    {
+                                        "@type": "SiteNavigationElement",
+                                        "name": "Ürünler",
+                                        "url": "https://federalgaz.com/urunler"
+                                    },
+                                    {
+                                        "@type": "SiteNavigationElement",
+                                        "name": "Hizmetler",
+                                        "url": "https://federalgaz.com/hizmetler"
+                                    },
+                                    {
+                                        "@type": "SiteNavigationElement",
+                                        "name": "Galeri",
+                                        "url": "https://federalgaz.com/galeri"
+                                    },
+                                    {
+                                        "@type": "SiteNavigationElement",
+                                        "name": "İletişim",
+                                        "url": "https://federalgaz.com/iletisim"
+                                    }
+                                ]
+                            })
+                        }}
+                    />
+                )}
             </head>
             <body className={`${inter.variable} font-display antialiased`}>
                 <LanguageProvider>

@@ -2,55 +2,76 @@ import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = 'https://federalgaz.com';
+    const now = new Date();
 
-    return [
+    // Main pages
+    const mainPages: MetadataRoute.Sitemap = [
         {
             url: baseUrl,
-            lastModified: new Date(),
-            changeFrequency: 'yearly',
+            lastModified: now,
+            changeFrequency: 'daily',
             priority: 1,
         },
         {
             url: `${baseUrl}/hakkimizda`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: 'monthly',
             priority: 0.8,
         },
         {
             url: `${baseUrl}/hizmetler`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: 'monthly',
             priority: 0.8,
         },
         {
             url: `${baseUrl}/urunler`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: 'weekly',
             priority: 0.9,
         },
         {
             url: `${baseUrl}/galeri`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: 'monthly',
             priority: 0.7,
         },
         {
             url: `${baseUrl}/iletisim`,
-            lastModified: new Date(),
-            changeFrequency: 'yearly',
-            priority: 0.7,
+            lastModified: now,
+            changeFrequency: 'monthly',
+            priority: 0.8,
         },
         {
             url: `${baseUrl}/giris`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: 'yearly',
             priority: 0.5,
         },
         {
             url: `${baseUrl}/siparis`,
-            lastModified: new Date(),
+            lastModified: now,
             changeFrequency: 'monthly',
             priority: 0.8,
         },
     ];
+
+    // Product detail pages - Turkish slugs
+    const productSlugs = [
+        'medikal-gazlar',
+        'endustriyel-gazlar',
+        'kaynak-gazlari',
+        'gida-gazlari',
+        'ozel-gazlar',
+        'kriyojenik-sivilar',
+    ];
+
+    const productPages: MetadataRoute.Sitemap = productSlugs.map(slug => ({
+        url: `${baseUrl}/urunler/${slug}`,
+        lastModified: now,
+        changeFrequency: 'monthly',
+        priority: 0.7,
+    }));
+
+    return [...mainPages, ...productPages];
 }
