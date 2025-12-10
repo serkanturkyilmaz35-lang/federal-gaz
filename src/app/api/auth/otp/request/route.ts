@@ -1,24 +1,34 @@
-// OTP Request Route - Ultra-fast with direct Brevo API
+// OTP Request Route - Maximum performance optimized
 import { NextResponse } from 'next/server';
 import { connectToDatabase, User, OTPToken } from '@/lib/models';
-import { getOTPEmailTemplate } from '@/lib/email';
 import { Op } from 'sequelize';
 
-// Direct Brevo HTTP API call - fastest possible email sending
-async function sendOTPEmailDirect(to: string, userName: string, otp: string): Promise<{ success: boolean; time: number }> {
+// Minimal OTP email - no external dependencies, tiny payload
+function getMinimalOTPEmail(name: string, otp: string): string {
+    return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px">
+<div style="background:#fff;padding:20px;border-radius:8px;text-align:center">
+<h2 style="color:#8B0000;margin-bottom:20px">Federal Gaz</h2>
+<p>Merhaba <strong>${name}</strong>,</p>
+<p>Doğrulama kodunuz:</p>
+<div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#8B0000;background:#f5f5f5;padding:15px;border-radius:8px;margin:20px 0">${otp}</div>
+<p style="color:#666;font-size:12px">Bu kod 2 dakika geçerlidir.</p>
+<hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+<p style="color:#999;font-size:11px">Federal Gaz © 2014</p>
+</div></body></html>`;
+}
+
+// Ultra-fast Brevo API call with timeout
+async function sendOTPEmailFast(to: string, userName: string, otp: string): Promise<{ success: boolean; time: number }> {
     const startTime = Date.now();
     const apiKey = process.env.BREVO_API_KEY;
 
-    console.log(`[OTP-EMAIL] Starting direct API call, API key present: ${!!apiKey}`);
-
     if (!apiKey) {
-        console.error('[OTP-EMAIL] BREVO_API_KEY is missing!');
+        console.error('[OTP-API] BREVO_API_KEY missing!');
         return { success: false, time: Date.now() - startTime };
     }
 
-    const html = getOTPEmailTemplate(userName, otp);
-    // Replace logo placeholder
-    const finalHtml = html.replace(/cid:logo/g, 'https://www.federalgaz.com/logo-clean.png');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
     try {
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -31,87 +41,81 @@ async function sendOTPEmailDirect(to: string, userName: string, otp: string): Pr
             body: JSON.stringify({
                 sender: { name: 'Federal Gaz', email: 'noreply@federalgaz.com' },
                 to: [{ email: to }],
-                subject: 'Federal Gaz - Yönetim Paneli Giriş Doğrulama Kodu',
-                htmlContent: finalHtml,
+                subject: 'Doğrulama Kodu - Federal Gaz',
+                htmlContent: getMinimalOTPEmail(userName, otp),
             }),
+            signal: controller.signal,
         });
 
+        clearTimeout(timeout);
         const elapsed = Date.now() - startTime;
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error(`[OTP-EMAIL] API error in ${elapsed}ms:`, response.status, errorData);
+            const err = await response.text().catch(() => 'Unknown error');
+            console.error(`[OTP-API] Error ${response.status} in ${elapsed}ms: ${err}`);
             return { success: false, time: elapsed };
         }
 
-        const data = await response.json();
-        console.log(`[OTP-EMAIL] Success in ${elapsed}ms, messageId: ${data.messageId}`);
+        console.log(`[OTP-API] Success in ${elapsed}ms`);
         return { success: true, time: elapsed };
-    } catch (error) {
+    } catch (error: unknown) {
+        clearTimeout(timeout);
         const elapsed = Date.now() - startTime;
-        console.error(`[OTP-EMAIL] Fetch error in ${elapsed}ms:`, error);
+        const errorName = error instanceof Error ? error.name : 'Unknown';
+        console.error(`[OTP-API] ${errorName} in ${elapsed}ms`);
         return { success: false, time: elapsed };
     }
 }
 
 export async function POST(request: Request) {
-    const startTime = Date.now();
+    const t0 = Date.now();
 
     try {
         const { email } = await request.json();
-
         if (!email) {
             return NextResponse.json({ error: 'E-posta adresi gereklidir' }, { status: 400 });
         }
 
-        // Connect to DB
+        // DB connection
         await connectToDatabase();
-        console.log(`[OTP] DB connected in ${Date.now() - startTime}ms`);
+        const t1 = Date.now();
+        console.log(`[OTP] DB: ${t1 - t0}ms`);
 
-        // Check if user exists and has admin or editor role
+        // Find user
         const user = await User.findOne({
-            where: {
-                email,
-                role: { [Op.in]: ['admin', 'editor'] }
-            },
+            where: { email, role: { [Op.in]: ['admin', 'editor'] } },
             attributes: ['id', 'name', 'email']
         });
-        console.log(`[OTP] User query in ${Date.now() - startTime}ms`);
+        const t2 = Date.now();
+        console.log(`[OTP] Query: ${t2 - t1}ms`);
 
         if (!user) {
             return NextResponse.json({ error: 'Bu e-posta adresi ile kayıtlı yetkili kullanıcı bulunamadı.' }, { status: 404 });
         }
 
-        // Generate OTP
+        // Generate and save OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
-
-        // Save OTP to database
         await OTPToken.create({
             email,
             token: otp,
-            expiresAt,
+            expiresAt: new Date(Date.now() + 2 * 60 * 1000),
             isUsed: false
         });
-        console.log(`[OTP] OTP saved in ${Date.now() - startTime}ms`);
+        const t3 = Date.now();
+        console.log(`[OTP] Save: ${t3 - t2}ms, Total: ${t3 - t0}ms`);
 
-        // Send email directly via Brevo API (fire and forget)
-        // Don't await - return response immediately for speed
-        sendOTPEmailDirect(email, user.name, otp).then(result => {
-            console.log(`[OTP] Email completed in ${Date.now() - startTime}ms total, API time: ${result.time}ms`);
-        }).catch(err => {
-            console.error('[OTP] Email background error:', err);
+        // Fire email in background (no await)
+        sendOTPEmailFast(email, user.name, otp).then(r => {
+            console.log(`[OTP] Email done: ${Date.now() - t0}ms total, API: ${r.time}ms, success: ${r.success}`);
         });
 
-        console.log(`[OTP] Response at ${Date.now() - startTime}ms (email in background)`);
-
-        return NextResponse.json({
-            message: 'Doğrulama kodu e-posta adresinize gönderildi.',
-        });
+        console.log(`[OTP] Response: ${Date.now() - t0}ms`);
+        return NextResponse.json({ message: 'Doğrulama kodu e-posta adresinize gönderildi.' });
 
     } catch (error) {
-        console.error('OTP Request Error:', error);
+        console.error('[OTP] Error:', error);
         return NextResponse.json({ error: 'Sunucu hatası oluştu, lütfen tekrar deneyin.' }, { status: 500 });
     }
 }
+
 
