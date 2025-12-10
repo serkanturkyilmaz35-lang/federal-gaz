@@ -496,38 +496,38 @@ export default function MembersPage() {
 
                                 <div className="space-y-4">
                                     {formData.addresses.map((addr, idx) => (
-                                        <div key={idx} className="bg-[#111418] border border-[#3b4754] rounded-lg p-4 relative group">
-                                            <div className="absolute top-4 right-4 flex items-center gap-2">
-                                                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400 hover:text-white">
-                                                    <input
-                                                        type="radio"
-                                                        name="defaultAddress"
-                                                        checked={addr.isDefault}
-                                                        onChange={() => handleAddressChange(idx, 'isDefault', true)}
-                                                        className="accent-[#137fec]"
-                                                    />
-                                                    Varsayılan
-                                                </label>
-                                                <button
-                                                    onClick={() => handleRemoveAddress(idx)}
-                                                    className="text-gray-500 hover:text-red-500 transition-colors p-1"
-                                                    title="Sil"
-                                                >
-                                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                                </button>
+                                        <div key={idx} className="bg-[#111418] border border-[#3b4754] rounded-lg p-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="block text-xs font-medium text-gray-500">Başlık</label>
+                                                <div className="flex items-center gap-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400 hover:text-white select-none">
+                                                        <input
+                                                            type="radio"
+                                                            name="defaultAddress"
+                                                            checked={addr.isDefault}
+                                                            onChange={() => handleAddressChange(idx, 'isDefault', true)}
+                                                            className="accent-[#137fec]"
+                                                        />
+                                                        Varsayılan
+                                                    </label>
+                                                    <button
+                                                        onClick={() => handleRemoveAddress(idx)}
+                                                        className="text-gray-500 hover:text-red-500 transition-colors"
+                                                        title="Sil"
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 gap-3">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Başlık</label>
-                                                    <input
-                                                        type="text"
-                                                        value={addr.title}
-                                                        onChange={(e) => handleAddressChange(idx, 'title', e.target.value)}
-                                                        placeholder="Örn: Ev, İş"
-                                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white focus:border-[#137fec] focus:outline-none"
-                                                    />
-                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={addr.title}
+                                                    onChange={(e) => handleAddressChange(idx, 'title', e.target.value)}
+                                                    placeholder="Örn: Ev, İş"
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white focus:border-[#137fec] focus:outline-none"
+                                                />
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Açık Adres</label>
                                                     <textarea
