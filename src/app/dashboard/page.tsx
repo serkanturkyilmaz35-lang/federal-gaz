@@ -471,7 +471,7 @@ export default function DashboardPage() {
                 pdf.setFont("Roboto", "bold");
                 pdf.text(value, x + 3, y + 14);
 
-                // Draw mini breakdown
+                // Draw mini breakdown with labels
                 if (breakdown && breakdown.length > 0) {
                     let bx = x + 3;
                     pdf.setFontSize(5);
@@ -481,9 +481,9 @@ export default function DashboardPage() {
                             pdf.circle(bx + 1, y + 21, 1, "F");
                             pdf.setTextColor(100, 100, 100);
                             pdf.setFont("Roboto", "normal");
-                            const text = `${item.count}`;
+                            const text = `${item.label}: ${item.count}`;
                             pdf.text(text, bx + 2.5, y + 22);
-                            bx += pdf.getTextWidth(text) + 5;
+                            bx += pdf.getTextWidth(text) + 4;
                         }
                     });
                 }
@@ -566,27 +566,24 @@ export default function DashboardPage() {
                         pdf.addImage(imgData, "JPEG", chartX, yPos, chartWidth, finalHeight);
                         maxChartHeight = Math.max(maxChartHeight, finalHeight);
 
-                        // Custom Legend Below
+                        // Custom Legend Below - Use dynamic doughnutLegend data
                         let legendY = yPos + finalHeight + 5;
                         const legendX = chartX;
                         pdf.setFontSize(8);
 
-                        const items = [
-                            { label: "Anasayfa", val: "45%", color: [59, 130, 246] }, // blue-500
-                            { label: "Ürünler", val: "25%", color: [34, 197, 94] },   // green-500
-                            { label: "Hakkımızda", val: "20%", color: [234, 179, 8] }, // yellow-500
-                            { label: "İletişim", val: "10%", color: [100, 116, 139] }  // slate-500
-                        ];
+                        // Map doughnutLegend to PDF format
+                        const pdfLegendColors = [[59, 130, 246], [34, 197, 94], [234, 179, 8], [100, 116, 139], [239, 68, 68]];
 
-                        items.forEach(item => {
-                            pdf.setFont("Roboto", "normal"); // Ensure normal font for legend text
+                        doughnutLegend.forEach((item, i) => {
+                            pdf.setFont("Roboto", "normal");
                             // Dot
-                            pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
+                            const color = pdfLegendColors[i] || [100, 100, 100];
+                            pdf.setFillColor(color[0], color[1], color[2]);
                             pdf.circle(legendX + 2, legendY - 1, 1.5, "F");
 
                             // Text
                             pdf.setTextColor(80, 80, 80);
-                            pdf.text(`${item.label} ${item.val}`, legendX + 6, legendY);
+                            pdf.text(`${item.label} ${item.value}`, legendX + 6, legendY);
                             legendY += 4;
                         });
 
@@ -597,6 +594,53 @@ export default function DashboardPage() {
             }
 
             yPos += maxChartHeight + 10;
+
+
+            // --- 4.5. REAL-TIME & ACTIVE PAGES SECTION ---
+            // Real-time stats
+            pdf.setFontSize(12);
+            pdf.setTextColor(30, 30, 30);
+            pdf.setFont("Roboto", "normal");
+            pdf.text("Gerçek Zamanlı Takip", margin, yPos);
+            yPos += 6;
+
+            pdf.setFillColor(248, 250, 252);
+            pdf.setDrawColor(226, 232, 240);
+            pdf.roundedRect(margin, yPos, 85, 18, 2, 2, "FD");
+
+            pdf.setFontSize(18);
+            pdf.setTextColor(0, 0, 0);
+            pdf.setFont("Roboto", "bold");
+            pdf.text(realTimeStats.activeUsers.toString(), margin + 5, yPos + 12);
+
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 100, 100);
+            pdf.setFont("Roboto", "normal");
+            pdf.text("şu anda aktif kullanıcı", margin + 20, yPos + 12);
+            pdf.text(`Mobil: ${realTimeStats.mobileUsers}  Masaüstü: ${realTimeStats.desktopUsers}`, margin + 5, yPos + 16);
+
+            yPos += 22;
+
+            // Active Pages
+            if (activePages && activePages.length > 0) {
+                pdf.setFontSize(10);
+                pdf.setTextColor(30, 30, 30);
+                pdf.setFont("Roboto", "bold");
+                pdf.text("Aktif Sayfalar", margin, yPos);
+                yPos += 5;
+
+                pdf.setFontSize(8);
+                pdf.setFont("Roboto", "normal");
+                activePages.slice(0, 5).forEach((page: any) => {
+                    if (yPos > pageHeight - 30) return;
+                    pdf.setTextColor(80, 80, 80);
+                    pdf.text(`${page.title || page.name}`, margin + 2, yPos + 4);
+                    pdf.setTextColor(239, 68, 68); // Red for user count
+                    pdf.text(`${page.users} kullanıcı`, margin + 120, yPos + 4);
+                    yPos += 6;
+                });
+                yPos += 5;
+            }
 
 
             // --- 5. TABLE SECTION ---
