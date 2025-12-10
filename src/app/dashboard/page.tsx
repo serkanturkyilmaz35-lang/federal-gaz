@@ -48,6 +48,7 @@ export default function DashboardPage() {
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
     const [exporting, setExporting] = useState(false);
+    const [loading, setLoading] = useState(true); // Loading state for data
     const reportRef = useRef<HTMLDivElement>(null);
     const lineChartRef = useRef<any>(null);
     const doughnutChartRef = useRef<any>(null);
@@ -101,14 +102,15 @@ export default function DashboardPage() {
     };
 
     // Fetch Analytics for Real-time Data
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = async (currentDateRange: string, startDate?: string, endDate?: string) => {
         try {
+            setLoading(true);
             // Build query string with date filter
             const params = new URLSearchParams();
-            params.set('dateRange', dateRange);
-            if (dateRange === 'custom' && customStartDate && customEndDate) {
-                params.set('customStart', customStartDate);
-                params.set('customEnd', customEndDate);
+            params.set('dateRange', currentDateRange);
+            if (currentDateRange === 'custom' && startDate && endDate) {
+                params.set('customStart', startDate);
+                params.set('customEnd', endDate);
             }
 
             const res = await fetch(`/api/dashboard/analytics?${params.toString()}`);
@@ -138,19 +140,56 @@ export default function DashboardPage() {
             }
         } catch (error) {
             console.error("Failed to fetch analytics", error);
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Initial load and when date filter changes
     useEffect(() => {
         fetchOrders();
-        fetchAnalytics();
-        // Real-time refresh every 15 seconds for faster updates
+        fetchAnalytics(dateRange, customStartDate, customEndDate);
+    }, [dateRange, customStartDate, customEndDate]);
+
+    // Separate interval for background refresh (doesn't show loading)
+    useEffect(() => {
         const interval = setInterval(() => {
             fetchOrders();
-            fetchAnalytics();
+            // Silent refresh - don't set loading state
+            const params = new URLSearchParams();
+            params.set('dateRange', dateRange);
+            if (dateRange === 'custom' && customStartDate && customEndDate) {
+                params.set('customStart', customStartDate);
+                params.set('customEnd', customEndDate);
+            }
+            fetch(`/api/dashboard/analytics?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setRealTimeStats(data.realTime);
+                        setActivePages(data.activePages);
+                        setTopPages(data.topPages);
+                        setDbStats({
+                            totalOrders: data.stats.totalOrders,
+                            dailyOrders: data.stats.dailyOrders || 0,
+                            filteredOrders: data.stats.filteredOrders || 0,
+                            totalUsers: data.stats.totalUsers,
+                            totalContacts: data.stats.totalContacts,
+                            dailyContacts: data.stats.dailyContacts || 0,
+                            filteredContacts: data.stats.filteredContacts || 0,
+                            totalPageViews: data.stats.totalPageViews || 0
+                        });
+                        if (data.orderBreakdown) setOrderBreakdown(data.orderBreakdown);
+                        if (data.dailyOrderBreakdown) setDailyOrderBreakdown(data.dailyOrderBreakdown);
+                        if (data.contactBreakdown) setContactBreakdown(data.contactBreakdown);
+                        if (data.dailyContactBreakdown) setDailyContactBreakdown(data.dailyContactBreakdown);
+                        if (data.chartData) setChartData(data.chartData);
+                    }
+                })
+                .catch(err => console.error("Background refresh failed", err));
         }, 15000);
         return () => clearInterval(interval);
-    }, [dateRange, customStartDate, customEndDate]); // Re-fetch when date filter changes
+    }, [dateRange, customStartDate, customEndDate]);
 
     // Set page title
     useEffect(() => {
