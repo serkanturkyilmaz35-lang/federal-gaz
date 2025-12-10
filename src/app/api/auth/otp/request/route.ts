@@ -1,11 +1,10 @@
-// OTP Request Route - Ultra-fast with Resend API
+// OTP Request Route - Brevo SMTP optimized
 import { NextResponse } from 'next/server';
 import { connectToDatabase, User, OTPToken } from '@/lib/models';
-import { sendEmail, getOTPEmailTemplate } from '@/lib/email';
+import { sendEmail } from '@/lib/email';
 import { Op } from 'sequelize';
-import { Resend } from 'resend';
 
-// Minimal OTP email for speed
+// Minimal OTP email for speed (smaller payload = faster)
 const getMinimalOTPHtml = (name: string, otp: string) => `
 <div style="font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px;text-align:center">
 <h2 style="color:#8B0000">Federal Gaz</h2>
@@ -14,37 +13,6 @@ const getMinimalOTPHtml = (name: string, otp: string) => `
 <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#8B0000;background:#f5f5f5;padding:15px;border-radius:8px;margin:20px 0">${otp}</div>
 <p style="color:#666;font-size:12px">Bu kod 2 dakika geçerlidir.</p>
 </div>`;
-
-// Send email via Resend (fastest) or fallback to Brevo SMTP
-async function sendOTPEmail(to: string, name: string, otp: string, t0: number) {
-    const resendKey = process.env.RESEND_API_KEY;
-
-    // Try Resend first (much faster ~100-300ms)
-    if (resendKey) {
-        try {
-            const resend = new Resend(resendKey);
-            const result = await resend.emails.send({
-                from: 'Federal Gaz <noreply@federalgaz.com>',
-                to: [to],
-                subject: 'Doğrulama Kodu - Federal Gaz',
-                html: getMinimalOTPHtml(name, otp),
-            });
-            console.log(`[OTP] Resend done: ${Date.now() - t0}ms, id: ${result.data?.id}`);
-            return { success: true };
-        } catch (error) {
-            console.error('[OTP] Resend failed:', error);
-        }
-    }
-
-    // Fallback to Brevo SMTP
-    const result = await sendEmail({
-        to,
-        subject: 'Federal Gaz - Yönetim Paneli Giriş Doğrulama Kodu',
-        html: getOTPEmailTemplate(name, otp),
-    });
-    console.log(`[OTP] SMTP done: ${Date.now() - t0}ms, success: ${result.success}`);
-    return result;
-}
 
 export async function POST(request: Request) {
     const t0 = Date.now();
@@ -80,8 +48,14 @@ export async function POST(request: Request) {
         });
         console.log(`[OTP] Save: ${Date.now() - t0}ms`);
 
-        // Send email in background (don't await)
-        sendOTPEmail(email, user.name, otp, t0).catch(err => {
+        // Send email via SMTP in background
+        sendEmail({
+            to: email,
+            subject: 'Doğrulama Kodu - Federal Gaz',
+            html: getMinimalOTPHtml(user.name, otp),
+        }).then(result => {
+            console.log(`[OTP] Email: ${Date.now() - t0}ms, success: ${result.success}`);
+        }).catch(err => {
             console.error('[OTP] Email error:', err);
         });
 
