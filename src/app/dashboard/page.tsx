@@ -358,51 +358,85 @@ export default function DashboardPage() {
             const availableWidth = pageWidth - (margin * 2);
             const gap = 5;
             const cardWidth = (availableWidth - gap) / 2;
-            const cardHeight = 22;
+            const cardHeight = 32; // Increased height for breakdown
 
-            // Helper to draw stat card
-            const drawStatCard = (x: number, y: number, label: string, value: string) => {
+            // Helper to draw stat card with breakdown
+            const drawStatCardWithBreakdown = (
+                x: number, y: number, label: string, value: string,
+                breakdown?: { label: string; count: number; color: number[] }[]
+            ) => {
                 pdf.setFillColor(248, 250, 252);
                 pdf.setDrawColor(226, 232, 240);
-                pdf.roundedRect(x, y, cardWidth, cardHeight, 2, 2, "FD"); // Fill and Draw border
+                pdf.roundedRect(x, y, cardWidth, cardHeight, 2, 2, "FD");
 
                 pdf.setFontSize(9);
                 pdf.setTextColor(100, 115, 130);
                 pdf.setFont("Roboto", "normal");
                 pdf.text(label, x + 4, y + 8);
 
-                pdf.setFontSize(12);
-                pdf.setTextColor(0, 0, 0);
-                pdf.setFont("Roboto", "bold"); // Use BOLD for values
-                pdf.text(value, x + 4, y + 16);
-            };
-
-            // Row 1: Toplam Sipariş, Günlük Sipariş, Toplam Üye
-            const cardWidth3 = (availableWidth - gap * 2) / 3;
-            const drawStatCard3 = (x: number, y: number, label: string, value: string) => {
-                pdf.setFillColor(248, 250, 252);
-                pdf.setDrawColor(226, 232, 240);
-                pdf.roundedRect(x, y, cardWidth3, cardHeight, 2, 2, "FD");
-                pdf.setFontSize(8);
-                pdf.setTextColor(100, 115, 130);
-                pdf.setFont("Roboto", "normal");
-                pdf.text(label, x + 3, y + 7);
-                pdf.setFontSize(11);
+                pdf.setFontSize(14);
                 pdf.setTextColor(0, 0, 0);
                 pdf.setFont("Roboto", "bold");
-                pdf.text(value, x + 3, y + 15);
+                pdf.text(value, x + 4, y + 18);
+
+                // Draw breakdown if exists
+                if (breakdown && breakdown.length > 0) {
+                    let bx = x + 4;
+                    pdf.setFontSize(6);
+                    breakdown.forEach((item) => {
+                        if (item.count > 0) {
+                            // Color dot
+                            pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
+                            pdf.circle(bx + 1.5, y + 26, 1.5, "F");
+                            // Text
+                            pdf.setTextColor(100, 100, 100);
+                            pdf.setFont("Roboto", "normal");
+                            const text = `${item.label}: ${item.count}`;
+                            pdf.text(text, bx + 4, y + 27);
+                            bx += pdf.getTextWidth(text) + 7;
+                        }
+                    });
+                }
             };
 
-            drawStatCard3(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"));
-            drawStatCard3(margin + cardWidth3 + gap, yPos, "Günlük Sipariş", stats.dailyOrders.toLocaleString("tr-TR"));
-            drawStatCard3(margin + (cardWidth3 + gap) * 2, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
+            // Order breakdown for PDF
+            const orderBreakdownPDF = [
+                { label: "Beklemede", count: orderBreakdown.pending, color: [234, 179, 8] },
+                { label: "Hazırlanıyor", count: orderBreakdown.preparing, color: [59, 130, 246] },
+                { label: "Yola Çıktı", count: orderBreakdown.shipping, color: [139, 92, 246] },
+                { label: "Tamamlandı", count: orderBreakdown.completed, color: [34, 197, 94] },
+                { label: "İptal", count: orderBreakdown.cancelled, color: [239, 68, 68] },
+            ];
+
+            const contactBreakdownPDF = [
+                { label: "Yeni", count: contactBreakdown.new, color: [59, 130, 246] },
+                { label: "Okundu", count: contactBreakdown.read, color: [107, 114, 128] },
+                { label: "Yanıtlandı", count: contactBreakdown.replied, color: [34, 197, 94] },
+            ];
+
+            // Row 1: Toplam Sipariş, Toplam Talep
+            drawStatCardWithBreakdown(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"), orderBreakdownPDF);
+            drawStatCardWithBreakdown(margin + cardWidth + gap, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"), contactBreakdownPDF);
             yPos += cardHeight + gap;
 
-            // Row 2: Toplam Talep, Günlük Talep, Günlük Ziyaret
-            drawStatCard3(margin, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"));
-            drawStatCard3(margin + cardWidth3 + gap, yPos, "Günlük Talep", stats.dailyContacts.toLocaleString("tr-TR"));
-            drawStatCard3(margin + (cardWidth3 + gap) * 2, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
-            yPos += cardHeight + 10; // Extra spacing after stats
+            // Row 2: Toplam Üye, Günlük Ziyaret (no breakdown)
+            const drawStatCardSimple = (x: number, y: number, label: string, value: string) => {
+                pdf.setFillColor(248, 250, 252);
+                pdf.setDrawColor(226, 232, 240);
+                pdf.roundedRect(x, y, cardWidth, 22, 2, 2, "FD");
+                pdf.setFontSize(9);
+                pdf.setTextColor(100, 115, 130);
+                pdf.setFont("Roboto", "normal");
+                pdf.text(label, x + 4, y + 8);
+                pdf.setFontSize(14);
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFont("Roboto", "bold");
+                pdf.text(value, x + 4, y + 18);
+            };
+
+            drawStatCardSimple(margin, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
+            drawStatCardSimple(margin + cardWidth + gap, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
+            yPos += 22 + 10; // Extra spacing after stats
 
 
             // --- 4. CHARTS SECTION (Side by Side) ---
