@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { headers } from "next/headers";
+import { SiteSettings, connectToDatabase } from "@/lib/models"; // Import models
 
 const inter = Inter({
     subsets: ["latin"],
@@ -84,6 +85,28 @@ import SecurityProvider from "@/components/SecurityProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { SettingsProvider } from "@/context/SettingsContext"; // Import SettingsProvider
+
+// Fetch settings helper
+async function getSiteSettings() {
+    try {
+        await connectToDatabase();
+        // Use raw query or ensuring the model is loaded to avoid "Model not defined" in dev
+        // In production, standard findAll works fine.
+        const settings = await SiteSettings.findAll();
+
+        const settingsObj: Record<string, string> = {};
+        settings.forEach(s => {
+            if (s && s.key) {
+                settingsObj[s.key] = s.value;
+            }
+        });
+        return settingsObj;
+    } catch (error) {
+        console.error("Failed to fetch settings for layout:", error);
+        return {};
+    }
+}
 
 export default async function RootLayout({
     children,
@@ -94,6 +117,9 @@ export default async function RootLayout({
     const headersList = await headers();
     const hostname = headersList.get('host') || '';
     const isDashboard = hostname.startsWith('dashboard.');
+
+    // Fetch settings server-side
+    const settings = await getSiteSettings();
 
     return (
         <html lang="tr" className={isDashboard ? "dark" : "light"}>
@@ -125,7 +151,8 @@ export default async function RootLayout({
                         />
                     </>
                 )}
-                <link rel="icon" href={isDashboard ? "/dashboard-logo.png" : "/favicon.ico"} type="image/png" />
+                {/* Use dynamic favicon if available, else default */}
+                <link rel="icon" href={isDashboard ? "/dashboard-logo.png" : (settings['favicon_url'] || "/favicon.ico")} type="image/png" />
                 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
                 {/* JSON-LD Structured Data for SEO */}
@@ -139,30 +166,36 @@ export default async function RootLayout({
                                     {
                                         "@type": "Organization",
                                         "@id": "https://federalgaz.com/#organization",
-                                        "name": "Federal Gaz",
+                                        "name": settings['site_name'] || "Federal Gaz",
                                         "alternateName": "Federal Gaz Endüstriyel Gaz",
                                         "url": "https://federalgaz.com",
                                         "logo": {
                                             "@type": "ImageObject",
-                                            "url": "https://federalgaz.com/logo-clean.png",
+                                            "url": `https://federalgaz.com${settings['logo_url'] || '/logo-clean.png'}`,
                                             "width": 512,
                                             "height": 512
                                         },
-                                        "description": "Federal Gaz, endüstriyel gaz sektöründe Türkiye genelinde oksijen, argon, azot ve medikal gaz çözümleri sunan güvenilir tedarikçiniz.",
+                                        "description": settings['site_slogan'] || "Federal Gaz, endüstriyel gaz sektöründe Türkiye genelinde oksijen, argon, azot ve medikal gaz çözümleri sunan güvenilir tedarikçiniz.",
                                         "contactPoint": {
                                             "@type": "ContactPoint",
-                                            "telephone": "+90-212-XXX-XXXX",
+                                            "telephone": settings['contact_phone'] || "+90-312-395-3595",
                                             "contactType": "customer service",
                                             "areaServed": "TR",
                                             "availableLanguage": ["Turkish", "English"]
                                         },
-                                        "sameAs": []
+                                        "sameAs": [
+                                            settings['instagram_url'],
+                                            settings['facebook_url'],
+                                            settings['twitter_url'],
+                                            settings['linkedin_url'],
+                                            settings['youtube_url']
+                                        ].filter(Boolean)
                                     },
                                     {
                                         "@type": "WebSite",
                                         "@id": "https://federalgaz.com/#website",
                                         "url": "https://federalgaz.com",
-                                        "name": "Federal Gaz",
+                                        "name": settings['site_name'] || "Federal Gaz",
                                         "description": "Endüstriyel gaz çözümleri ve tüp satış hizmetleri",
                                         "publisher": {
                                             "@id": "https://federalgaz.com/#organization"
@@ -212,25 +245,27 @@ export default async function RootLayout({
             <body className={`${inter.variable} font-display antialiased`}>
                 <LanguageProvider>
                     <AuthProvider>
-                        <NotificationProvider>
-                            <SecurityProvider>
-                                {isDashboard ? (
-                                    // Dashboard: no main site header/footer
-                                    <>{children}</>
-                                ) : (
-                                    // Main site: with header and footer
-                                    <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
-                                        <div className="layout-container flex h-full grow flex-col">
-                                            <Header />
-                                            <main className="flex-1">
-                                                {children}
-                                            </main>
-                                            <Footer />
+                        <SettingsProvider initialSettings={settings}>
+                            <NotificationProvider>
+                                <SecurityProvider>
+                                    {isDashboard ? (
+                                        // Dashboard: no main site header/footer
+                                        <>{children}</>
+                                    ) : (
+                                        // Main site: with header and footer
+                                        <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
+                                            <div className="layout-container flex h-full grow flex-col">
+                                                <Header />
+                                                <main className="flex-1">
+                                                    {children}
+                                                </main>
+                                                <Footer />
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </SecurityProvider>
-                        </NotificationProvider>
+                                    )}
+                                </SecurityProvider>
+                            </NotificationProvider>
+                        </SettingsProvider>
                     </AuthProvider>
                 </LanguageProvider>
             </body>

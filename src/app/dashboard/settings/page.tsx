@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Default settings structure
 const defaultSettings = {
@@ -13,8 +14,11 @@ const defaultSettings = {
     // Contact
     contact_address: "İvedik OSB, 1550. Cad. No:1, 06378 Yenimahalle/Ankara",
     contact_phone: "(0312) 395 35 95",
+    contact_phone_1_label: "", // New
     contact_phone_2: "(+90) 543 455 45 63",
+    contact_phone_2_label: "", // New
     contact_phone_3: "(+90) 532 422 45 15",
+    contact_phone_3_label: "", // New
     contact_email: "federal.gaz@hotmail.com",
     contact_whatsapp: "+905434554563",
 
@@ -39,6 +43,7 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'social' | 'seo'>('general');
     const [successMessage, setSuccessMessage] = useState("");
+    const router = useRouter();
 
     useEffect(() => {
         fetchSettings();
@@ -79,11 +84,15 @@ export default function SettingsPage() {
             });
 
             if (res.ok) {
-                setSuccessMessage("Ayarlar başarıyla kaydedildi!");
-                setTimeout(() => setSuccessMessage(""), 3000);
+                setSuccessMessage("Tüm ayarlar başarıyla kaydedildi ve yayınlandı.");
+                setTimeout(() => setSuccessMessage(""), 5000);
+                router.refresh(); // Force server components to re-fetch settings
+            } else {
+                alert("Kaydetme sırasında bir hata oluştu.");
             }
         } catch (error) {
             console.error('Failed to save settings:', error);
+            alert("Bağlantı hatası oluştu.");
         } finally {
             setSaving(false);
         }
@@ -123,7 +132,7 @@ export default function SettingsPage() {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors shadow-lg shadow-[#137fec]/20"
                 >
                     <span className="material-symbols-outlined text-sm">
                         {saving ? "hourglass_empty" : "save"}
@@ -134,24 +143,24 @@ export default function SettingsPage() {
 
             {/* Success Message */}
             {successMessage && (
-                <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg flex items-center gap-2">
-                    <span className="material-symbols-outlined">check_circle</span>
-                    {successMessage}
+                <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-4 rounded-lg flex items-center gap-3 animate-fade-in">
+                    <span className="material-symbols-outlined text-2xl">check_circle</span>
+                    <span className="font-medium">{successMessage}</span>
                 </div>
             )}
 
             {/* Main Card */}
-            <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
+            <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden border border-[#3b4754]">
                 {/* Tabs */}
                 <div className="border-b border-[#3b4754]">
-                    <nav className="flex">
+                    <nav className="flex overflow-x-auto">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === tab.id
-                                        ? 'text-[#137fec] border-b-2 border-[#137fec] bg-[#137fec]/5'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                className={`flex-1 min-w-[120px] px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 border-b-2 ${activeTab === tab.id
+                                    ? 'text-[#137fec] border-[#137fec] bg-[#137fec]/5'
+                                    : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <span className="material-symbols-outlined text-lg">{tab.icon}</span>
@@ -161,17 +170,17 @@ export default function SettingsPage() {
                     </nav>
                 </div>
 
-                <div className="p-6 space-y-6 overflow-y-auto flex-1">
+                <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                     {/* General Settings */}
                     {activeTab === 'general' && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 max-w-4xl">
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Site Adı</label>
                                 <input
                                     type="text"
                                     value={settings.site_name}
                                     onChange={(e) => updateSetting('site_name', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                             <div>
@@ -180,7 +189,7 @@ export default function SettingsPage() {
                                     type="text"
                                     value={settings.site_slogan}
                                     onChange={(e) => updateSetting('site_slogan', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -190,8 +199,12 @@ export default function SettingsPage() {
                                         type="text"
                                         value={settings.logo_url}
                                         onChange={(e) => updateSetting('logo_url', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                     />
+                                    <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[14px]">info</span>
+                                        Önerilen: 512x512px, PNG veya WebP formatı. Medya kütüphanesinden URL kopyalayabilirsiniz.
+                                    </p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Favicon URL</label>
@@ -199,8 +212,12 @@ export default function SettingsPage() {
                                         type="text"
                                         value={settings.favicon_url}
                                         onChange={(e) => updateSetting('favicon_url', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                     />
+                                    <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[14px]">info</span>
+                                        Önerilen: 32x32px veya 16x16px, .ico veya .png formatı.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -208,45 +225,86 @@ export default function SettingsPage() {
 
                     {/* Contact Settings */}
                     {activeTab === 'contact' && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 max-w-4xl">
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Adres</label>
                                 <textarea
                                     value={settings.contact_address}
                                     onChange={(e) => updateSetting('contact_address', e.target.value)}
-                                    rows={2}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    rows={3}
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
                                 <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Telefon 1 Etiket (Örn: Merkez)</label>
+                                    <input
+                                        type="text"
+                                        value={settings.contact_phone_1_label || ''}
+                                        onChange={(e) => updateSetting('contact_phone_1_label', e.target.value)}
+                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white mb-3"
+                                        placeholder="Etiket (Opsiyonel)"
+                                    />
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 1</label>
                                     <input
                                         type="text"
                                         value={settings.contact_phone}
                                         onChange={(e) => updateSetting('contact_phone', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
                                     />
                                 </div>
+                                <div className="self-center hidden md:block">
+                                    <p className="text-xs text-gray-500">Ana iletişim numarasıdır. Footer ve genel iletişim alanlarında görünür.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
                                 <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Telefon 2 Etiket (Örn: Satış)</label>
+                                    <input
+                                        type="text"
+                                        value={settings.contact_phone_2_label || ''}
+                                        onChange={(e) => updateSetting('contact_phone_2_label', e.target.value)}
+                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white mb-3"
+                                        placeholder="Etiket (Opsiyonel)"
+                                    />
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 2 (GSM)</label>
                                     <input
                                         type="text"
                                         value={settings.contact_phone_2}
                                         onChange={(e) => updateSetting('contact_phone_2', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
                                     />
                                 </div>
+                                <div className="self-center hidden md:block">
+                                    <p className="text-xs text-gray-500">Ek iletişim veya GSM numarası.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
                                 <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Telefon 3 Etiket (Örn: Muhasebe)</label>
+                                    <input
+                                        type="text"
+                                        value={settings.contact_phone_3_label || ''}
+                                        onChange={(e) => updateSetting('contact_phone_3_label', e.target.value)}
+                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white mb-3"
+                                        placeholder="Etiket (Opsiyonel)"
+                                    />
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 3 (GSM)</label>
                                     <input
                                         type="text"
                                         value={settings.contact_phone_3}
                                         onChange={(e) => updateSetting('contact_phone_3', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
                                     />
                                 </div>
+                                <div className="self-center hidden md:block">
+                                    <p className="text-xs text-gray-500">Ek iletişim veya GSM numarası.</p>
+                                </div>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">E-posta</label>
@@ -254,7 +312,7 @@ export default function SettingsPage() {
                                         type="email"
                                         value={settings.contact_email}
                                         onChange={(e) => updateSetting('contact_email', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                     />
                                 </div>
                                 <div>
@@ -264,7 +322,7 @@ export default function SettingsPage() {
                                         value={settings.contact_whatsapp}
                                         onChange={(e) => updateSetting('contact_whatsapp', e.target.value)}
                                         placeholder="+905xxxxxxxxx"
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                     />
                                 </div>
                             </div>
@@ -273,7 +331,7 @@ export default function SettingsPage() {
 
                     {/* Social Media Settings */}
                     {activeTab === 'social' && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 max-w-4xl">
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-pink-500">photo_camera</span> Instagram
@@ -283,7 +341,7 @@ export default function SettingsPage() {
                                     value={settings.instagram_url}
                                     onChange={(e) => updateSetting('instagram_url', e.target.value)}
                                     placeholder="https://instagram.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                             <div>
@@ -295,7 +353,7 @@ export default function SettingsPage() {
                                     value={settings.facebook_url}
                                     onChange={(e) => updateSetting('facebook_url', e.target.value)}
                                     placeholder="https://facebook.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                             <div>
@@ -307,7 +365,7 @@ export default function SettingsPage() {
                                     value={settings.twitter_url}
                                     onChange={(e) => updateSetting('twitter_url', e.target.value)}
                                     placeholder="https://twitter.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                             <div>
@@ -319,7 +377,7 @@ export default function SettingsPage() {
                                     value={settings.linkedin_url}
                                     onChange={(e) => updateSetting('linkedin_url', e.target.value)}
                                     placeholder="https://linkedin.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                             <div>
@@ -331,7 +389,7 @@ export default function SettingsPage() {
                                     value={settings.youtube_url}
                                     onChange={(e) => updateSetting('youtube_url', e.target.value)}
                                     placeholder="https://youtube.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                             </div>
                         </div>
@@ -339,14 +397,14 @@ export default function SettingsPage() {
 
                     {/* SEO Settings */}
                     {activeTab === 'seo' && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 max-w-4xl">
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Meta Title</label>
                                 <input
                                     type="text"
                                     value={settings.seo_title}
                                     onChange={(e) => updateSetting('seo_title', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
                                     {settings.seo_title.length}/60 karakter (önerilen)
@@ -358,7 +416,7 @@ export default function SettingsPage() {
                                     value={settings.seo_description}
                                     onChange={(e) => updateSetting('seo_description', e.target.value)}
                                     rows={3}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
                                     {settings.seo_description.length}/160 karakter (önerilen)
@@ -371,7 +429,7 @@ export default function SettingsPage() {
                                     onChange={(e) => updateSetting('seo_keywords', e.target.value)}
                                     rows={2}
                                     placeholder="keyword1, keyword2, keyword3"
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
                             </div>
