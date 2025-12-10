@@ -40,7 +40,7 @@ export default function MembersPage() {
     const [editingMember, setEditingMember] = useState<Member | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModal, setIsDetailModal] = useState(false);
-    const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+    const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
     const [successMessage, setSuccessMessage] = useState("");
 
     // Search & Date Filter
@@ -100,10 +100,13 @@ export default function MembersPage() {
 
     const handleEdit = (member: Member) => {
         setEditingMember(member);
+        // Get first address or default one
+        const defaultAddr = member.addresses.find(a => a.isDefault) || member.addresses[0];
         setFormData({
             name: member.name,
             email: member.email,
             phone: member.phone === "-" ? "" : member.phone,
+            address: defaultAddr ? defaultAddr.address : ""
         });
         setIsDetailModal(false);
         setIsModalOpen(true);
@@ -247,20 +250,26 @@ export default function MembersPage() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.addresses.length > 0
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                                            }`}>
-                                            {member.addresses.length} adres
-                                        </span>
+                                        {member.addresses.length > 0 ? (
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm text-gray-300 truncate max-w-[200px]" title={member.addresses[0].address}>
+                                                    {member.addresses[0].address}
+                                                </span>
+                                                {member.addresses.length > 1 && (
+                                                    <span className="text-xs text-gray-500">+{member.addresses.length - 1} diğer</span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-500 text-sm">-</span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className="text-gray-400 text-sm">{member.joinDate}</span>
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full border ${member.isActive
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
                                             }`}>
                                             {member.isActive ? 'Aktif' : 'Pasif'}
                                         </span>
@@ -354,8 +363,8 @@ export default function MembersPage() {
                                 <div className="bg-[#111418] p-4 rounded-lg">
                                     <p className="text-sm text-gray-400 mb-1">Hesap Durumu</p>
                                     <span className={`px-2 py-1 text-xs font-medium rounded-full border ${editingMember.isActive
-                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                        : 'bg-red-500/10 text-red-400 border-red-500/20'
                                         }`}>
                                         {editingMember.isActive ? 'Aktif' : 'Pasif'}
                                     </span>
@@ -415,7 +424,7 @@ export default function MembersPage() {
                                                                 </span>
                                                             )}
                                                         </p>
-                                                        <p className="text-sm text-gray-400 mt-1">{addr.fullAddress}</p>
+                                                        <p className="text-sm text-gray-400 mt-1">{addr.fullAddress || addr.address}</p>
                                                         <p className="text-sm text-gray-500">{addr.district}, {addr.city}</p>
                                                         {addr.phone && <p className="text-sm text-gray-500 mt-1">Tel: {addr.phone}</p>}
                                                     </div>
@@ -441,6 +450,7 @@ export default function MembersPage() {
                                         name: editingMember.name,
                                         email: editingMember.email,
                                         phone: editingMember.phone === "-" ? "" : editingMember.phone,
+                                        address: editingMember.addresses[0]?.address || ""
                                     });
                                 }}
                                 className="flex items-center gap-2 px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 transition-colors"
@@ -493,6 +503,16 @@ export default function MembersPage() {
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="+90 5xx xxx xx xx"
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Adres</label>
+                                <textarea
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    placeholder="Mahalle, Sokak, No, İlçe/Şehir"
+                                    rows={3}
                                     className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                 />
                             </div>
