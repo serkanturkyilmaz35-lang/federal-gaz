@@ -15,23 +15,23 @@ export async function POST(request: Request) {
 
         await connectToDatabase();
 
-        // 1. Verify OTP
-        const validToken = await OTPToken.findOne({
-            where: {
-                email,
-                token: otp,
-                isUsed: false,
-            },
-            order: [['createdAt', 'DESC']],
-        });
-
-        // 2. User Details - Check admin or editor role
-        const user = await User.findOne({
-            where: {
-                email,
-                role: { [Op.in]: ['admin', 'editor'] }
-            }
-        });
+        // 1. Verify OTP and get User in PARALLEL for speed
+        const [validToken, user] = await Promise.all([
+            OTPToken.findOne({
+                where: {
+                    email,
+                    token: otp,
+                    isUsed: false,
+                },
+                order: [['createdAt', 'DESC']],
+            }),
+            User.findOne({
+                where: {
+                    email,
+                    role: { [Op.in]: ['admin', 'editor'] }
+                }
+            })
+        ]);
 
         if (!validToken) {
             return NextResponse.json({ error: 'Geçersiz veya kullanılmış kod.' }, { status: 400 });
@@ -42,17 +42,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Bu kodun süresi dolmuş.' }, { status: 400 });
         }
 
-        // 3. Mark OTP as used
-        await validToken.update({ isUsed: true });
-
-        // 4. User Details
         if (!user) {
             return NextResponse.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404 });
         }
 
-        // 5. Generate new session token (invalidates all other sessions)
+        // 3. Mark OTP as used and generate session token in PARALLEL
         const sessionToken = crypto.randomUUID();
-        await user.update({ sessionToken });
+        await Promise.all([
+            validToken.update({ isUsed: true }),
+            user.update({ sessionToken })
+        ]);
+
 
         // 6. Generate JWT with session token
         const tokenPayload = {

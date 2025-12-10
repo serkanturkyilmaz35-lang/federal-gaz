@@ -92,51 +92,49 @@ export async function GET(request: NextRequest) {
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
-        // Get real counts from database
-        const [totalOrders, totalUsers, totalContacts] = await Promise.all([
+        // MEGA PARALLEL: All DB queries + GA4 calls in ONE Promise.all for maximum speed
+        const [
+            totalOrders,
+            totalUsers,
+            totalContacts,
+            filteredOrders,
+            filteredContacts,
+            dailyOrders,
+            dailyContacts,
+            orderBreakdown,
+            dailyOrderBreakdown,
+            contactBreakdown,
+            dailyContactBreakdown,
+            chartData,
+            realTimeData,
+            activePagesData,
+            topPagesData,
+            totalPageViews
+        ] = await Promise.all([
+            // Basic counts
             Order.count(),
             User.count(),
             ContactRequest.count(),
-        ]);
-
-        // Filtered counts based on date range
-        const [filteredOrders, filteredContacts] = await Promise.all([
-            Order.count({
-                where: { createdAt: { [Op.between]: [filterStart, filterEnd] } } as any
-            }),
-            ContactRequest.count({
-                where: { createdAt: { [Op.between]: [filterStart, filterEnd] } } as any
-            }),
-        ]);
-
-        // Daily counts (always today)
-        const [dailyOrders, dailyContacts] = await Promise.all([
-            Order.count({
-                where: { createdAt: { [Op.between]: [todayStart, todayEnd] } } as any
-            }),
-            ContactRequest.count({
-                where: { createdAt: { [Op.between]: [todayStart, todayEnd] } } as any
-            }),
-        ]);
-
-        // Get breakdowns
-        const [orderBreakdown, dailyOrderBreakdown, contactBreakdown, dailyContactBreakdown] = await Promise.all([
-            getOrderBreakdown(), // Total breakdown
-            getOrderBreakdown({ start: todayStart, end: todayEnd }), // Daily breakdown
-            getContactBreakdown(), // Total breakdown
-            getContactBreakdown({ start: todayStart, end: todayEnd }), // Daily breakdown
-        ]);
-
-        // Chart data based on date range
-        const chartData = await getChartData(dateRange, filterStart, filterEnd);
-
-        // Try to get real GA4 data
-        const [realTimeData, activePagesData, topPagesData, totalPageViews] = await Promise.all([
+            // Filtered counts
+            Order.count({ where: { createdAt: { [Op.between]: [filterStart, filterEnd] } } as any }),
+            ContactRequest.count({ where: { createdAt: { [Op.between]: [filterStart, filterEnd] } } as any }),
+            // Daily counts
+            Order.count({ where: { createdAt: { [Op.between]: [todayStart, todayEnd] } } as any }),
+            ContactRequest.count({ where: { createdAt: { [Op.between]: [todayStart, todayEnd] } } as any }),
+            // Breakdowns
+            getOrderBreakdown(),
+            getOrderBreakdown({ start: todayStart, end: todayEnd }),
+            getContactBreakdown(),
+            getContactBreakdown({ start: todayStart, end: todayEnd }),
+            // Chart data
+            getChartData(dateRange, filterStart, filterEnd),
+            // GA4 data
             getRealtimeUsers(),
             getActivePages(),
             getTopPages(),
             getTotalPageViews(),
         ]);
+
 
         // Check if GA is configured
         const gaConfigured = !!(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON && process.env.GA_PROPERTY_ID);
