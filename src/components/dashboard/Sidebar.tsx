@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface MenuItem {
     icon: string;
@@ -28,6 +28,7 @@ const menuItems: MenuItem[] = [
 
 export default function DashboardSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -55,19 +56,34 @@ export default function DashboardSidebar() {
         return () => { document.body.style.overflow = ''; };
     }, [isMobileOpen]);
 
+    // Logo click handler - refresh if on dashboard, navigate otherwise
+    const handleLogoClick = () => {
+        setIsMobileOpen(false);
+        if (pathname === "/dashboard") {
+            // Same page - hard refresh
+            window.location.reload();
+        } else {
+            // Different page - navigate to dashboard
+            router.push("/dashboard");
+        }
+    };
+
     const SidebarContent = () => (
         <div className="flex h-full flex-col justify-between">
-            {/* Logo & Brand */}
+            {/* Logo & Brand - Clickable */}
             <div className="flex flex-col gap-8">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 px-2">
+                    <button
+                        onClick={handleLogoClick}
+                        className="flex items-center gap-3 px-2 hover:opacity-80 transition-opacity cursor-pointer"
+                    >
                         <img
                             src="/dashboard-logo.png"
                             alt="Federal Gaz Logo"
                             className={`${isCollapsed && !isMobileOpen ? "h-10 w-10" : "h-12 w-12"} object-contain`}
                         />
                         {(!isCollapsed || isMobileOpen) && (
-                            <div className="flex flex-col">
+                            <div className="flex flex-col text-left">
                                 <h1 className="text-base font-bold leading-normal text-white">
                                     Federal Gaz
                                 </h1>
@@ -76,7 +92,7 @@ export default function DashboardSidebar() {
                                 </p>
                             </div>
                         )}
-                    </div>
+                    </button>
                     {/* Close button for mobile */}
                     {isMobileOpen && (
                         <button
