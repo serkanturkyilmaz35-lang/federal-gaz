@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import StatsCard from "@/components/dashboard/StatsCard";
 import RealTimeCard from "@/components/dashboard/RealTimeCard";
 import ActivePagesCard from "@/components/dashboard/ActivePagesCard";
@@ -673,9 +673,11 @@ export default function DashboardPage() {
                 activePages.slice(0, 5).forEach((page: any) => {
                     if (yPos > pageHeight - 30) return;
                     pdf.setTextColor(80, 80, 80);
-                    pdf.text(`${page.title || page.name}`, margin + 2, yPos + 4);
+                    // Use page.url - that's what GA4 returns
+                    const pageName = page.url || page.title || page.name || "/";
+                    pdf.text(pageName, margin + 2, yPos + 4);
                     pdf.setTextColor(239, 68, 68); // Red for user count
-                    pdf.text(`${page.users} kullanıcı`, margin + 120, yPos + 4);
+                    pdf.text(`${page.users || 0} kullanıcı`, margin + 120, yPos + 4);
                     yPos += 6;
                 });
                 yPos += 5;

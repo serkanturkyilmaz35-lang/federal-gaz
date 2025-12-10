@@ -180,59 +180,73 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// Helper function to get chart data based on date range
+// Helper function to get chart data based on date range - OPTIMIZED
 async function getChartData(dateRange: string, filterStart: Date, filterEnd: Date) {
     const labels: string[] = [];
     const ordersData: number[] = [];
     const contactsData: number[] = [];
 
-    // Determine number of days to show
+    // Determine number of days to show - always show meaningful amount
     let daysToShow = 7;
-    if (dateRange === 'today') daysToShow = 1;
+    if (dateRange === 'today') daysToShow = 7; // Show last 7 days even for today
     else if (dateRange === '7days') daysToShow = 7;
     else if (dateRange === '30days') daysToShow = 30;
     else if (dateRange === '90days') daysToShow = 90;
     else if (dateRange === 'custom') {
         const diffTime = Math.abs(filterEnd.getTime() - filterStart.getTime());
         daysToShow = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        daysToShow = Math.max(daysToShow, 7); // At least 7 days
         daysToShow = Math.min(daysToShow, 90); // Cap at 90 days
     }
 
-    // For longer periods, aggregate by week or month
-    let aggregateBy = 'day';
-    if (daysToShow > 30) aggregateBy = 'week';
+    // For longer periods, aggregate by week
+    let step = 1;
+    if (daysToShow > 30) step = 7; // Show weekly for 30+ days
 
     const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
-    for (let i = daysToShow - 1; i >= 0; i--) {
+    // Build date ranges for parallel querying
+    const dateRanges: { date: Date; nextDate: Date; label: string }[] = [];
+
+    for (let i = daysToShow - 1; i >= 0; i -= step) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         date.setHours(0, 0, 0, 0);
 
         const nextDate = new Date(date);
-        nextDate.setDate(nextDate.getDate() + 1);
-
-        // Skip if aggregating
-        if (aggregateBy === 'week' && i % 7 !== 0) continue;
+        nextDate.setDate(nextDate.getDate() + step);
 
         const day = date.getDate();
         const monthLabel = months[date.getMonth()];
-        labels.push(`${day} ${monthLabel}`);
 
-        const orderCount = await Order.count({
-            where: {
-                createdAt: { [Op.between]: [date, nextDate] }
-            } as any
+        dateRanges.push({
+            date,
+            nextDate,
+            label: `${day} ${monthLabel}`
         });
-        ordersData.push(orderCount);
-
-        const contactCount = await ContactRequest.count({
-            where: {
-                createdAt: { [Op.between]: [date, nextDate] }
-            } as any
-        });
-        contactsData.push(contactCount);
     }
+
+    // Execute all queries in parallel for speed
+    const results = await Promise.all(
+        dateRanges.map(async ({ date, nextDate, label }) => {
+            const [orderCount, contactCount] = await Promise.all([
+                Order.count({
+                    where: { createdAt: { [Op.between]: [date, nextDate] } } as any
+                }),
+                ContactRequest.count({
+                    where: { createdAt: { [Op.between]: [date, nextDate] } } as any
+                })
+            ]);
+            return { label, orderCount, contactCount };
+        })
+    );
+
+    // Populate arrays from results
+    results.forEach(({ label, orderCount, contactCount }) => {
+        labels.push(label);
+        ordersData.push(orderCount);
+        contactsData.push(contactCount);
+    });
 
     return { labels, ordersData, contactsData };
 }
