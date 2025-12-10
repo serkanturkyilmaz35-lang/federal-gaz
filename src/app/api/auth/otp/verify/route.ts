@@ -13,9 +13,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'E-posta ve OTP gereklidir.' }, { status: 400 });
         }
 
+        // 1. Verify OTP and get User in PARALLEL for speed
         await connectToDatabase();
 
-        // 1. Verify OTP and get User in PARALLEL for speed
         const [validToken, user] = await Promise.all([
             OTPToken.findOne({
                 where: {
@@ -48,10 +48,15 @@ export async function POST(request: Request) {
 
         // 3. Mark OTP as used and generate session token in PARALLEL
         const sessionToken = crypto.randomUUID();
-        await Promise.all([
+
+        // Fire and forget updates to speed up response? No, we need consistency.
+        // But we can execute them efficiently.
+        const updatePromises = [
             validToken.update({ isUsed: true }),
             user.update({ sessionToken })
-        ]);
+        ];
+
+        await Promise.all(updatePromises);
 
 
         // 6. Generate JWT with session token

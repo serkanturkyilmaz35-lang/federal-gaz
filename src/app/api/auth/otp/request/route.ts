@@ -25,14 +25,15 @@ export async function POST(request: Request) {
 
         // DB connection
         await connectToDatabase();
-        console.log(`[OTP] DB: ${Date.now() - t0}ms`);
+        console.log(`[OTP] DB Connect: ${Date.now() - t0}ms`);
 
-        // Find user
+        // Find user - Use lean query
         const user = await User.findOne({
             where: { email, role: { [Op.in]: ['admin', 'editor'] } },
-            attributes: ['id', 'name', 'email']
+            attributes: ['id', 'name', 'email'],
+            raw: true
         });
-        console.log(`[OTP] Query: ${Date.now() - t0}ms`);
+        console.log(`[OTP] User Query: ${Date.now() - t0}ms`);
 
         if (!user) {
             return NextResponse.json({ error: 'Bu e-posta adresi ile kayıtlı yetkili kullanıcı bulunamadı.' }, { status: 404 });
@@ -40,26 +41,30 @@ export async function POST(request: Request) {
 
         // Generate and save OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Use create but don't return instance to save time/resources if possible, or just raw
         await OTPToken.create({
             email,
             token: otp,
-            expiresAt: new Date(Date.now() + 2 * 60 * 1000),
+            expiresAt: new Date(Date.now() + 2 * 60 * 1000), // 2 mins
             isUsed: false
         });
-        console.log(`[OTP] Save: ${Date.now() - t0}ms`);
+        console.log(`[OTP] Token Save: ${Date.now() - t0}ms`);
 
-        // Send email via SMTP in background
+        // Send email via SMTP in background - DO NOT AWAIT
+        // This promise floats and will complete after response is sent
         sendEmail({
             to: email,
             subject: 'Doğrulama Kodu - Federal Gaz',
             html: getMinimalOTPHtml(user.name, otp),
         }).then(result => {
-            console.log(`[OTP] Email: ${Date.now() - t0}ms, success: ${result.success}`);
+            // Log success silently
+            if (!result.success) console.error('[OTP] Background Email Failed:', result.error);
         }).catch(err => {
-            console.error('[OTP] Email error:', err);
+            console.error('[OTP] Background Email Error:', err);
         });
 
-        console.log(`[OTP] Response: ${Date.now() - t0}ms`);
+        console.log(`[OTP] Total API Time: ${Date.now() - t0}ms`);
         return NextResponse.json({ message: 'Doğrulama kodu e-posta adresinize gönderildi.' });
 
     } catch (error) {

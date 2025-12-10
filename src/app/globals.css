@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global focus styles - remove blue outlines */
+button:focus,
+button:focus-visible {
+  outline: none !important;
+}
+
+/* Remove default focus ring on all interactive elements */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+
 @layer utilities {
 
 

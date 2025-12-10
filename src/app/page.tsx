@@ -162,7 +162,7 @@ export default function HomePage() {
                     {/* Slider Controls - Mobile: Bottom aligned, Desktop: Center aligned */}
                     <button
                         onClick={prevSlide}
-                        className="absolute left-4 bottom-20 md:top-1/2 md:bottom-auto z-20 -translate-y-1/2 rounded-full bg-white/30 p-2 md:p-3 text-white backdrop-blur-sm transition-all hover:bg-white/50"
+                        className="absolute left-4 bottom-20 md:top-1/2 md:bottom-auto z-20 -translate-y-1/2 rounded-full bg-white/30 p-2 md:p-3 text-white backdrop-blur-sm transition-all hover:bg-white/50 focus:outline-none"
                     >
                         <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -170,7 +170,7 @@ export default function HomePage() {
                     </button>
                     <button
                         onClick={nextSlide}
-                        className="absolute right-4 bottom-20 md:top-1/2 md:bottom-auto z-20 -translate-y-1/2 rounded-full bg-white/30 p-2 md:p-3 text-white backdrop-blur-sm transition-all hover:bg-white/50"
+                        className="absolute right-4 bottom-20 md:top-1/2 md:bottom-auto z-20 -translate-y-1/2 rounded-full bg-white/30 p-2 md:p-3 text-white backdrop-blur-sm transition-all hover:bg-white/50 focus:outline-none"
                     >
                         <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -183,7 +183,7 @@ export default function HomePage() {
                             <button
                                 key={index}
                                 onClick={() => setCurrentSlide(index)}
-                                className={`h-2 w-2 rounded-full transition-all ${index === currentSlide ? 'w-8 bg-white' : 'bg-white/50'}`}
+                                className={`h-2 w-2 rounded-full transition-all focus:outline-none ${index === currentSlide ? 'w-8 bg-white' : 'bg-white/50'}`}
                             />
                         ))}
                     </div>
