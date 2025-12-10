@@ -59,8 +59,8 @@ export const getDb = (): Sequelize => {
           max: 3,  // Reduced for serverless - prevents "Too many connections"
           min: 0,  // Allow pool to completely close in serverless
           acquire: 30000,
-          idle: 10000,  // Close idle connections after 10 seconds
-          evict: 10000  // Check for idle connections every 10 seconds
+          idle: 60000,  // Keep connection alive for 60s (reduces cold starts during session)
+          evict: 60000  // Check for eviction every 60s
         }
       });
       console.log('✅ Sequelize instance created with MySQL config.');

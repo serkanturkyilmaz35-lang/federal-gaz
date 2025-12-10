@@ -22,9 +22,15 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
         }
 
-        // Fetch orders sorted by newest first
+        // Fetch orders sorted by newest first - LIMIT 50 for performance
+        const limit = Number(new URL(req.url).searchParams.get('limit')) || 50;
+        const offset = Number(new URL(req.url).searchParams.get('offset')) || 0;
+
         const orders = await Order.findAll({
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset,
+            // attributes: ['id', 'userId', 'status', 'trackingNumber', 'createdAt', 'details'] // Select only needed
         });
 
         // Parse 'details' if it's JSON, otherwise return as is (Legacy support)

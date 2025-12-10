@@ -37,14 +37,15 @@ async function benchmark() {
     });
 
     try {
-        await sequelize.authenticate();
-        console.log(`DB Connected in ${Date.now() - t0}ms`);
+        // await sequelize.authenticate(); // SKIPPING AUTHENTICATE TO TEST LAZY CONNECT
+        // console.log(`DB Connected in ${Date.now() - t0}ms`);
 
         const filterStart = new Date();
         filterStart.setDate(filterStart.getDate() - 30);
         const filterEnd = new Date();
 
         const qStart = Date.now();
+        console.log('Running First Query (Lazy Connect)...');
 
         // Emulate the optimized query
         const orderResults = await sequelize.query(`
@@ -58,7 +59,8 @@ async function benchmark() {
             type: Sequelize.QueryTypes.SELECT
         });
 
-        console.log(`Optimized Orders Query Time: ${Date.now() - qStart}ms`);
+        const qEnd = Date.now();
+        console.log(`First Query Total Time (Connect + Query): ${qEnd - qStart}ms`);
         console.log(`Rows returned: ${orderResults.length}`);
 
         const cStart = Date.now();

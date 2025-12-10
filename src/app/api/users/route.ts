@@ -14,7 +14,8 @@ export async function GET() {
                 ]
             },
             attributes: { exclude: ['password_hash'] },
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            raw: true
         });
         return NextResponse.json({ success: true, users });
     } catch (error) {

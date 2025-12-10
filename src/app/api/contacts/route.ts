@@ -7,7 +7,8 @@ export async function GET() {
     try {
         await connectToDatabase();
         const contacts = await ContactRequest.findAll({
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            raw: true
         });
         return NextResponse.json({ success: true, contacts });
     } catch (error) {
