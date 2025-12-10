@@ -1,5 +1,13 @@
 "use client";
 
+import StatusBreakdown from "./StatusBreakdown";
+
+interface StatusItem {
+    label: string;
+    count: number;
+    color: string;
+}
+
 interface StatsCardProps {
     title: string;
     value: string | number;
@@ -8,9 +16,10 @@ interface StatsCardProps {
         trend: "up" | "down";
     };
     icon?: string;
+    breakdown?: StatusItem[];
 }
 
-export default function StatsCard({ title, value, change, icon }: StatsCardProps) {
+export default function StatsCard({ title, value, change, icon, breakdown }: StatsCardProps) {
     return (
         <div className="flex flex-col gap-2 rounded-xl border border-gray-700 bg-[#151d27] p-6">
             <div className="flex items-start justify-between">
@@ -37,6 +46,10 @@ export default function StatsCard({ title, value, change, icon }: StatsCardProps
                     <span>{change.value}</span>
                 </p>
             )}
+            {breakdown && breakdown.length > 0 && (
+                <StatusBreakdown items={breakdown} compact />
+            )}
         </div>
     );
 }
+

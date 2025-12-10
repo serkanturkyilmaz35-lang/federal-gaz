@@ -44,6 +44,34 @@ function getDateRange(dateRange: string, customStart?: string, customEnd?: strin
     return { start, end };
 }
 
+// Get order breakdown by status
+async function getOrderBreakdown(dateFilter?: { start: Date; end: Date }) {
+    const where = dateFilter ? { createdAt: { [Op.between]: [dateFilter.start, dateFilter.end] } } : {};
+
+    const [pending, processing, shipped, delivered, cancelled] = await Promise.all([
+        Order.count({ where: { ...where, status: 'pending' } as any }),
+        Order.count({ where: { ...where, status: 'processing' } as any }),
+        Order.count({ where: { ...where, status: 'shipped' } as any }),
+        Order.count({ where: { ...where, status: 'delivered' } as any }),
+        Order.count({ where: { ...where, status: 'cancelled' } as any }),
+    ]);
+
+    return { pending, processing, shipped, delivered, cancelled };
+}
+
+// Get contact breakdown by status
+async function getContactBreakdown(dateFilter?: { start: Date; end: Date }) {
+    const where = dateFilter ? { createdAt: { [Op.between]: [dateFilter.start, dateFilter.end] } } : {};
+
+    const [newCount, read, replied] = await Promise.all([
+        ContactRequest.count({ where: { ...where, status: 'new' } as any }),
+        ContactRequest.count({ where: { ...where, status: 'read' } as any }),
+        ContactRequest.count({ where: { ...where, status: 'replied' } as any }),
+    ]);
+
+    return { new: newCount, read, replied };
+}
+
 export async function GET(request: NextRequest) {
     try {
         await connectToDatabase();
@@ -64,33 +92,39 @@ export async function GET(request: NextRequest) {
         todayEnd.setHours(23, 59, 59, 999);
 
         // Get real counts from database
-        const totalOrders = await Order.count();
-        const totalUsers = await User.count();
-        const totalContacts = await ContactRequest.count();
+        const [totalOrders, totalUsers, totalContacts] = await Promise.all([
+            Order.count(),
+            User.count(),
+            ContactRequest.count(),
+        ]);
 
         // Filtered counts based on date range
-        const filteredOrders = await Order.count({
-            where: {
-                createdAt: { [Op.between]: [filterStart, filterEnd] }
-            } as any
-        });
-        const filteredContacts = await ContactRequest.count({
-            where: {
-                createdAt: { [Op.between]: [filterStart, filterEnd] }
-            } as any
-        });
+        const [filteredOrders, filteredContacts] = await Promise.all([
+            Order.count({
+                where: { createdAt: { [Op.between]: [filterStart, filterEnd] } } as any
+            }),
+            ContactRequest.count({
+                where: { createdAt: { [Op.between]: [filterStart, filterEnd] } } as any
+            }),
+        ]);
 
         // Daily counts (always today)
-        const dailyOrders = await Order.count({
-            where: {
-                createdAt: { [Op.between]: [todayStart, todayEnd] }
-            } as any
-        });
-        const dailyContacts = await ContactRequest.count({
-            where: {
-                createdAt: { [Op.between]: [todayStart, todayEnd] }
-            } as any
-        });
+        const [dailyOrders, dailyContacts] = await Promise.all([
+            Order.count({
+                where: { createdAt: { [Op.between]: [todayStart, todayEnd] } } as any
+            }),
+            ContactRequest.count({
+                where: { createdAt: { [Op.between]: [todayStart, todayEnd] } } as any
+            }),
+        ]);
+
+        // Get breakdowns
+        const [orderBreakdown, dailyOrderBreakdown, contactBreakdown, dailyContactBreakdown] = await Promise.all([
+            getOrderBreakdown(), // Total breakdown
+            getOrderBreakdown({ start: todayStart, end: todayEnd }), // Daily breakdown
+            getContactBreakdown(), // Total breakdown
+            getContactBreakdown({ start: todayStart, end: todayEnd }), // Daily breakdown
+        ]);
 
         // Chart data based on date range
         const chartData = await getChartData(dateRange, filterStart, filterEnd);
@@ -129,6 +163,11 @@ export async function GET(request: NextRequest) {
                 filteredContacts,
                 totalPageViews: totalPageViews || 0,
             },
+            // Breakdown data for enhanced stats cards
+            orderBreakdown,
+            dailyOrderBreakdown,
+            contactBreakdown,
+            dailyContactBreakdown,
             chartData,
             realTime,
             activePages,

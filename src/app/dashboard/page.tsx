@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import StatsCard from "@/components/dashboard/StatsCard";
 import RealTimeCard from "@/components/dashboard/RealTimeCard";
 import ActivePagesCard from "@/components/dashboard/ActivePagesCard";
+import { ORDER_STATUS_COLORS, CONTACT_STATUS_COLORS } from "@/components/dashboard/StatusBreakdown";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -65,6 +66,10 @@ export default function DashboardPage() {
         filteredContacts: 0,
         totalPageViews: 0
     });
+    const [orderBreakdown, setOrderBreakdown] = useState({ pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 });
+    const [dailyOrderBreakdown, setDailyOrderBreakdown] = useState({ pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 });
+    const [contactBreakdown, setContactBreakdown] = useState({ new: 0, read: 0, replied: 0 });
+    const [dailyContactBreakdown, setDailyContactBreakdown] = useState({ new: 0, read: 0, replied: 0 });
     const [chartData, setChartData] = useState<{ labels: string[], ordersData: number[], contactsData: number[] }>({
         labels: [],
         ordersData: [],
@@ -122,6 +127,11 @@ export default function DashboardPage() {
                     filteredContacts: data.stats.filteredContacts || 0,
                     totalPageViews: data.stats.totalPageViews || 0
                 });
+                // Set breakdowns
+                if (data.orderBreakdown) setOrderBreakdown(data.orderBreakdown);
+                if (data.dailyOrderBreakdown) setDailyOrderBreakdown(data.dailyOrderBreakdown);
+                if (data.contactBreakdown) setContactBreakdown(data.contactBreakdown);
+                if (data.dailyContactBreakdown) setDailyContactBreakdown(data.dailyContactBreakdown);
                 if (data.chartData) {
                     setChartData(data.chartData);
                 }
@@ -134,11 +144,11 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchOrders();
         fetchAnalytics();
-        // Real-time refresh every 30 seconds
+        // Real-time refresh every 15 seconds for faster updates
         const interval = setInterval(() => {
             fetchOrders();
             fetchAnalytics();
-        }, 30000);
+        }, 15000);
         return () => clearInterval(interval);
     }, [dateRange, customStartDate, customEndDate]); // Re-fetch when date filter changes
 
@@ -677,11 +687,25 @@ export default function DashboardPage() {
                     title="Toplam Sipariş"
                     value={stats.totalOrders.toLocaleString("tr-TR")}
                     icon="shopping_cart"
+                    breakdown={[
+                        { label: ORDER_STATUS_COLORS.pending.label, count: orderBreakdown.pending, color: ORDER_STATUS_COLORS.pending.color },
+                        { label: ORDER_STATUS_COLORS.processing.label, count: orderBreakdown.processing, color: ORDER_STATUS_COLORS.processing.color },
+                        { label: ORDER_STATUS_COLORS.shipped.label, count: orderBreakdown.shipped, color: ORDER_STATUS_COLORS.shipped.color },
+                        { label: ORDER_STATUS_COLORS.delivered.label, count: orderBreakdown.delivered, color: ORDER_STATUS_COLORS.delivered.color },
+                        { label: ORDER_STATUS_COLORS.cancelled.label, count: orderBreakdown.cancelled, color: ORDER_STATUS_COLORS.cancelled.color },
+                    ]}
                 />
                 <StatsCard
                     title="Günlük Sipariş"
                     value={stats.dailyOrders.toLocaleString("tr-TR")}
                     icon="add_shopping_cart"
+                    breakdown={[
+                        { label: ORDER_STATUS_COLORS.pending.label, count: dailyOrderBreakdown.pending, color: ORDER_STATUS_COLORS.pending.color },
+                        { label: ORDER_STATUS_COLORS.processing.label, count: dailyOrderBreakdown.processing, color: ORDER_STATUS_COLORS.processing.color },
+                        { label: ORDER_STATUS_COLORS.shipped.label, count: dailyOrderBreakdown.shipped, color: ORDER_STATUS_COLORS.shipped.color },
+                        { label: ORDER_STATUS_COLORS.delivered.label, count: dailyOrderBreakdown.delivered, color: ORDER_STATUS_COLORS.delivered.color },
+                        { label: ORDER_STATUS_COLORS.cancelled.label, count: dailyOrderBreakdown.cancelled, color: ORDER_STATUS_COLORS.cancelled.color },
+                    ]}
                 />
                 <StatsCard
                     title="Toplam Üye"
@@ -693,11 +717,21 @@ export default function DashboardPage() {
                     title="Toplam Talep"
                     value={stats.totalContacts.toLocaleString("tr-TR")}
                     icon="chat_bubble"
+                    breakdown={[
+                        { label: CONTACT_STATUS_COLORS.new.label, count: contactBreakdown.new, color: CONTACT_STATUS_COLORS.new.color },
+                        { label: CONTACT_STATUS_COLORS.read.label, count: contactBreakdown.read, color: CONTACT_STATUS_COLORS.read.color },
+                        { label: CONTACT_STATUS_COLORS.replied.label, count: contactBreakdown.replied, color: CONTACT_STATUS_COLORS.replied.color },
+                    ]}
                 />
                 <StatsCard
                     title="Günlük Talep"
                     value={stats.dailyContacts.toLocaleString("tr-TR")}
                     icon="mark_chat_unread"
+                    breakdown={[
+                        { label: CONTACT_STATUS_COLORS.new.label, count: dailyContactBreakdown.new, color: CONTACT_STATUS_COLORS.new.color },
+                        { label: CONTACT_STATUS_COLORS.read.label, count: dailyContactBreakdown.read, color: CONTACT_STATUS_COLORS.read.color },
+                        { label: CONTACT_STATUS_COLORS.replied.label, count: dailyContactBreakdown.replied, color: CONTACT_STATUS_COLORS.replied.color },
+                    ]}
                 />
                 <StatsCard
                     title="Günlük Ziyaret"
