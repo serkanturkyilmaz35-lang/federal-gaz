@@ -16,12 +16,20 @@ async function sendEmailViaAPI({ to, subject, html, replyTo }: EmailOptions): Pr
         return { success: false, error: 'BREVO_API_KEY is missing' };
     }
 
+    // Use verified sender from env or default
+    const senderEmail = process.env.EMAIL_FROM?.match(/<(.+)>/)?.[1] ||
+        process.env.EMAIL_FROM ||
+        'noreply@federalgaz.com';
+    const senderName = process.env.EMAIL_FROM?.match(/^([^<]+)/)?.[1]?.trim() || 'Federal Gaz';
+
     // Replace logo placeholder with hosted URL
     const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
     const finalHtml = html.replace(/cid:logo/g, logoUrl);
 
     // Create text version from HTML
     const textVersion = html.replace(/<[^>]*>?/gm, '');
+
+    console.log(`[Brevo API] Sending to: ${to}, from: ${senderEmail}, subject: ${subject}`);
 
     try {
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -33,8 +41,8 @@ async function sendEmailViaAPI({ to, subject, html, replyTo }: EmailOptions): Pr
             },
             body: JSON.stringify({
                 sender: {
-                    name: 'Federal Gaz',
-                    email: 'noreply@federalgaz.com'
+                    name: senderName,
+                    email: senderEmail
                 },
                 to: [{ email: to }],
                 subject,
@@ -46,15 +54,15 @@ async function sendEmailViaAPI({ to, subject, html, replyTo }: EmailOptions): Pr
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            console.error('Brevo API error:', response.status, errorData);
+            console.error('[Brevo API] Error:', response.status, JSON.stringify(errorData));
             return { success: false, error: errorData };
         }
 
         const data = await response.json();
-        console.log('Email sent via Brevo API:', data.messageId);
+        console.log('[Brevo API] Email sent:', data.messageId);
         return { success: true, data: { id: data.messageId } };
     } catch (error) {
-        console.error('Brevo API request failed:', error);
+        console.error('[Brevo API] Request failed:', error);
         return { success: false, error };
     }
 }
