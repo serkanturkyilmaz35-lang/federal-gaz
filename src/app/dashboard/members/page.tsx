@@ -8,7 +8,7 @@ import { filterByDate } from "@/lib/dateFilterUtils";
 interface Address {
     id: number;
     title: string;
-    fullAddress: string;
+    address: string;
     city: string;
     district: string;
     phone: string;
@@ -424,7 +424,7 @@ export default function MembersPage() {
                                                                 </span>
                                                             )}
                                                         </p>
-                                                        <p className="text-sm text-gray-400 mt-1">{addr.fullAddress || addr.address}</p>
+                                                        <p className="text-sm text-gray-400 mt-1">{addr.address}</p>
                                                         <p className="text-sm text-gray-500">{addr.district}, {addr.city}</p>
                                                         {addr.phone && <p className="text-sm text-gray-500 mt-1">Tel: {addr.phone}</p>}
                                                     </div>
