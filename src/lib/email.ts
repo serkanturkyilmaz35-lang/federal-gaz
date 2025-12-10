@@ -129,13 +129,26 @@ async function sendEmailViaSMTP({ to, subject, html, replyTo }: EmailOptions): P
 // ==================== MAIN SEND EMAIL FUNCTION ====================
 // Uses HTTP API first (fastest), falls back to SMTP if API fails
 export async function sendEmail(options: EmailOptions) {
+    const emailStartTime = Date.now();
+    const apiKey = process.env.BREVO_API_KEY;
+
+    console.log(`[EMAIL] Starting email send to ${options.to}`);
+    console.log(`[EMAIL] BREVO_API_KEY present: ${!!apiKey}, length: ${apiKey?.length || 0}`);
+
     // Try HTTP API first (much faster - no TCP handshake needed)
-    if (process.env.BREVO_API_KEY) {
+    if (apiKey) {
+        console.log('[EMAIL] Using Brevo HTTP API...');
+        const apiStartTime = Date.now();
         const apiResult = await sendEmailViaAPI(options);
+        console.log(`[EMAIL] API call completed in ${Date.now() - apiStartTime}ms, success: ${apiResult.success}`);
+
         if (apiResult.success) {
+            console.log(`[EMAIL] Total email time: ${Date.now() - emailStartTime}ms via API`);
             return apiResult;
         }
-        console.warn('Brevo API failed, falling back to SMTP...');
+        console.warn('[EMAIL] Brevo API failed, error:', apiResult.error, 'falling back to SMTP...');
+    } else {
+        console.log('[EMAIL] No API key, using SMTP directly...');
     }
 
     // Fallback to SMTP
