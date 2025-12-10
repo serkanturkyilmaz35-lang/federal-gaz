@@ -7,12 +7,63 @@ interface EmailOptions {
     replyTo?: string;
 }
 
-// Brevo SMTP transporter - Singleton pattern for faster email delivery
+// ==================== BREVO HTTP API (FASTEST) ====================
+// HTTP API is much faster than SMTP because it doesn't require TCP handshake
+async function sendEmailViaAPI({ to, subject, html, replyTo }: EmailOptions): Promise<{ success: boolean; data?: { id: string }; error?: unknown }> {
+    const apiKey = process.env.BREVO_API_KEY;
+
+    if (!apiKey) {
+        return { success: false, error: 'BREVO_API_KEY is missing' };
+    }
+
+    // Replace logo placeholder with hosted URL
+    const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
+    const finalHtml = html.replace(/cid:logo/g, logoUrl);
+
+    // Create text version from HTML
+    const textVersion = html.replace(/<[^>]*>?/gm, '');
+
+    try {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+                sender: {
+                    name: 'Federal Gaz',
+                    email: 'noreply@federalgaz.com'
+                },
+                to: [{ email: to }],
+                subject,
+                htmlContent: finalHtml,
+                textContent: textVersion,
+                replyTo: replyTo ? { email: replyTo } : undefined,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Brevo API error:', response.status, errorData);
+            return { success: false, error: errorData };
+        }
+
+        const data = await response.json();
+        console.log('Email sent via Brevo API:', data.messageId);
+        return { success: true, data: { id: data.messageId } };
+    } catch (error) {
+        console.error('Brevo API request failed:', error);
+        return { success: false, error };
+    }
+}
+
+// ==================== BREVO SMTP (FALLBACK) ====================
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cachedTransporter: any = null;
 
 const getTransporter = () => {
-    // Return cached transporter if available
     if (cachedTransporter) {
         return cachedTransporter;
     }
@@ -21,18 +72,16 @@ const getTransporter = () => {
     const smtpPass = process.env.BREVO_SMTP_PASS;
 
     if (!smtpUser || !smtpPass) {
-        console.warn('BREVO_SMTP_USER or BREVO_SMTP_PASS is missing. Email sending will be skipped.');
         return null;
     }
 
-    // Create and cache transporter with connection pooling
     cachedTransporter = nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
         port: 587,
         secure: false,
-        pool: true, // Enable connection pooling for faster subsequent emails
-        maxConnections: 5, // Allow up to 5 parallel connections
-        maxMessages: 100, // Max messages per connection before reconnecting
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
         auth: {
             user: smtpUser,
             pass: smtpPass,
@@ -42,7 +91,7 @@ const getTransporter = () => {
     return cachedTransporter;
 };
 
-export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
+async function sendEmailViaSMTP({ to, subject, html, replyTo }: EmailOptions): Promise<{ success: boolean; data?: { id: string }; error?: unknown }> {
     const transporter = getTransporter();
 
     if (!transporter) {
@@ -50,15 +99,9 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
     }
 
     try {
-        // Domain onaylı olduğu için kendi domainimizden göndermeliyiz
-        // noreply veya bilgi kullanılabilir. Yanıtlar replyTo'ya gider.
         const fromEmail = process.env.EMAIL_FROM || 'Federal Gaz <noreply@federalgaz.com>';
-
-        // Use hosted logo URL
         const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
         const finalHtml = html.replace(/cid:logo/g, logoUrl);
-
-        // Create text version from HTML (simple strip tags)
         const textVersion = html.replace(/<[^>]*>?/gm, '');
 
         const info = await transporter.sendMail({
@@ -66,21 +109,37 @@ export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
             to,
             subject,
             html: finalHtml,
-            text: textVersion, // Fallback for clients that don't support HTML
+            text: textVersion,
             replyTo,
             headers: {
-                'X-Entity-Ref-ID': new Date().getTime().toString(), // Unique ID
-                'List-Unsubscribe': `<mailto:${fromEmail}?subject=unsubscribe>`, // Anti-spam signal
+                'X-Entity-Ref-ID': new Date().getTime().toString(),
+                'List-Unsubscribe': `<mailto:${fromEmail}?subject=unsubscribe>`,
                 'Precedence': 'bulk',
             }
         });
 
-        console.log('Email sent successfully:', info.messageId);
+        console.log('Email sent via SMTP:', info.messageId);
         return { success: true, data: { id: info.messageId } };
     } catch (error) {
-        console.error('Email error:', error);
+        console.error('SMTP email error:', error);
         return { success: false, error };
     }
+}
+
+// ==================== MAIN SEND EMAIL FUNCTION ====================
+// Uses HTTP API first (fastest), falls back to SMTP if API fails
+export async function sendEmail(options: EmailOptions) {
+    // Try HTTP API first (much faster - no TCP handshake needed)
+    if (process.env.BREVO_API_KEY) {
+        const apiResult = await sendEmailViaAPI(options);
+        if (apiResult.success) {
+            return apiResult;
+        }
+        console.warn('Brevo API failed, falling back to SMTP...');
+    }
+
+    // Fallback to SMTP
+    return sendEmailViaSMTP(options);
 }
 
 export function getPasswordResetEmail(resetLink: string) {
