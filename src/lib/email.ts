@@ -75,13 +75,16 @@ const getTransporter = () => {
         return null;
     }
 
+    // Use port 465 with direct SSL (faster than 587 STARTTLS)
     cachedTransporter = nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false,
+        port: 465,
+        secure: true, // Direct SSL, no STARTTLS upgrade needed
         pool: true,
         maxConnections: 5,
         maxMessages: 100,
+        connectionTimeout: 5000, // 5 second connection timeout
+        greetingTimeout: 5000,   // 5 second greeting timeout
         auth: {
             user: smtpUser,
             pass: smtpPass,
