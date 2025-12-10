@@ -66,8 +66,8 @@ export default function DashboardPage() {
         filteredContacts: 0,
         totalPageViews: 0
     });
-    const [orderBreakdown, setOrderBreakdown] = useState({ pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 });
-    const [dailyOrderBreakdown, setDailyOrderBreakdown] = useState({ pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 });
+    const [orderBreakdown, setOrderBreakdown] = useState({ pending: 0, preparing: 0, shipping: 0, completed: 0, cancelled: 0 });
+    const [dailyOrderBreakdown, setDailyOrderBreakdown] = useState({ pending: 0, preparing: 0, shipping: 0, completed: 0, cancelled: 0 });
     const [contactBreakdown, setContactBreakdown] = useState({ new: 0, read: 0, replied: 0 });
     const [dailyContactBreakdown, setDailyContactBreakdown] = useState({ new: 0, read: 0, replied: 0 });
     const [chartData, setChartData] = useState<{ labels: string[], ordersData: number[], contactsData: number[] }>({
@@ -689,9 +689,9 @@ export default function DashboardPage() {
                     icon="shopping_cart"
                     breakdown={[
                         { label: ORDER_STATUS_COLORS.pending.label, count: orderBreakdown.pending, color: ORDER_STATUS_COLORS.pending.color },
-                        { label: ORDER_STATUS_COLORS.processing.label, count: orderBreakdown.processing, color: ORDER_STATUS_COLORS.processing.color },
-                        { label: ORDER_STATUS_COLORS.shipped.label, count: orderBreakdown.shipped, color: ORDER_STATUS_COLORS.shipped.color },
-                        { label: ORDER_STATUS_COLORS.delivered.label, count: orderBreakdown.delivered, color: ORDER_STATUS_COLORS.delivered.color },
+                        { label: ORDER_STATUS_COLORS.preparing.label, count: orderBreakdown.preparing, color: ORDER_STATUS_COLORS.preparing.color },
+                        { label: ORDER_STATUS_COLORS.shipping.label, count: orderBreakdown.shipping, color: ORDER_STATUS_COLORS.shipping.color },
+                        { label: ORDER_STATUS_COLORS.completed.label, count: orderBreakdown.completed, color: ORDER_STATUS_COLORS.completed.color },
                         { label: ORDER_STATUS_COLORS.cancelled.label, count: orderBreakdown.cancelled, color: ORDER_STATUS_COLORS.cancelled.color },
                     ]}
                 />
@@ -701,9 +701,9 @@ export default function DashboardPage() {
                     icon="add_shopping_cart"
                     breakdown={[
                         { label: ORDER_STATUS_COLORS.pending.label, count: dailyOrderBreakdown.pending, color: ORDER_STATUS_COLORS.pending.color },
-                        { label: ORDER_STATUS_COLORS.processing.label, count: dailyOrderBreakdown.processing, color: ORDER_STATUS_COLORS.processing.color },
-                        { label: ORDER_STATUS_COLORS.shipped.label, count: dailyOrderBreakdown.shipped, color: ORDER_STATUS_COLORS.shipped.color },
-                        { label: ORDER_STATUS_COLORS.delivered.label, count: dailyOrderBreakdown.delivered, color: ORDER_STATUS_COLORS.delivered.color },
+                        { label: ORDER_STATUS_COLORS.preparing.label, count: dailyOrderBreakdown.preparing, color: ORDER_STATUS_COLORS.preparing.color },
+                        { label: ORDER_STATUS_COLORS.shipping.label, count: dailyOrderBreakdown.shipping, color: ORDER_STATUS_COLORS.shipping.color },
+                        { label: ORDER_STATUS_COLORS.completed.label, count: dailyOrderBreakdown.completed, color: ORDER_STATUS_COLORS.completed.color },
                         { label: ORDER_STATUS_COLORS.cancelled.label, count: dailyOrderBreakdown.cancelled, color: ORDER_STATUS_COLORS.cancelled.color },
                     ]}
                 />

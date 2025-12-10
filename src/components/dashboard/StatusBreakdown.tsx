@@ -40,11 +40,11 @@ export default function StatusBreakdown({ items, compact = false }: StatusBreakd
 
 // Status colors constants
 export const ORDER_STATUS_COLORS: Record<string, { label: string; color: string }> = {
-    pending: { label: 'Beklemede', color: '#eab308' },    // Yellow
-    processing: { label: 'İşleniyor', color: '#3b82f6' }, // Blue
-    shipped: { label: 'Kargoda', color: '#8b5cf6' },      // Purple
-    delivered: { label: 'Teslim', color: '#22c55e' },     // Green
-    cancelled: { label: 'İptal', color: '#ef4444' },      // Red
+    pending: { label: 'Beklemede', color: '#eab308' },       // Yellow
+    preparing: { label: 'Hazırlanıyor', color: '#3b82f6' },  // Blue
+    shipping: { label: 'Yola Çıktı', color: '#8b5cf6' },     // Purple
+    completed: { label: 'Tamamlandı', color: '#22c55e' },    // Green
+    cancelled: { label: 'İptal Edildi', color: '#ef4444' },  // Red
 };
 
 export const CONTACT_STATUS_COLORS: Record<string, { label: string; color: string }> = {

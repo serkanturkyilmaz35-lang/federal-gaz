@@ -48,15 +48,16 @@ function getDateRange(dateRange: string, customStart?: string, customEnd?: strin
 async function getOrderBreakdown(dateFilter?: { start: Date; end: Date }) {
     const where = dateFilter ? { createdAt: { [Op.between]: [dateFilter.start, dateFilter.end] } } : {};
 
-    const [pending, processing, shipped, delivered, cancelled] = await Promise.all([
-        Order.count({ where: { ...where, status: 'pending' } as any }),
-        Order.count({ where: { ...where, status: 'processing' } as any }),
-        Order.count({ where: { ...where, status: 'shipped' } as any }),
-        Order.count({ where: { ...where, status: 'delivered' } as any }),
-        Order.count({ where: { ...where, status: 'cancelled' } as any }),
+    // Use UPPERCASE status values matching database ENUM
+    const [pending, preparing, shipping, completed, cancelled] = await Promise.all([
+        Order.count({ where: { ...where, status: 'PENDING' } as any }),
+        Order.count({ where: { ...where, status: 'PREPARING' } as any }),
+        Order.count({ where: { ...where, status: 'SHIPPING' } as any }),
+        Order.count({ where: { ...where, status: 'COMPLETED' } as any }),
+        Order.count({ where: { ...where, status: 'CANCELLED' } as any }),
     ]);
 
-    return { pending, processing, shipped, delivered, cancelled };
+    return { pending, preparing, shipping, completed, cancelled };
 }
 
 // Get contact breakdown by status
