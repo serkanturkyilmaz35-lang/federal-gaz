@@ -17,7 +17,7 @@ function getMinimalOTPEmail(name: string, otp: string): string {
 </div></body></html>`;
 }
 
-// Ultra-fast Brevo API call with timeout
+// Ultra-fast Brevo API call - no timeout to ensure delivery
 async function sendOTPEmailFast(to: string, userName: string, otp: string): Promise<{ success: boolean; time: number }> {
     const startTime = Date.now();
     const apiKey = process.env.BREVO_API_KEY;
@@ -26,9 +26,6 @@ async function sendOTPEmailFast(to: string, userName: string, otp: string): Prom
         console.error('[OTP-API] BREVO_API_KEY missing!');
         return { success: false, time: Date.now() - startTime };
     }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
     try {
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -44,10 +41,8 @@ async function sendOTPEmailFast(to: string, userName: string, otp: string): Prom
                 subject: 'Doğrulama Kodu - Federal Gaz',
                 htmlContent: getMinimalOTPEmail(userName, otp),
             }),
-            signal: controller.signal,
         });
 
-        clearTimeout(timeout);
         const elapsed = Date.now() - startTime;
 
         if (!response.ok) {
@@ -59,10 +54,9 @@ async function sendOTPEmailFast(to: string, userName: string, otp: string): Prom
         console.log(`[OTP-API] Success in ${elapsed}ms`);
         return { success: true, time: elapsed };
     } catch (error: unknown) {
-        clearTimeout(timeout);
         const elapsed = Date.now() - startTime;
-        const errorName = error instanceof Error ? error.name : 'Unknown';
-        console.error(`[OTP-API] ${errorName} in ${elapsed}ms`);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown';
+        console.error(`[OTP-API] Error in ${elapsed}ms: ${errorMsg}`);
         return { success: false, time: elapsed };
     }
 }
