@@ -632,35 +632,40 @@ export default function DashboardPage() {
                 } catch (e) { console.warn("Doughnut chart error", e); }
             }
 
-            yPos += maxChartHeight + 10;
+            yPos += maxChartHeight + 15; // More spacing before this section
 
 
             // --- 4.5. REAL-TIME & ACTIVE PAGES SECTION ---
-            // Real-time stats
+            // Section Title
             pdf.setFontSize(12);
             pdf.setTextColor(30, 30, 30);
-            pdf.setFont("Roboto", "normal");
-            pdf.text("Gerçek Zamanlı Takip", margin, yPos);
-            yPos += 6;
-
-            pdf.setFillColor(248, 250, 252);
-            pdf.setDrawColor(226, 232, 240);
-            pdf.roundedRect(margin, yPos, 85, 18, 2, 2, "FD");
-
-            pdf.setFontSize(18);
-            pdf.setTextColor(0, 0, 0);
             pdf.setFont("Roboto", "bold");
-            pdf.text(realTimeStats.activeUsers.toString(), margin + 5, yPos + 12);
+            pdf.text("Gerçek Zamanlı Takip", margin, yPos);
+            yPos += 8;
 
-            pdf.setFontSize(8);
-            pdf.setTextColor(100, 100, 100);
+            // Real-time stats card
+            pdf.setFillColor(240, 249, 255); // Light blue background
+            pdf.setDrawColor(147, 197, 253); // Blue border
+            pdf.roundedRect(margin, yPos, availableWidth, 22, 2, 2, "FD");
+
+            pdf.setFontSize(24);
+            pdf.setTextColor(30, 64, 175); // Blue text
+            pdf.setFont("Roboto", "bold");
+            pdf.text(realTimeStats.activeUsers.toString(), margin + 8, yPos + 14);
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(71, 85, 105);
             pdf.setFont("Roboto", "normal");
-            pdf.text("şu anda aktif kullanıcı", margin + 20, yPos + 12);
-            pdf.text(`Mobil: ${realTimeStats.mobileUsers}  Masaüstü: ${realTimeStats.desktopUsers}`, margin + 5, yPos + 16);
+            pdf.text("şu anda aktif kullanıcı", margin + 25, yPos + 14);
 
-            yPos += 22;
+            // Mobile/Desktop breakdown
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(`📱 Mobil: ${realTimeStats.mobileUsers}   💻 Masaüstü: ${realTimeStats.desktopUsers}`, margin + 8, yPos + 20);
 
-            // Active Pages
+            yPos += 28; // Better spacing after card
+
+            // Active Pages with card background
             if (activePages && activePages.length > 0) {
                 pdf.setFontSize(10);
                 pdf.setTextColor(30, 30, 30);
@@ -668,20 +673,29 @@ export default function DashboardPage() {
                 pdf.text("Aktif Sayfalar", margin, yPos);
                 yPos += 5;
 
+                // Card background for list
+                const listHeight = Math.min(activePages.length, 5) * 7 + 4;
+                pdf.setFillColor(249, 250, 251);
+                pdf.setDrawColor(229, 231, 235);
+                pdf.roundedRect(margin, yPos, availableWidth, listHeight, 2, 2, "FD");
+
+                yPos += 4;
                 pdf.setFontSize(8);
                 pdf.setFont("Roboto", "normal");
                 activePages.slice(0, 5).forEach((page: any) => {
                     if (yPos > pageHeight - 30) return;
-                    pdf.setTextColor(80, 80, 80);
-                    // Use page.url - that's what GA4 returns
+                    pdf.setTextColor(55, 65, 81);
                     const pageName = page.url || page.title || page.name || "/";
-                    pdf.text(pageName, margin + 2, yPos + 4);
+                    pdf.text(pageName, margin + 4, yPos + 4);
                     pdf.setTextColor(239, 68, 68); // Red for user count
-                    pdf.text(`${page.users || 0} kullanıcı`, margin + 120, yPos + 4);
-                    yPos += 6;
+                    pdf.setFont("Roboto", "bold");
+                    pdf.text(`${page.users || 0} kullanıcı`, margin + availableWidth - 30, yPos + 4);
+                    pdf.setFont("Roboto", "normal");
+                    yPos += 7;
                 });
-                yPos += 5;
+                yPos += 8;
             }
+
 
 
             // --- 5. TABLE SECTION ---
