@@ -223,17 +223,41 @@ export default function DashboardPage() {
         },
     };
 
-    // Doughnut Chart
+    // Doughnut Chart - Dynamic from topPages
+    const doughnutColors = ["#137fec", "#22c55e", "#eab308", "#6b7280", "#ef4444"];
+
+    // Get top 4 pages for doughnut chart
+    const top4Pages = topPages.slice(0, 4);
+    const totalViews = top4Pages.reduce((sum: number, p: any) => sum + (p.views || 0), 0);
+
     const doughnutChartData = {
-        labels: ["Anasayfa", "Ürünler", "Hakkımızda", "İletişim"],
+        labels: top4Pages.length > 0
+            ? top4Pages.map((p: any) => p.name || 'Sayfa')
+            : ["Veri Yok"],
         datasets: [
             {
-                data: [45, 25, 20, 10],
-                backgroundColor: ["#137fec", "#22c55e", "#eab308", "#6b7280"],
+                data: top4Pages.length > 0
+                    ? top4Pages.map((p: any) => p.views || 0)
+                    : [1],
+                backgroundColor: doughnutColors.slice(0, Math.max(top4Pages.length, 1)),
                 borderWidth: 0,
             },
         ],
     };
+
+    // Calculate percentages for legend
+    const doughnutLegend = top4Pages.length > 0
+        ? top4Pages.map((p: any, i: number) => ({
+            label: p.name || 'Sayfa',
+            color: doughnutColors[i],
+            value: totalViews > 0 ? `${Math.round((p.views / totalViews) * 100)}%` : '0%'
+        }))
+        : [
+            { label: "Anasayfa", color: "#137fec", value: "45%" },
+            { label: "Ürünler", color: "#22c55e", value: "25%" },
+            { label: "Hakkımızda", color: "#eab308", value: "20%" },
+            { label: "İletişim", color: "#6b7280", value: "10%" },
+        ];
 
     const doughnutChartOptions = {
         responsive: true,
@@ -408,35 +432,74 @@ export default function DashboardPage() {
                 { label: "İptal", count: orderBreakdown.cancelled, color: [239, 68, 68] },
             ];
 
+            const dailyOrderBreakdownPDF = [
+                { label: "Beklemede", count: dailyOrderBreakdown.pending, color: [234, 179, 8] },
+                { label: "Hazırlanıyor", count: dailyOrderBreakdown.preparing, color: [59, 130, 246] },
+                { label: "Yola Çıktı", count: dailyOrderBreakdown.shipping, color: [139, 92, 246] },
+                { label: "Tamamlandı", count: dailyOrderBreakdown.completed, color: [34, 197, 94] },
+                { label: "İptal", count: dailyOrderBreakdown.cancelled, color: [239, 68, 68] },
+            ];
+
             const contactBreakdownPDF = [
                 { label: "Yeni", count: contactBreakdown.new, color: [59, 130, 246] },
                 { label: "Okundu", count: contactBreakdown.read, color: [107, 114, 128] },
                 { label: "Yanıtlandı", count: contactBreakdown.replied, color: [34, 197, 94] },
             ];
 
-            // Row 1: Toplam Sipariş, Toplam Talep
-            drawStatCardWithBreakdown(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"), orderBreakdownPDF);
-            drawStatCardWithBreakdown(margin + cardWidth + gap, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"), contactBreakdownPDF);
-            yPos += cardHeight + gap;
+            const dailyContactBreakdownPDF = [
+                { label: "Yeni", count: dailyContactBreakdown.new, color: [59, 130, 246] },
+                { label: "Okundu", count: dailyContactBreakdown.read, color: [107, 114, 128] },
+                { label: "Yanıtlandı", count: dailyContactBreakdown.replied, color: [34, 197, 94] },
+            ];
 
-            // Row 2: Toplam Üye, Günlük Ziyaret (no breakdown)
-            const drawStatCardSimple = (x: number, y: number, label: string, value: string) => {
+            // 3x2 Grid - 6 cards like dashboard
+            const cardWidth3 = (availableWidth - gap * 2) / 3;
+            const cardHeight3 = 28;
+
+            const drawCard3 = (x: number, y: number, label: string, value: string, breakdown?: { label: string; count: number; color: number[] }[]) => {
                 pdf.setFillColor(248, 250, 252);
                 pdf.setDrawColor(226, 232, 240);
-                pdf.roundedRect(x, y, cardWidth, 22, 2, 2, "FD");
-                pdf.setFontSize(9);
+                pdf.roundedRect(x, y, cardWidth3, cardHeight3, 2, 2, "FD");
+
+                pdf.setFontSize(8);
                 pdf.setTextColor(100, 115, 130);
                 pdf.setFont("Roboto", "normal");
-                pdf.text(label, x + 4, y + 8);
-                pdf.setFontSize(14);
+                pdf.text(label, x + 3, y + 6);
+
+                pdf.setFontSize(12);
                 pdf.setTextColor(0, 0, 0);
                 pdf.setFont("Roboto", "bold");
-                pdf.text(value, x + 4, y + 18);
+                pdf.text(value, x + 3, y + 14);
+
+                // Draw mini breakdown
+                if (breakdown && breakdown.length > 0) {
+                    let bx = x + 3;
+                    pdf.setFontSize(5);
+                    breakdown.forEach((item) => {
+                        if (item.count > 0) {
+                            pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
+                            pdf.circle(bx + 1, y + 21, 1, "F");
+                            pdf.setTextColor(100, 100, 100);
+                            pdf.setFont("Roboto", "normal");
+                            const text = `${item.count}`;
+                            pdf.text(text, bx + 2.5, y + 22);
+                            bx += pdf.getTextWidth(text) + 5;
+                        }
+                    });
+                }
             };
 
-            drawStatCardSimple(margin, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
-            drawStatCardSimple(margin + cardWidth + gap, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
-            yPos += 22 + 10; // Extra spacing after stats
+            // Row 1: Toplam Sipariş, Günlük Sipariş, Toplam Üye
+            drawCard3(margin, yPos, "Toplam Sipariş", stats.totalOrders.toLocaleString("tr-TR"), orderBreakdownPDF);
+            drawCard3(margin + cardWidth3 + gap, yPos, "Günlük Sipariş", stats.dailyOrders.toLocaleString("tr-TR"), dailyOrderBreakdownPDF);
+            drawCard3(margin + (cardWidth3 + gap) * 2, yPos, "Toplam Üye", stats.totalUsers.toLocaleString("tr-TR"));
+            yPos += cardHeight3 + gap;
+
+            // Row 2: Toplam Talep, Günlük Talep, Günlük Ziyaret
+            drawCard3(margin, yPos, "Toplam Talep", stats.totalContacts.toLocaleString("tr-TR"), contactBreakdownPDF);
+            drawCard3(margin + cardWidth3 + gap, yPos, "Günlük Talep", stats.dailyContacts.toLocaleString("tr-TR"), dailyContactBreakdownPDF);
+            drawCard3(margin + (cardWidth3 + gap) * 2, yPos, "Günlük Ziyaret", stats.dailyPageViews.toLocaleString("tr-TR"));
+            yPos += cardHeight3 + 10; // Extra spacing after stats
 
 
             // --- 4. CHARTS SECTION (Side by Side) ---
@@ -795,15 +858,10 @@ export default function DashboardPage() {
                         <Doughnut ref={doughnutChartRef} data={doughnutChartData} options={doughnutChartOptions} />
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                        {[
-                            { label: "Anasayfa", color: "#137fec", value: "45%" },
-                            { label: "Ürünler", color: "#22c55e", value: "25%" },
-                            { label: "Hakkımızda", color: "#eab308", value: "20%" },
-                            { label: "İletişim", color: "#6b7280", value: "10%" },
-                        ].map((item) => (
+                        {doughnutLegend.map((item) => (
                             <div key={item.label} className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                                <span className="text-gray-400">{item.label}</span>
+                                <span className="text-gray-400 truncate">{item.label}</span>
                                 <span className="text-white ml-auto">{item.value}</span>
                             </div>
                         ))}
