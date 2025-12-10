@@ -7,8 +7,16 @@ interface EmailOptions {
     replyTo?: string;
 }
 
-// Brevo SMTP transporter
-const createTransporter = () => {
+// Brevo SMTP transporter - Singleton pattern for faster email delivery
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedTransporter: any = null;
+
+const getTransporter = () => {
+    // Return cached transporter if available
+    if (cachedTransporter) {
+        return cachedTransporter;
+    }
+
     const smtpUser = process.env.BREVO_SMTP_USER;
     const smtpPass = process.env.BREVO_SMTP_PASS;
 
@@ -17,19 +25,25 @@ const createTransporter = () => {
         return null;
     }
 
-    return nodemailer.createTransport({
+    // Create and cache transporter with connection pooling
+    cachedTransporter = nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
         port: 587,
         secure: false,
+        pool: true, // Enable connection pooling for faster subsequent emails
+        maxConnections: 5, // Allow up to 5 parallel connections
+        maxMessages: 100, // Max messages per connection before reconnecting
         auth: {
             user: smtpUser,
             pass: smtpPass,
         },
     });
+
+    return cachedTransporter;
 };
 
 export async function sendEmail({ to, subject, html, replyTo }: EmailOptions) {
-    const transporter = createTransporter();
+    const transporter = getTransporter();
 
     if (!transporter) {
         return { success: false, error: 'Missing SMTP credentials' };
