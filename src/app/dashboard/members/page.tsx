@@ -9,9 +9,6 @@ interface Address {
     id: number;
     title: string;
     address: string;
-    city: string;
-    district: string;
-    phone: string;
     isDefault: boolean;
 }
 
@@ -170,7 +167,7 @@ export default function MembersPage() {
             ...formData,
             addresses: [
                 ...formData.addresses,
-                { id: 0, title: "", address: "", isDefault: false, city: "", district: "", phone: "" } // id 0 marks new
+                { id: 0, title: "", address: "", isDefault: false } // id 0 marks new
             ]
         });
     };
