@@ -62,9 +62,15 @@ async function sendEmailViaAPI({ to, subject, html, replyTo }: EmailOptions): Pr
 // ==================== BREVO SMTP (FALLBACK) ====================
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cachedTransporter: any = null;
+let lastConnectionTime = 0;
 
 const getTransporter = () => {
-    if (cachedTransporter) {
+    const now = Date.now();
+    // Recreate transporter if more than 5 minutes since last use (connection may have closed)
+    const CONNECTION_TIMEOUT = 5 * 60 * 1000;
+
+    if (cachedTransporter && (now - lastConnectionTime) < CONNECTION_TIMEOUT) {
+        lastConnectionTime = now;
         return cachedTransporter;
     }
 
@@ -75,22 +81,37 @@ const getTransporter = () => {
         return null;
     }
 
-    // Use port 587 with STARTTLS (more compatible)
+    // Close old transporter if exists
+    if (cachedTransporter) {
+        try {
+            cachedTransporter.close();
+        } catch (e) {
+            // Ignore close errors
+        }
+    }
+
+    // Optimized SMTP settings for speed and reliability
     cachedTransporter = nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
         port: 587,
         secure: false, // Use STARTTLS
         pool: true,
-        maxConnections: 5,
-        maxMessages: 100,
-        connectionTimeout: 10000, // 10 second connection timeout
-        greetingTimeout: 10000,   // 10 second greeting timeout
+        maxConnections: 3,
+        maxMessages: 50,
+        connectionTimeout: 5000,  // 5 second connection timeout (was 10)
+        greetingTimeout: 5000,    // 5 second greeting timeout (was 10)
+        socketTimeout: 10000,     // 10 second socket timeout
         auth: {
             user: smtpUser,
             pass: smtpPass,
         },
+        tls: {
+            rejectUnauthorized: false, // Accept self-signed certs for speed
+            ciphers: 'SSLv3'
+        }
     });
 
+    lastConnectionTime = now;
     return cachedTransporter;
 };
 
