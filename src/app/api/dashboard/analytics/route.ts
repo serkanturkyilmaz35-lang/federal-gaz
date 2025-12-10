@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase, Order, User, ContactRequest } from '@/lib/models';
 import { getDb } from '@/lib/db';
-import { getRealtimeUsers, getActivePages, getTopPages, getTrafficSources, getKeyMetrics } from '@/lib/ga4';
+import { getRealtimeUsers, getActivePages, getTopPages, getTrafficSources, getKeyMetrics, getTopCities } from '@/lib/ga4';
 import { Op } from 'sequelize';
 
 const sequelize = getDb();
@@ -118,7 +118,8 @@ export async function GET(request: NextRequest) {
             activePagesData,
             topPagesData,
             trafficSourcesData,
-            keyMetricsData
+            keyMetricsData,
+            topCitiesData
         ] = await Promise.all([
             // Basic counts
             Order.count(),
@@ -143,6 +144,7 @@ export async function GET(request: NextRequest) {
             getTopPages(gaStart, gaEnd),
             getTrafficSources(gaStart, gaEnd),
             getKeyMetrics(gaStart, gaEnd),
+            getTopCities(gaStart, gaEnd),
         ]);
 
 
@@ -158,6 +160,7 @@ export async function GET(request: NextRequest) {
         const activePages = gaConfigured ? activePagesData : [];
         const topPages = gaConfigured ? topPagesData : [];
         const trafficSources = gaConfigured ? trafficSourcesData : [];
+        const topCities = gaConfigured ? topCitiesData : [];
         const keyMetrics = gaConfigured ? keyMetricsData : {
             pageViews: 0,
             uniqueVisitors: 0,
@@ -189,6 +192,7 @@ export async function GET(request: NextRequest) {
             activePages,
             topPages,
             trafficSources,
+            topCities,
             keyMetrics,
         });
     } catch (error) {

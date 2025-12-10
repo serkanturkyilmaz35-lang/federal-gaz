@@ -208,3 +208,32 @@ export async function getKeyMetrics(startDate: string = 'today', endDate: string
         return { pageViews: 0, uniqueVisitors: 0, bounceRate: 0, avgSessionDuration: 0 };
     }
 }
+
+export async function getTopCities(startDate: string = 'today', endDate: string = 'today'): Promise<Array<{ city: string; users: number; percentage: number }>> {
+    const client = getAnalyticsClient();
+    const propertyId = process.env.GA_PROPERTY_ID;
+
+    if (!client || !propertyId) return [];
+
+    try {
+        const [response] = await client.runReport({
+            property: `properties/${propertyId}`,
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: 'city' }],
+            metrics: [{ name: 'activeUsers' }],
+            limit: 5,
+            orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        });
+
+        const totalUsers = response.rows?.reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || '0', 10), 0) || 1;
+
+        return response.rows?.map(row => ({
+            city: row.dimensionValues?.[0]?.value || 'Unknown',
+            users: parseInt(row.metricValues?.[0]?.value || '0', 10),
+            percentage: Math.round((parseInt(row.metricValues?.[0]?.value || '0', 10) / totalUsers) * 100),
+        })) || [];
+    } catch (error) {
+        console.error('GA4 Top Cities Error:', error);
+        return [];
+    }
+}
