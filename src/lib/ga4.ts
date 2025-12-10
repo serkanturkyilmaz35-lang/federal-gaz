@@ -73,9 +73,7 @@ export async function getActivePages(): Promise<Array<{ url: string; users: numb
     const client = getAnalyticsClient();
     const propertyId = process.env.GA_PROPERTY_ID;
 
-    if (!client || !propertyId) {
-        return [];
-    }
+    if (!client || !propertyId) return [];
 
     try {
         const [response] = await client.runRealtimeReport({
@@ -85,43 +83,36 @@ export async function getActivePages(): Promise<Array<{ url: string; users: numb
             limit: 5,
         });
 
-        const totalUsers = response.rows?.reduce((sum, row) => {
-            return sum + parseInt(row.metricValues?.[0]?.value || '0', 10);
-        }, 0) || 1;
+        const totalUsers = response.rows?.reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || '0', 10), 0) || 1;
 
-        return response.rows?.map(row => {
-            const users = parseInt(row.metricValues?.[0]?.value || '0', 10);
-            return {
-                url: row.dimensionValues?.[0]?.value || '/',
-                users,
-                percentage: Math.round((users / totalUsers) * 100),
-            };
-        }) || [];
+        return response.rows?.map(row => ({
+            url: row.dimensionValues?.[0]?.value || '/',
+            users: parseInt(row.metricValues?.[0]?.value || '0', 10),
+            percentage: Math.round((parseInt(row.metricValues?.[0]?.value || '0', 10) / totalUsers) * 100),
+        })) || [];
     } catch (error) {
         console.error('GA4 Active Pages Error:', error);
         return [];
     }
 }
 
-export async function getTopPages(): Promise<Array<{ name: string; views: number; unique: number; bounceRate: string }>> {
+export async function getTopPages(startDate: string = 'today', endDate: string = 'today'): Promise<Array<{ name: string; views: number; unique: number; bounceRate: string }>> {
     const client = getAnalyticsClient();
     const propertyId = process.env.GA_PROPERTY_ID;
 
-    if (!client || !propertyId) {
-        return [];
-    }
+    if (!client || !propertyId) return [];
 
     try {
         const [response] = await client.runReport({
             property: `properties/${propertyId}`,
-            dateRanges: [{ startDate: 'today', endDate: 'today' }],
+            dateRanges: [{ startDate, endDate }],
             metrics: [
                 { name: 'screenPageViews' },
                 { name: 'activeUsers' },
                 { name: 'bounceRate' },
             ],
             dimensions: [{ name: 'pagePath' }],
-            limit: 10,
+            limit: 5,
             orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
         });
 
@@ -137,24 +128,83 @@ export async function getTopPages(): Promise<Array<{ name: string; views: number
     }
 }
 
-export async function getTotalPageViews(): Promise<number> {
+export async function getTotalPageViews(startDate: string = 'today', endDate: string = 'today'): Promise<number> {
+    const client = getAnalyticsClient();
+    const propertyId = process.env.GA_PROPERTY_ID;
+
+    if (!client || !propertyId) return 0;
+
+    try {
+        const [response] = await client.runReport({
+            property: `properties/${propertyId}`,
+            dateRanges: [{ startDate, endDate }],
+            metrics: [{ name: 'screenPageViews' }],
+        });
+        return parseInt(response.rows?.[0]?.metricValues?.[0]?.value || '0', 10);
+    } catch (error) {
+        console.error('GA4 Total Views Error:', error);
+        return 0;
+    }
+}
+
+export async function getTrafficSources(startDate: string = 'today', endDate: string = 'today'): Promise<Array<{ source: string; users: number; percentage: number }>> {
+    const client = getAnalyticsClient();
+    const propertyId = process.env.GA_PROPERTY_ID;
+
+    if (!client || !propertyId) return [];
+
+    try {
+        const [response] = await client.runReport({
+            property: `properties/${propertyId}`,
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+            metrics: [{ name: 'activeUsers' }],
+            limit: 5,
+            orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        });
+
+        const totalUsers = response.rows?.reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || '0', 10), 0) || 1;
+
+        return response.rows?.map(row => ({
+            source: row.dimensionValues?.[0]?.value || 'Direct',
+            users: parseInt(row.metricValues?.[0]?.value || '0', 10),
+            percentage: Math.round((parseInt(row.metricValues?.[0]?.value || '0', 10) / totalUsers) * 100),
+        })) || [];
+    } catch (error) {
+        console.error('GA4 Traffic Sources Error:', error);
+        return [];
+    }
+}
+
+export async function getKeyMetrics(startDate: string = 'today', endDate: string = 'today'): Promise<{ pageViews: number; uniqueVisitors: number; bounceRate: number; avgSessionDuration: number }> {
     const client = getAnalyticsClient();
     const propertyId = process.env.GA_PROPERTY_ID;
 
     if (!client || !propertyId) {
-        return 0;
+        return { pageViews: 0, uniqueVisitors: 0, bounceRate: 0, avgSessionDuration: 0 };
     }
 
     try {
         const [response] = await client.runReport({
             property: `properties/${propertyId}`,
-            dateRanges: [{ startDate: 'today', endDate: 'today' }],
-            metrics: [{ name: 'screenPageViews' }],
+            dateRanges: [{ startDate, endDate }],
+            metrics: [
+                { name: 'screenPageViews' },
+                { name: 'activeUsers' },
+                { name: 'bounceRate' },
+                { name: 'averageSessionDuration' }
+            ],
         });
 
-        return parseInt(response.rows?.[0]?.metricValues?.[0]?.value || '0', 10);
+        const row = response.rows?.[0];
+        return {
+            pageViews: parseInt(row?.metricValues?.[0]?.value || '0', 10),
+            uniqueVisitors: parseInt(row?.metricValues?.[1]?.value || '0', 10),
+            bounceRate: Math.round(parseFloat(row?.metricValues?.[2]?.value || '0') * 100),
+            avgSessionDuration: Math.round(parseFloat(row?.metricValues?.[3]?.value || '0')),
+        };
     } catch (error) {
-        console.error('GA4 Total Views Error:', error);
-        return 0;
+        console.error('GA4 Key Metrics Error:', error);
+        return { pageViews: 0, uniqueVisitors: 0, bounceRate: 0, avgSessionDuration: 0 };
     }
 }

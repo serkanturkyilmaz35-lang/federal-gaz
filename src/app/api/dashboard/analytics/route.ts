@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase, Order, User, ContactRequest } from '@/lib/models';
 import { getDb } from '@/lib/db';
-import { getRealtimeUsers, getActivePages, getTopPages, getTotalPageViews } from '@/lib/ga4';
+import { getRealtimeUsers, getActivePages, getTopPages, getTrafficSources, getKeyMetrics } from '@/lib/ga4';
 import { Op } from 'sequelize';
 
 const sequelize = getDb();
@@ -95,6 +95,11 @@ export async function GET(request: NextRequest) {
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
+        // Format dates for GA4 (YYYY-MM-DD)
+        const formatDate = (date: Date) => date.toISOString().split('T')[0];
+        const gaStart = formatDate(filterStart);
+        const gaEnd = formatDate(filterEnd);
+
         // MEGA PARALLEL: All DB queries + GA4 calls in ONE Promise.all for maximum speed
         const [
             totalOrders,
@@ -112,7 +117,8 @@ export async function GET(request: NextRequest) {
             realTimeData,
             activePagesData,
             topPagesData,
-            totalPageViews
+            trafficSourcesData,
+            keyMetricsData
         ] = await Promise.all([
             // Basic counts
             Order.count(),
@@ -134,8 +140,9 @@ export async function GET(request: NextRequest) {
             // GA4 data
             getRealtimeUsers(),
             getActivePages(),
-            getTopPages(),
-            getTotalPageViews(),
+            getTopPages(gaStart, gaEnd),
+            getTrafficSources(gaStart, gaEnd),
+            getKeyMetrics(gaStart, gaEnd),
         ]);
 
 
@@ -150,6 +157,13 @@ export async function GET(request: NextRequest) {
 
         const activePages = gaConfigured ? activePagesData : [];
         const topPages = gaConfigured ? topPagesData : [];
+        const trafficSources = gaConfigured ? trafficSourcesData : [];
+        const keyMetrics = gaConfigured ? keyMetricsData : {
+            pageViews: 0,
+            uniqueVisitors: 0,
+            bounceRate: 0,
+            avgSessionDuration: 0
+        };
 
         return NextResponse.json({
             success: true,
@@ -163,7 +177,7 @@ export async function GET(request: NextRequest) {
                 totalContacts,
                 dailyContacts,
                 filteredContacts,
-                totalPageViews: totalPageViews || 0,
+                totalPageViews: keyMetrics.pageViews, // From keyMetrics now
             },
             // Breakdown data for enhanced stats cards
             orderBreakdown,
@@ -174,6 +188,8 @@ export async function GET(request: NextRequest) {
             realTime,
             activePages,
             topPages,
+            trafficSources,
+            keyMetrics,
         });
     } catch (error) {
         console.error('Analytics API error:', error);
