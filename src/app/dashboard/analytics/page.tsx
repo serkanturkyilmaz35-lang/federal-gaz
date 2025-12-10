@@ -153,13 +153,13 @@ export default function AnalyticsPage() {
                                 type="date"
                                 value={customStart}
                                 onChange={(e) => setCustomStart(e.target.value)}
-                                className="bg-[#111418] border border-[#3b4754] text-white text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#137fec] outline-none"
+                                className="bg-[#111418] border border-[#3b4754] text-white text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#137fec] outline-none [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                             />
                             <input
                                 type="date"
                                 value={customEnd}
                                 onChange={(e) => setCustomEnd(e.target.value)}
-                                className="bg-[#111418] border border-[#3b4754] text-white text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#137fec] outline-none"
+                                className="bg-[#111418] border border-[#3b4754] text-white text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#137fec] outline-none [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                             />
                         </div>
                     )}
