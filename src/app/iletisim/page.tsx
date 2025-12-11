@@ -220,44 +220,52 @@ export default function IletisimPage() {
                             <h2 className="text-2xl font-bold text-secondary dark:text-white">{t.formTitle}</h2>
                             <form onSubmit={handleSubmit} className="mt-6 flex flex-1 flex-col gap-4">
                                 <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.formName}</label>
+                                    <label className="text-sm font-medium text-secondary dark:text-white">
+                                        {settings.contact_form_name_label || t.formName}
+                                    </label>
                                     <input
                                         type="text"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        placeholder={t.formNamePlaceholder}
+                                        placeholder={settings.contact_form_name_placeholder || t.formNamePlaceholder}
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.formEmail}</label>
+                                    <label className="text-sm font-medium text-secondary dark:text-white">
+                                        {settings.contact_form_email_label || t.formEmail}
+                                    </label>
                                     <input
                                         type="email"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        placeholder={t.formEmailPlaceholder}
+                                        placeholder={settings.contact_form_email_placeholder || t.formEmailPlaceholder}
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.formPhone} *</label>
+                                    <label className="text-sm font-medium text-secondary dark:text-white">
+                                        {settings.contact_form_phone_label || t.formPhone} *
+                                    </label>
                                     <input
                                         type="tel"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        placeholder={t.formPhonePlaceholder}
+                                        placeholder={settings.contact_form_phone_placeholder || t.formPhonePlaceholder}
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                         required
                                     />
                                 </div>
                                 <div className="flex flex-1 flex-col">
-                                    <label className="text-sm font-medium text-secondary dark:text-white">{t.formMessage}</label>
+                                    <label className="text-sm font-medium text-secondary dark:text-white">
+                                        {settings.contact_form_message_label || t.formMessage}
+                                    </label>
                                     <textarea
                                         className="mt-1 flex-1 resize-none rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
                                         style={{ minHeight: '200px' }}
-                                        placeholder={t.formMessagePlaceholder}
+                                        placeholder={settings.contact_form_message_placeholder || t.formMessagePlaceholder}
                                         value={formData.message}
                                         onChange={e => setFormData({ ...formData, message: e.target.value })}
                                         required
@@ -268,7 +276,9 @@ export default function IletisimPage() {
                                     disabled={isLoading}
                                     className="w-full rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-70 disabled:hover:scale-100"
                                 >
-                                    {isLoading ? t.sending : t.sendBtn}
+                                    {isLoading
+                                        ? (settings.contact_form_submitting || t.sending)
+                                        : (settings.contact_form_submit_btn || t.sendBtn)}
                                 </button>
                             </form>
                         </div>
@@ -279,8 +289,8 @@ export default function IletisimPage() {
             <SuccessModal
                 isOpen={showSuccess}
                 onClose={() => setShowSuccess(false)}
-                title={t.successTitle}
-                message={t.successMessage}
+                title={settings.contact_form_success_title || t.successTitle}
+                message={settings.contact_form_success_message || t.successMessage}
             />
         </>
     );

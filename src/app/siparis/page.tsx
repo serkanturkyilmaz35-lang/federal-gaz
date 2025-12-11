@@ -108,6 +108,25 @@ export default function SiparisPage() {
     const t = translations[language];
     const notesRef = useRef<HTMLTextAreaElement>(null);
 
+    // Parse products and units from settings (JSON strings)
+    const products: string[] = (() => {
+        try {
+            const parsed = JSON.parse(settings.order_form_products || '[]');
+            return parsed.length > 0 ? parsed : t.products;
+        } catch {
+            return t.products;
+        }
+    })();
+
+    const units: string[] = (() => {
+        try {
+            const parsed = JSON.parse(settings.order_form_units || '[]');
+            return parsed.length > 0 ? parsed : t.units;
+        } catch {
+            return t.units;
+        }
+    })();
+
     // Modal States
     const [showWarningModal, setShowWarningModal] = useState(false);
     const [showAuthChoice, setShowAuthChoice] = useState(false);
@@ -128,7 +147,7 @@ export default function SiparisPage() {
     const [currentProduct, setCurrentProduct] = useState({
         product: "",
         amount: "1",
-        unit: t.units[0]
+        unit: units[0] || t.units[0]
     });
 
     // Basket State
@@ -506,12 +525,12 @@ export default function SiparisPage() {
                         <div className="space-y-4">
                             <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">İletişim Bilgileri</h3>
                             <div className="grid gap-4 md:grid-cols-2">
-                                <input type="text" name="name" value={contactData.name} onChange={handleContactChange} placeholder={t.name} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                                <input type="text" name="company" value={contactData.company} onChange={handleContactChange} placeholder={t.company} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                                <input type="email" name="email" value={contactData.email} onChange={handleContactChange} placeholder={t.email} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                                <input type="tel" name="phone" value={contactData.phone} onChange={handleContactChange} placeholder={t.phone} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="text" name="name" value={contactData.name} onChange={handleContactChange} placeholder={settings.order_form_name_label || t.name} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="text" name="company" value={contactData.company} onChange={handleContactChange} placeholder={settings.order_form_company_label || t.company} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="email" name="email" value={contactData.email} onChange={handleContactChange} placeholder={settings.order_form_email_label || t.email} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="tel" name="phone" value={contactData.phone} onChange={handleContactChange} placeholder={settings.order_form_phone_label || t.phone} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
                                 <div className="md:col-span-2">
-                                    <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">{t.address}</label>
+                                    <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">{settings.order_form_address_label || t.address}</label>
                                     <textarea name="address" value={contactData.address} onChange={e => { handleContactChange(e); setSelectedAddressId("custom"); }} required rows={2} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" placeholder="Adres giriniz..." />
                                 </div>
                             </div>
@@ -520,21 +539,21 @@ export default function SiparisPage() {
                         {/* 2. Products Basket */}
                         <div className="space-y-6">
                             <div className="flex items-center justify-between border-b pb-2">
-                                <h3 className="text-xl font-bold text-secondary dark:text-white">{t.basketTitle}</h3>
+                                <h3 className="text-xl font-bold text-secondary dark:text-white">{settings.order_form_basket_title || t.basketTitle}</h3>
                             </div>
 
                             {/* Add Product Area */}
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 dark:bg-white/5 dark:border-gray-700">
                                 <div className="grid gap-4 md:grid-cols-12 items-end">
                                     <div className="md:col-span-5">
-                                        <label className="text-sm font-bold text-secondary dark:text-white">{t.product}</label>
+                                        <label className="text-sm font-bold text-secondary dark:text-white">{settings.order_form_product_label || t.product}</label>
                                         <select name="product" value={currentProduct.product} onChange={handleProductInput} className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-base bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-                                            <option value="">{t.selectProduct}</option>
-                                            {t.products.map((p, i) => <option key={i} value={p}>{p}</option>)}
+                                            <option value="">{settings.order_form_select_product || t.selectProduct}</option>
+                                            {products.map((p, i) => <option key={i} value={p}>{p}</option>)}
                                         </select>
                                     </div>
                                     <div className="md:col-span-3">
-                                        <label className="text-sm font-bold text-secondary dark:text-white">{t.amount}</label>
+                                        <label className="text-sm font-bold text-secondary dark:text-white">{settings.order_form_amount_label || t.amount}</label>
                                         <div className="mt-1 flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden h-[50px] dark:bg-gray-800 dark:border-gray-700">
                                             <button
                                                 type="button"
@@ -562,9 +581,9 @@ export default function SiparisPage() {
                                         </div>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="text-sm font-bold text-secondary dark:text-white">{t.unit}</label>
+                                        <label className="text-sm font-bold text-secondary dark:text-white">{settings.order_form_unit_label || t.unit}</label>
                                         <select name="unit" value={currentProduct.unit} onChange={handleProductInput} className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-base bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-                                            {t.units.map((u, i) => <option key={i} value={u}>{u}</option>)}
+                                            {units.map((u, i) => <option key={i} value={u}>{u}</option>)}
                                         </select>
                                     </div>
                                     <div className="md:col-span-2">
@@ -573,7 +592,7 @@ export default function SiparisPage() {
                                             onClick={addToBasket}
                                             className="w-full rounded-lg bg-primary h-[50px] font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 flex items-center justify-center gap-1"
                                         >
-                                            <span className="material-symbols-outlined text-sm">add</span> {t.addProductBtn}
+                                            <span className="material-symbols-outlined text-sm">add</span> {settings.order_form_add_product_btn || t.addProductBtn}
                                         </button>
                                     </div>
                                 </div>
@@ -604,7 +623,7 @@ export default function SiparisPage() {
                                     )}
 
                                     {basket.length === 0 ? (
-                                        <p className="text-center text-gray-400 italic py-8">{t.emptyBasket}</p>
+                                        <p className="text-center text-gray-400 italic py-8">{settings.order_form_empty_basket || t.emptyBasket}</p>
                                     ) : (
                                         <div className="divide-y divide-gray-100 dark:divide-gray-700">
                                             {basket.map((item, index) => (
@@ -670,8 +689,8 @@ export default function SiparisPage() {
 
                         {/* 3. Notes */}
                         <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{t.notes}</h3>
-                            <textarea ref={notesRef} name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{settings.order_form_notes_label || t.notes}</h3>
+                            <textarea ref={notesRef} name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={settings.order_form_notes_placeholder || t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
                         </div>
 
                         {error && (
@@ -685,7 +704,9 @@ export default function SiparisPage() {
                             disabled={isLoading}
                             className="w-full transform rounded-xl bg-primary py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
                         >
-                            {isLoading ? t.submitting : t.submitBtn}
+                            {isLoading
+                                ? (settings.order_form_submitting || t.submitting)
+                                : (settings.order_form_submit_btn || t.submitBtn)}
                         </button>
                     </form>
                 </div>
