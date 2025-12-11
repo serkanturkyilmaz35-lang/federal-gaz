@@ -36,8 +36,9 @@ export interface SiteSettingsData {
     order_form_title?: string;
     order_form_subtitle?: string;
 
-    // Map
-    contact_map_query?: string; // Google Maps konum sorgusu
+    // Map Coordinates
+    contact_map_lat?: string;
+    contact_map_lng?: string;
 }
 
 // Default fallback settings (safe to use if API fails)
@@ -61,7 +62,8 @@ const defaultSettings: SiteSettingsData = {
     contact_form_subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
     order_form_title: "Sipariş Ver",
     order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
-    contact_map_query: "Ivedik OSB, 1550. Cad. No:1, Yenimahalle, Ankara",
+    contact_map_lat: "39.9876",
+    contact_map_lng: "32.7543",
 };
 
 interface SettingsContextType {

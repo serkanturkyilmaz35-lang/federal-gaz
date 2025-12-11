@@ -42,8 +42,9 @@ const defaultSettings = {
     order_form_title: "Sipariş Ver",
     order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
 
-    // Map
-    contact_map_query: "Ivedik OSB, 1550. Cad. No:1, Yenimahalle, Ankara",
+    // Map Coordinates (Federal Gaz lokasyonu)
+    contact_map_lat: "39.9876",
+    contact_map_lng: "32.7543",
 };
 
 type SettingsKey = keyof typeof defaultSettings;
@@ -80,7 +81,9 @@ export default function SettingsPage() {
                     if (!newSettings.contact_form_subtitle) newSettings.contact_form_subtitle = defaultSettings.contact_form_subtitle;
                     if (!newSettings.order_form_title) newSettings.order_form_title = defaultSettings.order_form_title;
                     if (!newSettings.order_form_subtitle) newSettings.order_form_subtitle = defaultSettings.order_form_subtitle;
-                    if (!newSettings.contact_map_query) newSettings.contact_map_query = defaultSettings.contact_map_query;
+                    // Map coordinates
+                    if (!newSettings.contact_map_lat) newSettings.contact_map_lat = defaultSettings.contact_map_lat;
+                    if (!newSettings.contact_map_lng) newSettings.contact_map_lng = defaultSettings.contact_map_lng;
                     return newSettings;
                 });
             }
@@ -523,20 +526,32 @@ export default function SettingsPage() {
                                     <span className="material-symbols-outlined text-red-400">location_on</span>
                                     Harita Konumu
                                 </h3>
-                                <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Google Maps Konum Sorgusu</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_map_query}
-                                        onChange={(e) => updateSetting('contact_map_query', e.target.value)}
-                                        placeholder="Ivedik OSB, 1550. Cad. No:1, Yenimahalle, Ankara"
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                                        <span className="material-symbols-outlined text-[14px]">info</span>
-                                        İletişim sayfasındaki harita ve "Yol Tarifi Al" butonu bu adresi kullanır.
-                                    </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Enlem (Latitude)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_map_lat}
+                                            onChange={(e) => updateSetting('contact_map_lat', e.target.value)}
+                                            placeholder="39.9876"
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Boylam (Longitude)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_map_lng}
+                                            onChange={(e) => updateSetting('contact_map_lng', e.target.value)}
+                                            placeholder="32.7543"
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </div>
                                 </div>
+                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">info</span>
+                                    Google Maps'ten koordinatları kopyalayın. Örn: 39.9876, 32.7543
+                                </p>
                             </div>
                         </div>
                     )}
