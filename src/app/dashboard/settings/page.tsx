@@ -141,9 +141,10 @@ export default function SettingsPage() {
 
         try {
             const settingsArray = Object.entries(newSettings).map(([key, value]) => {
-                let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
-                if (key.startsWith('contact_')) category = 'contact';
+                let category: 'general' | 'contact' | 'social' | 'seo' | 'content' = 'general';
+                if (key.startsWith('contact_') || key.startsWith('order_form_')) category = 'contact';
                 else if (key.startsWith('seo_')) category = 'seo';
+                else if (key.startsWith('homepage_')) category = 'content';
                 else if (key === 'instagram_url' || key === 'facebook_url' || key === 'twitter_url' || key === 'linkedin_url' || key === 'youtube_url') category = 'social';
                 else category = 'general';
                 return { key, value: String(value ?? ""), category };
@@ -237,8 +238,15 @@ export default function SettingsPage() {
                     )}
                 </div>
 
-                {/* Empty div for spacing balance */}
-                <div className="hidden lg:block w-24"></div>
+                {/* Save Button */}
+                <button
+                    onClick={() => autoSave(settings)}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#137fec] hover:bg-[#0e6bc7] text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span className="material-symbols-outlined text-[20px]">save</span>
+                    {saving ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
             </div>
 
             {/* Main Card */}
