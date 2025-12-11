@@ -704,7 +704,7 @@ export default function SettingsPage() {
                             {/* Custom Dynamic Fields */}
                             <DynamicFieldBuilder
                                 title="İletişim Formu Alanları"
-                                initialFields={JSON.parse(settings.contact_form_fields || "[]")}
+                                initialFields={settings.contact_form_fields || "[]"}
                                 onChange={(newFields) => updateSetting('contact_form_fields', JSON.stringify(newFields))}
                             />
 
@@ -813,7 +813,7 @@ export default function SettingsPage() {
                             {/* Dynamic Fields */}
                             <DynamicFieldBuilder
                                 title="Sipariş Formu Alanları"
-                                initialFields={JSON.parse(settings.order_form_fields || "[]")}
+                                initialFields={settings.order_form_fields || "[]"}
                                 onChange={(newFields) => updateSetting('order_form_fields', JSON.stringify(newFields))}
                             />
 

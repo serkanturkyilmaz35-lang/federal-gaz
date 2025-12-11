@@ -16,7 +16,7 @@ export interface FormField {
 
 interface DynamicFieldBuilderProps {
     title?: string; // Optional title override
-    initialFields: FormField[]; // JSON string or array
+    initialFields: FormField[] | string; // JSON string or array
     onChange: (fields: FormField[]) => void;
 }
 
@@ -26,17 +26,27 @@ export default function DynamicFieldBuilder({ title, initialFields, onChange }: 
 
     useEffect(() => {
         // Ensure initialFields is an array
-        let parsed = initialFields;
+        let parsed: FormField[] = [];
+
         if (typeof initialFields === 'string') {
             try {
                 parsed = JSON.parse(initialFields);
             } catch {
                 parsed = [];
             }
+        } else if (Array.isArray(initialFields)) {
+            parsed = initialFields;
         }
-        if (!Array.isArray(parsed)) parsed = [];
-        setFields(parsed);
-    }, [initialFields]);
+
+        // Optimization: Only update state if content is different
+        // This prevents infinite loops and re-renders if parent passes new array reference with same content
+        const currentJson = JSON.stringify(fields);
+        const newJson = JSON.stringify(parsed);
+
+        if (currentJson !== newJson) {
+            setFields(parsed);
+        }
+    }, [initialFields]); // Still depends on initialFields, but logic prevents state update if content matches
 
     const updateFields = (newFields: FormField[]) => {
         setFields(newFields);
