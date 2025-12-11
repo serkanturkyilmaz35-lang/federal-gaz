@@ -80,6 +80,14 @@ body {
   background: linear-gradient(to bottom,
       transparent,
       rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  font-family: var(--font-inter), Inter, sans-serif;
+}
+
+/* Ensure all elements inherit the Inter font */
+*,
+*::before,
+*::after {
+  font-family: inherit;
 }
 
 @layer utilities {
