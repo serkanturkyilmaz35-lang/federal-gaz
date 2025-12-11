@@ -47,23 +47,26 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Settings array required' }, { status: 400 });
         }
 
-        const results = [];
-        for (const setting of settings) {
+        const upsertPromises = settings.map((setting: any) => {
             const { key, value, category, description } = setting;
 
             if (!key || value === undefined || !category) {
-                continue;
+                return null;
             }
 
-            const [record, created] = await SiteSettings.upsert({
+            return SiteSettings.upsert({
                 key,
                 value: String(value),
                 category,
                 description,
-            });
+            }).then(([record, created]: [any, boolean | null]) => ({
+                key,
+                created,
+                updated: !created
+            }));
+        });
 
-            results.push({ key, created, updated: !created });
-        }
+        const results = (await Promise.all(upsertPromises)).filter((r: any) => r !== null);
 
         return NextResponse.json({
             success: true,

@@ -12,6 +12,7 @@ const defaultSettings = {
     site_slogan: "Endüstriyel Gaz Çözümleri",
     logo_url: "/logo.jpg",
     favicon_url: "/icon.png",
+    footer_copyright: "Tüm hakları saklıdır.",
 
     // Contact
     contact_address: "İvedik OSB, 1550. Cad. No:1, 06378 Yenimahalle/Ankara",
@@ -412,6 +413,24 @@ export default function SettingsPage() {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Footer Copyright Text */}
+                            <div>
+                                <SettingFieldWrapper
+                                    settingKey="footer_copyright"
+                                    label="Footer Copyright Metni"
+                                    enabled={!disabledKeys.includes('footer_copyright')}
+                                    onToggle={handleToggle}
+                                >
+                                    <input
+                                        type="text"
+                                        value={settings.footer_copyright || ''}
+                                        onChange={(e) => updateSetting('footer_copyright', e.target.value)}
+                                        placeholder="Tüm hakları saklıdır."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
+                            </div>
                         </div>
                     )}
 
@@ -511,21 +530,35 @@ export default function SettingsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
                                 <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Telefon 3 Etiket (Örn: Muhasebe)</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_phone_3_label || ''}
-                                        onChange={(e) => updateSetting('contact_phone_3_label', e.target.value)}
-                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white mb-3"
-                                        placeholder="Etiket (Opsiyonel)"
-                                    />
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 3 (GSM)</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_phone_3}
-                                        onChange={(e) => updateSetting('contact_phone_3', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                    />
+                                    <SettingFieldWrapper
+                                        settingKey="contact_phone_3_label"
+                                        enabled={!disabledKeys.includes('contact_phone_3_label')}
+                                        onToggle={handleToggle}
+                                        className="mb-3"
+                                    >
+                                        <label className="block text-xs text-gray-400 mb-1">Telefon 3 Etiket (Örn: Muhasebe)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_phone_3_label || ''}
+                                            onChange={(e) => updateSetting('contact_phone_3_label', e.target.value)}
+                                            className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                            placeholder="Etiket (Opsiyonel)"
+                                        />
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper
+                                        settingKey="contact_phone_3"
+                                        enabled={!disabledKeys.includes('contact_phone_3')}
+                                        onToggle={handleToggle}
+                                    >
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 3 (GSM)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_phone_3}
+                                            onChange={(e) => updateSetting('contact_phone_3', e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </SettingFieldWrapper>
                                 </div>
                                 <div className="self-center hidden md:block">
                                     <p className="text-xs text-gray-500">Footer ve İletişim sayfasında görünür.</p>
@@ -533,13 +566,19 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                <label className="block text-sm font-medium text-gray-300 mb-2">E-posta</label>
-                                <input
-                                    type="email"
-                                    value={settings.contact_email}
-                                    onChange={(e) => updateSetting('contact_email', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="contact_email"
+                                    enabled={!disabledKeys.includes('contact_email')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">E-posta</label>
+                                    <input
+                                        type="email"
+                                        value={settings.contact_email}
+                                        onChange={(e) => updateSetting('contact_email', e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1.5">Footer ve İletişim sayfasında görünür.</p>
                             </div>
                         </div>

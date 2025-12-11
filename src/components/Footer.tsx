@@ -118,7 +118,7 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="mt-8 border-t border-white/20 pt-8 text-center text-sm">
-                    <p>© {new Date().getFullYear()} {settings.site_name || "Federal Gaz"}. {t.rights} <a href="https://www.federalgaz.com" className="font-semibold transition-colors hover:text-primary">www.federalgaz.com</a></p>
+                    <p>© {new Date().getFullYear()} {settings.site_name || "Federal Gaz"}. {settings.footer_copyright || t.rights} <a href="https://www.federalgaz.com" className="font-semibold transition-colors hover:text-primary">www.federalgaz.com</a></p>
                 </div>
             </div>
         </footer>
