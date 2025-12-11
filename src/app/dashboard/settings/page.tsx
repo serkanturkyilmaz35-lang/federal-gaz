@@ -100,18 +100,25 @@ type SettingsKey = keyof typeof defaultSettings;
 
 // ... existing code ...
 
+// ... imports
+import { useSettings } from "@/context/SettingsContext";
+
 export default function SettingsPage() {
+    const { settings: contextSettings, isLoading: contextLoading } = useSettings();
+    const router = useRouter();
+
+    // Initialize with context settings if available, otherwise defaults
+    // We use a ref to track if we've initialized from context to avoid overwriting user edits
+    const initializedRef = useRef(false);
+
     const [settings, setSettings] = useState(defaultSettings);
     const [originalSettings, setOriginalSettings] = useState(defaultSettings);
-    const [disabledKeys, setDisabledKeys] = useState<string[]>([]); // New state for toggles
+    const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Missing state restored
-    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo'>('general');
     const [saving, setSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    // ... existing state ...
 
     // toggle handler
     const handleToggle = (key: string, enabled: boolean) => {
@@ -126,30 +133,64 @@ export default function SettingsPage() {
         if (saveStatus !== 'idle') setSaveStatus('idle');
     };
 
-    const fetchSettings = async () => {
-        try {
-            const res = await fetch('/api/dashboard/settings');
-            const data = await res.json();
-            if (data.settings) {
-                const newSettings = { ...defaultSettings, ...data.settings };
+    // Effect: Sync with context settings only once or when they become available
+    useEffect(() => {
+        if (!contextLoading && contextSettings && !initializedRef.current) {
+            const newSettings = { ...defaultSettings, ...contextSettings };
 
-                // Parse system_disabled_keys
-                try {
-                    const keys = JSON.parse(newSettings.system_disabled_keys || "[]");
-                    setDisabledKeys(Array.isArray(keys) ? keys : []);
-                } catch {
-                    setDisabledKeys([]);
-                }
+            // Re-parse disabled keys from the raw context setting if possible
+            // Note: SettingsContext filters values, so system_disabled_keys might be empty string there.
+            // However, we need the Raw keys to manage the toggles. 
+            // Since SettingsContext 'hides' disabled keys by setting them to empty string, 
+            // we ironically need the RAW data to manage the settings page itself.
+            // IF SettingsContext modifies the values, we might need to fetch RAW data strictly for the admin panel.
+            // BUT for now, let's try to trust the context or do a "background" fetch if context is filtered.
 
-                setSettings(newSettings);
-                setOriginalSettings(newSettings);
-            }
-        } catch (error) {
-            console.error('Failed to fetch settings:', error);
-        } finally {
-            setLoading(false);
+            // Correction: SettingsContext DOES modify values. It sets disabled ones to "".
+            // Useing contextSettings directly for managing the "Settings Page" is risky because we won't see the real values of disabled fields.
+            // strategy: Render immediately with what we have, AND fetch fresh RAW data in background.
+
+            setSettings(newSettings);
+            // We don't set originalSettings yet because we want the raw data for that
+            setLoading(false); // Show UI immediately (maybe with empty disabled fields)
         }
-    };
+    }, [contextSettings, contextLoading]);
+
+
+    // Fetch RAW settings for admin management (Background)
+    useEffect(() => {
+        const fetchRawSettings = async () => {
+            try {
+                // If we already have content from context, we aren't "loading" visually
+                // But we need the raw values for editing.
+                const res = await fetch('/api/dashboard/settings');
+                const data = await res.json();
+
+                if (data.settings) {
+                    const mergedSettings = { ...defaultSettings, ...data.settings };
+
+                    // Parse system_disabled_keys
+                    let keys: string[] = [];
+                    try {
+                        keys = JSON.parse(mergedSettings.system_disabled_keys || "[]");
+                    } catch {
+                        keys = [];
+                    }
+
+                    setDisabledKeys(Array.isArray(keys) ? keys : []);
+                    setSettings(mergedSettings);
+                    setOriginalSettings(mergedSettings);
+                    initializedRef.current = true;
+                }
+            } catch (error) {
+                console.error('Failed to fetch raw settings:', error);
+            } finally {
+                setLoading(false); // Ensure loading is off even if fetch fails
+            }
+        };
+
+        fetchRawSettings();
+    }, []);
 
     const handleSave = useCallback(async () => {
         // Sync disabledKeys to settings object before saving
