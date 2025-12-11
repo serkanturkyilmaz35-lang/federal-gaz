@@ -194,7 +194,7 @@ export default function IletisimPage() {
                             <div className="mt-8">
                                 <div className="overflow-hidden rounded-xl shadow-md">
                                     <iframe
-                                        src="https://maps.google.com/maps?q=Ivedik%20OSB%2C%20Yenimahalle%2C%20Ankara&t=&z=14&ie=UTF8&iwloc=&output=embed"
+                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(settings.contact_map_query || 'Ivedik OSB, Yenimahalle, Ankara')}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                                         width="100%"
                                         height="400"
                                         style={{ border: 0, aspectRatio: '1/1' }}
@@ -205,7 +205,7 @@ export default function IletisimPage() {
                                     ></iframe>
                                 </div>
                                 <a
-                                    href="https://www.google.com/maps/search/?api=1&query=Ivedik+OSB+1550.+Cad.+No:1+Yenimahalle+Ankara"
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.contact_map_query || 'Ivedik OSB 1550. Cad. No:1 Yenimahalle Ankara')}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90"

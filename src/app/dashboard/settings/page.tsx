@@ -41,6 +41,9 @@ const defaultSettings = {
     contact_form_subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
     order_form_title: "Sipariş Ver",
     order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
+
+    // Map
+    contact_map_query: "Ivedik OSB, 1550. Cad. No:1, Yenimahalle, Ankara",
 };
 
 type SettingsKey = keyof typeof defaultSettings;
@@ -77,6 +80,7 @@ export default function SettingsPage() {
                     if (!newSettings.contact_form_subtitle) newSettings.contact_form_subtitle = defaultSettings.contact_form_subtitle;
                     if (!newSettings.order_form_title) newSettings.order_form_title = defaultSettings.order_form_title;
                     if (!newSettings.order_form_subtitle) newSettings.order_form_subtitle = defaultSettings.order_form_subtitle;
+                    if (!newSettings.contact_map_query) newSettings.contact_map_query = defaultSettings.contact_map_query;
                     return newSettings;
                 });
             }
@@ -510,6 +514,28 @@ export default function SettingsPage() {
                                             className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
                                         />
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Map Location Settings */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-red-400">location_on</span>
+                                    Harita Konumu
+                                </h3>
+                                <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Google Maps Konum Sorgusu</label>
+                                    <input
+                                        type="text"
+                                        value={settings.contact_map_query}
+                                        onChange={(e) => updateSetting('contact_map_query', e.target.value)}
+                                        placeholder="Ivedik OSB, 1550. Cad. No:1, Yenimahalle, Ankara"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[14px]">info</span>
+                                        İletişim sayfasındaki harita ve "Yol Tarifi Al" butonu bu adresi kullanır.
+                                    </p>
                                 </div>
                             </div>
                         </div>
