@@ -111,22 +111,16 @@ export default function SettingsPage() {
             if (data.settings) {
                 setSettings(prev => {
                     const newSettings = { ...prev, ...data.settings };
-                    // If values are empty, use defaults to show what's actually being used on the site
-                    if (!newSettings.logo_url) newSettings.logo_url = defaultSettings.logo_url;
-                    if (!newSettings.favicon_url) newSettings.favicon_url = defaultSettings.favicon_url;
-                    // Phone labels
-                    if (!newSettings.contact_phone_1_label) newSettings.contact_phone_1_label = defaultSettings.contact_phone_1_label;
-                    if (!newSettings.contact_phone_2_label) newSettings.contact_phone_2_label = defaultSettings.contact_phone_2_label;
-                    if (!newSettings.contact_phone_3_label) newSettings.contact_phone_3_label = defaultSettings.contact_phone_3_label;
-                    // Content defaults
-                    if (!newSettings.homepage_marquee_text) newSettings.homepage_marquee_text = defaultSettings.homepage_marquee_text;
-                    if (!newSettings.contact_form_title) newSettings.contact_form_title = defaultSettings.contact_form_title;
-                    if (!newSettings.contact_form_subtitle) newSettings.contact_form_subtitle = defaultSettings.contact_form_subtitle;
-                    if (!newSettings.order_form_title) newSettings.order_form_title = defaultSettings.order_form_title;
-                    if (!newSettings.order_form_subtitle) newSettings.order_form_subtitle = defaultSettings.order_form_subtitle;
-                    // Map coordinates
-                    if (!newSettings.contact_map_lat) newSettings.contact_map_lat = defaultSettings.contact_map_lat;
-                    if (!newSettings.contact_map_lng) newSettings.contact_map_lng = defaultSettings.contact_map_lng;
+
+                    // Apply defaults for all empty fields
+                    // This ensures dashboard shows actual live site values
+                    Object.keys(defaultSettings).forEach(key => {
+                        const k = key as keyof typeof defaultSettings;
+                        if (!newSettings[k] || newSettings[k] === '') {
+                            newSettings[k] = defaultSettings[k];
+                        }
+                    });
+
                     return newSettings;
                 });
             }
