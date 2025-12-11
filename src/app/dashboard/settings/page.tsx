@@ -94,6 +94,7 @@ type SettingsKey = keyof typeof defaultSettings;
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState(defaultSettings);
+    const [originalSettings, setOriginalSettings] = useState(defaultSettings); // Track original values for comparison
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo'>('general');
@@ -109,20 +110,18 @@ export default function SettingsPage() {
             const res = await fetch('/api/dashboard/settings');
             const data = await res.json();
             if (data.settings) {
-                setSettings(prev => {
-                    const newSettings = { ...prev, ...data.settings };
+                const newSettings = { ...defaultSettings, ...data.settings };
 
-                    // Apply defaults for all empty fields
-                    // This ensures dashboard shows actual live site values
-                    Object.keys(defaultSettings).forEach(key => {
-                        const k = key as keyof typeof defaultSettings;
-                        if (!newSettings[k] || newSettings[k] === '') {
-                            newSettings[k] = defaultSettings[k];
-                        }
-                    });
-
-                    return newSettings;
+                // Apply defaults for all empty fields
+                Object.keys(defaultSettings).forEach(key => {
+                    const k = key as keyof typeof defaultSettings;
+                    if (!newSettings[k] || newSettings[k] === '') {
+                        newSettings[k] = defaultSettings[k];
+                    }
                 });
+
+                setSettings(newSettings);
+                setOriginalSettings(newSettings); // Store original values
             }
         } catch (error) {
             console.error('Failed to fetch settings:', error);
@@ -133,11 +132,22 @@ export default function SettingsPage() {
 
     // Manual save function (only when clicking Save button)
     const handleSave = useCallback(async () => {
+        // Find changed settings
+        const changedSettings = Object.entries(settings).filter(([key, value]) => {
+            return value !== originalSettings[key as keyof typeof originalSettings];
+        });
+
+        if (changedSettings.length === 0) {
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+            return;
+        }
+
         setSaving(true);
         setSaveStatus('idle');
 
         try {
-            const settingsArray = Object.entries(settings).map(([key, value]) => {
+            const settingsArray = changedSettings.map(([key, value]) => {
                 let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
                 if (key.startsWith('contact_') || key.startsWith('order_form_')) category = 'contact';
                 else if (key.startsWith('seo_')) category = 'seo';
@@ -156,6 +166,7 @@ export default function SettingsPage() {
 
             if (res.ok && data.success) {
                 setSaveStatus('success');
+                setOriginalSettings(settings); // Update original settings to match current
                 setTimeout(() => setSaveStatus('idle'), 3000);
                 router.refresh();
             } else {
@@ -168,7 +179,7 @@ export default function SettingsPage() {
         } finally {
             setSaving(false);
         }
-    }, [settings, router]);
+    }, [settings, originalSettings, router]);
 
     const updateSetting = (key: SettingsKey, value: string) => {
         const newSettings = { ...settings, [key]: value };
