@@ -56,11 +56,11 @@ export const getDb = (): Sequelize => {
         dialectModule: mysql2,
         logging: false,
         pool: {
-          max: 3,  // Reduced for serverless - prevents "Too many connections"
-          min: 0,  // Allow pool to completely close in serverless
+          max: 10,  // Increased to prevent connection exhaustion
+          min: 0,
           acquire: 30000,
-          idle: 60000,  // Keep connection alive for 60s (reduces cold starts during session)
-          evict: 60000  // Check for eviction every 60s
+          idle: 60000,
+          evict: 60000
         }
       });
       console.log('✅ Sequelize instance created with MySQL config.');

@@ -882,29 +882,36 @@ Product.init(
     }
 );
 
-// Relationships - Wrapped in Try/Catch to prevent crashes if models are not fully ready (Fixes HMR circular issues)
-try {
-    if (User && Address) {
-        User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
-        Address.belongsTo(User, { foreignKey: 'userId' });
-    }
+// Relationships - Initialize safely
+const initAssociations = () => {
+    try {
+        // Ensure models are initialized
+        if (User && Address) {
+            User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
+            Address.belongsTo(User, { foreignKey: 'userId' });
+        }
 
-    if (User && Order) {
-        User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
-        Order.belongsTo(User, { foreignKey: 'userId' });
-    }
+        if (User && Order) {
+            User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
+            Order.belongsTo(User, { foreignKey: 'userId' });
+        }
 
-    if (AdminUser && MediaFile) {
-        AdminUser.hasMany(MediaFile, { foreignKey: 'uploadedBy', as: 'uploadedFiles' });
-        MediaFile.belongsTo(AdminUser, { foreignKey: 'uploadedBy' });
-    }
+        if (AdminUser && MediaFile) {
+            AdminUser.hasMany(MediaFile, { foreignKey: 'uploadedBy', as: 'uploadedFiles' });
+            MediaFile.belongsTo(AdminUser, { foreignKey: 'uploadedBy' });
+        }
 
-    if (AdminUser && ContentPage) {
-        AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
-        ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
-    }
+        if (AdminUser && ContentPage) {
+            AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
+            ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
+        }
 
-    console.log('✅ Model associations initialized.');
-} catch (error) {
-    console.error('❌ Error initializing model associations:', error);
-}
+        console.log('✅ Model associations initialized.');
+    } catch (error) {
+        // Log but don't crash - allows app to run even if relations fail (e.g. during build)
+        console.error('⚠️ Warning: Error initializing model associations (non-critical):', error);
+    }
+};
+
+// Call association init
+initAssociations();
