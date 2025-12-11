@@ -12,7 +12,7 @@ const defaultSettings = {
     site_slogan: "Endüstriyel Gaz Çözümleri",
     logo_url: "/logo.jpg",
     favicon_url: "/icon.png",
-    footer_copyright: "Tüm hakları saklıdır.",
+    footer_copyright: "© 2025 Federal Gaz. Tüm hakları saklıdır.",
 
     // Contact
     contact_address: "İvedik OSB, 1550. Cad. No:1, 06378 Yenimahalle/Ankara",
@@ -426,7 +426,7 @@ export default function SettingsPage() {
                                         type="text"
                                         value={settings.footer_copyright || ''}
                                         onChange={(e) => updateSetting('footer_copyright', e.target.value)}
-                                        placeholder="Tüm hakları saklıdır."
+                                        placeholder="© 2025 Federal Gaz. Tüm hakları saklıdır."
                                         className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                     />
                                 </SettingFieldWrapper>

@@ -97,7 +97,7 @@ const defaultSettings: SiteSettingsData = {
     site_slogan: "Endüstriyel Gaz Çözümleri",
     logo_url: "/logo.jpg",
     favicon_url: "/icon.png",
-    footer_copyright: "Tüm hakları saklıdır.",
+    footer_copyright: "© 2025 Federal Gaz. Tüm hakları saklıdır.",
     contact_address: "İvedik OSB, 1550. Cad. No:1, 06378 Yenimahalle/Ankara",
     contact_phone: "(0312) 395 35 95",
     contact_phone_2: "(+90) 543 455 45 63",
