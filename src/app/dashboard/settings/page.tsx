@@ -131,16 +131,13 @@ export default function SettingsPage() {
         }
     };
 
-    // Debounce ref for auto-save
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Auto-save function
-    const autoSave = useCallback(async (newSettings: typeof defaultSettings) => {
+    // Manual save function (only when clicking Save button)
+    const handleSave = useCallback(async () => {
         setSaving(true);
         setSaveStatus('idle');
 
         try {
-            const settingsArray = Object.entries(newSettings).map(([key, value]) => {
+            const settingsArray = Object.entries(settings).map(([key, value]) => {
                 let category: 'general' | 'contact' | 'social' | 'seo' | 'content' = 'general';
                 if (key.startsWith('contact_') || key.startsWith('order_form_')) category = 'contact';
                 else if (key.startsWith('seo_')) category = 'seo';
@@ -156,11 +153,14 @@ export default function SettingsPage() {
                 body: JSON.stringify({ settings: settingsArray }),
             });
 
-            if (res.ok) {
+            const data = await res.json();
+
+            if (res.ok && data.success) {
                 setSaveStatus('success');
                 setTimeout(() => setSaveStatus('idle'), 3000);
                 router.refresh();
             } else {
+                console.error('Save failed:', data);
                 setSaveStatus('error');
             }
         } catch (error) {
@@ -169,20 +169,13 @@ export default function SettingsPage() {
         } finally {
             setSaving(false);
         }
-    }, [router]);
+    }, [settings, router]);
 
     const updateSetting = (key: SettingsKey, value: string) => {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
+        // Clear any success/error message when user makes changes
         if (saveStatus !== 'idle') setSaveStatus('idle');
-
-        // Debounced auto-save (waits 800ms after last change)
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-        saveTimeoutRef.current = setTimeout(() => {
-            autoSave(newSettings);
-        }, 800);
     };
 
     const tabs = [
@@ -240,7 +233,7 @@ export default function SettingsPage() {
 
                 {/* Save Button */}
                 <button
-                    onClick={() => autoSave(settings)}
+                    onClick={handleSave}
                     disabled={saving}
                     className="flex items-center gap-2 px-5 py-2.5 bg-[#137fec] hover:bg-[#0e6bc7] text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
