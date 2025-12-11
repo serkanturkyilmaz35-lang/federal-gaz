@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useSettings } from "@/context/SettingsContext";
 
 const translations = {
     TR: {
@@ -91,9 +92,13 @@ const services = {
 
 export default function HomePage() {
     const { language } = useLanguage();
+    const { settings } = useSettings();
     const [currentSlide, setCurrentSlide] = useState(0);
     const t = translations[language];
     const currentServices = services[language];
+
+    // Use dynamic marquee text from settings, fallback to translation
+    const marqueeText = settings.homepage_marquee_text || t.announcement;
 
     // Hero görselleri - Endüstriyel gaz ve tüp görselleri (5 adet)
     const heroImages = [
@@ -124,10 +129,10 @@ export default function HomePage() {
             {/* Announcement Ticker */}
             <div className="overflow-hidden bg-accent py-2">
                 <div className="animate-marquee whitespace-nowrap">
-                    <span className="mx-4 text-sm font-bold text-secondary">{t.announcement}</span>
-                    <span className="mx-4 text-sm font-bold text-secondary">{t.announcement}</span>
-                    <span className="mx-4 text-sm font-bold text-secondary">{t.announcement}</span>
-                    <span className="mx-4 text-sm font-bold text-secondary">{t.announcement}</span>
+                    <span className="mx-4 text-sm font-bold text-secondary">{marqueeText}</span>
+                    <span className="mx-4 text-sm font-bold text-secondary">{marqueeText}</span>
+                    <span className="mx-4 text-sm font-bold text-secondary">{marqueeText}</span>
+                    <span className="mx-4 text-sm font-bold text-secondary">{marqueeText}</span>
                 </div>
             </div>
 

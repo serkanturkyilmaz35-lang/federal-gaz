@@ -91,8 +91,12 @@ export default function IletisimPage() {
         <>
             <section className="bg-secondary py-16 text-white">
                 <div className="mx-auto max-w-7xl px-4">
-                    <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">{t.title}</h1>
-                    <p className="mt-4 text-lg text-white/80">{t.subtitle}</p>
+                    <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
+                        {settings.contact_form_title || t.title}
+                    </h1>
+                    <p className="mt-4 text-lg text-white/80">
+                        {settings.contact_form_subtitle || t.subtitle}
+                    </p>
                 </div>
             </section>
 

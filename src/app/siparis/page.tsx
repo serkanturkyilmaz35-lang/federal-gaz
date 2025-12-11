@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import { useSettings } from "@/context/SettingsContext";
 import WarningModal from "@/components/WarningModal";
 import AuthChoiceModal from "@/components/AuthChoiceModal";
 import OrderSummaryModal from "@/components/OrderSummaryModal";
@@ -102,6 +103,7 @@ interface BasketItem {
 export default function SiparisPage() {
     const { language } = useLanguage();
     const { user } = useAuth();
+    const { settings } = useSettings();
     const router = useRouter();
     const t = translations[language];
     const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -473,8 +475,12 @@ export default function SiparisPage() {
 
             <div className="mx-auto max-w-4xl">
                 <div className="mb-8 text-center">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">{t.title}</h1>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">{t.subtitle}</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+                        {settings.order_form_title || t.title}
+                    </h1>
+                    <p className="mt-2 text-gray-600 dark:text-gray-400">
+                        {settings.order_form_subtitle || t.subtitle}
+                    </p>
                 </div>
 
                 <div className="rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 md:p-8">

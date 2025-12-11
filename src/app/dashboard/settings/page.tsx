@@ -16,9 +16,9 @@ const defaultSettings = {
     contact_phone: "(0312) 395 35 95",
     contact_phone_1_label: "Merkez",
     contact_phone_2: "(+90) 543 455 45 63",
-    contact_phone_2_label: "Satış",
+    contact_phone_2_label: "Ziya Türkyılmaz",
     contact_phone_3: "(+90) 532 422 45 15",
-    contact_phone_3_label: "Muhasebe",
+    contact_phone_3_label: "Bayram Tıraş",
     contact_email: "federal.gaz@hotmail.com",
 
     // Social Media
@@ -32,6 +32,15 @@ const defaultSettings = {
     seo_title: "Federal Gaz - Endüstriyel Gaz Çözümleri | Oksijen, Argon, Azot",
     seo_description: "Federal Gaz - Ankara'nın güvenilir endüstriyel gaz tedarikçisi. Oksijen, argon, azot, CO2 ve tüm endüstriyel gazlar.",
     seo_keywords: "federal gaz, endüstriyel gaz, oksijen, argon, azot, tüp dolum, ankara gaz",
+
+    // Homepage & Content
+    homepage_marquee_text: "Önemli Duyuru: Federal Gaz sipariş ve destek talepleriniz için 7/24 iletişim e-posta adresimiz federal.gaz@hotmail.com",
+
+    // Form Titles
+    contact_form_title: "İletişim",
+    contact_form_subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
+    order_form_title: "Sipariş Ver",
+    order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
 };
 
 type SettingsKey = keyof typeof defaultSettings;
@@ -40,7 +49,7 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState(defaultSettings);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'social' | 'seo'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'social' | 'seo'>('general');
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const router = useRouter();
 
@@ -62,6 +71,12 @@ export default function SettingsPage() {
                     if (!newSettings.contact_phone_1_label) newSettings.contact_phone_1_label = defaultSettings.contact_phone_1_label;
                     if (!newSettings.contact_phone_2_label) newSettings.contact_phone_2_label = defaultSettings.contact_phone_2_label;
                     if (!newSettings.contact_phone_3_label) newSettings.contact_phone_3_label = defaultSettings.contact_phone_3_label;
+                    // Content defaults
+                    if (!newSettings.homepage_marquee_text) newSettings.homepage_marquee_text = defaultSettings.homepage_marquee_text;
+                    if (!newSettings.contact_form_title) newSettings.contact_form_title = defaultSettings.contact_form_title;
+                    if (!newSettings.contact_form_subtitle) newSettings.contact_form_subtitle = defaultSettings.contact_form_subtitle;
+                    if (!newSettings.order_form_title) newSettings.order_form_title = defaultSettings.order_form_title;
+                    if (!newSettings.order_form_subtitle) newSettings.order_form_subtitle = defaultSettings.order_form_subtitle;
                     return newSettings;
                 });
             }
@@ -128,6 +143,7 @@ export default function SettingsPage() {
     const tabs = [
         { id: 'general', label: 'Genel', icon: 'settings' },
         { id: 'contact', label: 'İletişim', icon: 'phone' },
+        { id: 'content', label: 'İçerik', icon: 'edit_note' },
         { id: 'social', label: 'Sosyal Medya', icon: 'public' },
         { id: 'seo', label: 'SEO', icon: 'search' },
     ];
@@ -411,6 +427,90 @@ export default function SettingsPage() {
                                     placeholder="https://youtube.com/..."
                                     className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Content Settings */}
+                    {activeTab === 'content' && (
+                        <div className="space-y-6 max-w-4xl">
+                            {/* Marquee / Kayan Yazı */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-yellow-500">text_rotation_none</span>
+                                    Kayan Yazı (Duyuru Bandı)
+                                </label>
+                                <textarea
+                                    value={settings.homepage_marquee_text}
+                                    onChange={(e) => updateSetting('homepage_marquee_text', e.target.value)}
+                                    rows={2}
+                                    placeholder="Ana sayfada görünen kayan duyuru metni..."
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                />
+                                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">info</span>
+                                    Ana sayfanın en üstünde kayan sarı bant üzerinde görünür.
+                                </p>
+                            </div>
+
+                            {/* Contact Form Settings */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-400">contact_mail</span>
+                                    İletişim Formu
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_form_title}
+                                            onChange={(e) => updateSetting('contact_form_title', e.target.value)}
+                                            placeholder="İletişim"
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_form_subtitle}
+                                            onChange={(e) => updateSetting('contact_form_subtitle', e.target.value)}
+                                            placeholder="Bizimle iletişime geçin..."
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Order Form Settings */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-green-400">shopping_cart</span>
+                                    Sipariş Formu
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
+                                        <input
+                                            type="text"
+                                            value={settings.order_form_title}
+                                            onChange={(e) => updateSetting('order_form_title', e.target.value)}
+                                            placeholder="Sipariş Ver"
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
+                                        <input
+                                            type="text"
+                                            value={settings.order_form_subtitle}
+                                            onChange={(e) => updateSetting('order_form_subtitle', e.target.value)}
+                                            placeholder="Hızlı ve güvenli sipariş için..."
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

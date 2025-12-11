@@ -26,6 +26,15 @@ export interface SiteSettingsData {
     twitter_url: string;
     linkedin_url: string;
     youtube_url: string;
+
+    // Homepage
+    homepage_marquee_text?: string; // Kayan yazı
+
+    // Forms
+    contact_form_title?: string;
+    contact_form_subtitle?: string;
+    order_form_title?: string;
+    order_form_subtitle?: string;
 }
 
 // Default fallback settings (safe to use if API fails)
@@ -44,6 +53,11 @@ const defaultSettings: SiteSettingsData = {
     twitter_url: "",
     linkedin_url: "",
     youtube_url: "",
+    homepage_marquee_text: "Önemli Duyuru: Federal Gaz sipariş ve destek talepleriniz için 7/24 iletişim e-posta adresimiz federal.gaz@hotmail.com",
+    contact_form_title: "İletişim",
+    contact_form_subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
+    order_form_title: "Sipariş Ver",
+    order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
 };
 
 interface SettingsContextType {
