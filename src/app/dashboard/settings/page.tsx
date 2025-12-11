@@ -138,12 +138,11 @@ export default function SettingsPage() {
 
         try {
             const settingsArray = Object.entries(settings).map(([key, value]) => {
-                let category: 'general' | 'contact' | 'social' | 'seo' | 'content' = 'general';
+                let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
                 if (key.startsWith('contact_') || key.startsWith('order_form_')) category = 'contact';
                 else if (key.startsWith('seo_')) category = 'seo';
-                else if (key.startsWith('homepage_')) category = 'content';
                 else if (key === 'instagram_url' || key === 'facebook_url' || key === 'twitter_url' || key === 'linkedin_url' || key === 'youtube_url') category = 'social';
-                else category = 'general';
+                else category = 'general'; // homepage_ and all other fields go to general
                 return { key, value: String(value ?? ""), category };
             });
 

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
         const category = searchParams.get('category');
 
         let whereClause = {};
-        if (category && ['general', 'contact', 'social', 'seo', 'content'].includes(category)) {
+        if (category && ['general', 'contact', 'social', 'seo'].includes(category)) {
             whereClause = { category };
         }
 
