@@ -86,6 +86,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { SettingsProvider } from "@/context/SettingsContext"; // Import SettingsProvider
+import { EncryptionProvider } from "@/context/EncryptionContext";
 
 // Fetch settings helper
 async function getSiteSettings() {
@@ -247,23 +248,25 @@ export default async function RootLayout({
                     <AuthProvider>
                         <SettingsProvider initialSettings={settings}>
                             <NotificationProvider>
-                                <SecurityProvider>
-                                    {isDashboard ? (
-                                        // Dashboard: no main site header/footer
-                                        <>{children}</>
-                                    ) : (
-                                        // Main site: with header and footer
-                                        <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
-                                            <div className="layout-container flex h-full grow flex-col">
-                                                <Header />
-                                                <main className="flex-1">
-                                                    {children}
-                                                </main>
-                                                <Footer />
+                                <EncryptionProvider>
+                                    <SecurityProvider>
+                                        {isDashboard ? (
+                                            // Dashboard: no main site header/footer
+                                            <>{children}</>
+                                        ) : (
+                                            // Main site: with header and footer
+                                            <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
+                                                <div className="layout-container flex h-full grow flex-col">
+                                                    <Header />
+                                                    <main className="flex-1">
+                                                        {children}
+                                                    </main>
+                                                    <Footer />
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </SecurityProvider>
+                                        )}
+                                    </SecurityProvider>
+                                </EncryptionProvider>
                             </NotificationProvider>
                         </SettingsProvider>
                     </AuthProvider>

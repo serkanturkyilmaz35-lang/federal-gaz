@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useEncryption } from "@/context/EncryptionContext";
 
 const translations = {
     TR: {
@@ -47,12 +48,12 @@ export default function LoginPage() {
     const { language } = useLanguage();
     const { login } = useAuth();
     const router = useRouter();
+    const { secureFetch } = useEncryption();
     const t = translations[language];
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isRedirecting, setIsRedirecting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -61,51 +62,35 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const res = await fetch('/api/auth/login', {
+            // Use secureFetch to send encrypted payload
+            const res = await secureFetch('/api/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password })
             });
 
-            if (!res.ok) {
+            if (res.ok) {
+                const data = await res.json();
+                login(data.token, data.user);
+                // Redirect based on role or default
+                if (data.user?.role === 'admin' || data.user?.role === 'editor') {
+                    router.push('/dashboard');
+                } else {
+                    router.push('/');
+                }
+            } else {
                 const data = await res.json();
 
-                // Check if database connection failed (503 error)
-                if (res.status === 503) {
-                    setError(t.dbError);
-                    setIsLoading(false);
-                    return;
-                }
-
-                // Check if wrong password (401 error)
-                if (res.status === 401) {
-                    setError(t.wrongPassword);
-                    setIsLoading(false);
-                    return;
-                }
-
-                // Check if user is not registered (404 error)
+                // Handle specific error cases if needed
                 if (res.status === 404) {
                     setError(t.notRegistered);
-                    setIsRedirecting(true);
-                    setIsLoading(false);
-                    setTimeout(() => {
-                        router.push('/kayit-ol');
-                    }, 1500);
-                    return;
+                    setTimeout(() => router.push('/kayit-ol'), 2000);
+                } else {
+                    setError(data.error || t.error);
                 }
-
-                throw new Error(data.error || 'Login failed');
             }
-
-            const data = await res.json();
-            login(data.user);
-            router.push('/');
-        } catch (err) {
-            console.error(err);
-            if (!isRedirecting) {
-                setError(t.error);
-            }
+        } catch (err: any) {
+            console.error("Login failed:", err);
+            setError(t.error);
         } finally {
             setIsLoading(false);
         }

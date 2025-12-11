@@ -5,13 +5,15 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 
+import { useEncryption } from "@/context/EncryptionContext";
+
 export default function ProfilePage() {
     const { user, logout, loading, refreshUser } = useAuth();
     const { language } = useLanguage();
+    const { secureFetch } = useEncryption();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'info' | 'addresses' | 'orders'>('info');
 
-    // Interfaces
     interface Address {
         id: number;
         title: string;
@@ -21,15 +23,19 @@ export default function ProfilePage() {
 
     interface Order {
         id: number;
-        details: string;
         status: string;
+        trackingNumber?: string;
         createdAt: string;
+        details: any;
     }
 
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [loadingAddresses, setLoadingAddresses] = useState(false);
+
+    // Form and UI States
     const [newAddress, setNewAddress] = useState({ title: '', address: '' });
-    const [editingAddress, setEditingAddress] = useState<{ id: number; title: string; address: string } | null>(null);
+    const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [orderForm, setOrderForm] = useState({ details: '' });
     const [msg, setMsg] = useState('');
 
@@ -37,56 +43,56 @@ export default function ProfilePage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    // Derived Orders: Sorted (Newest First) & Paginated
-    const sortedOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
-    const currentOrders = sortedOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    // Derived State for Pagination
+    const totalPages = Math.ceil(orders.length / itemsPerPage);
+    const currentOrders = orders.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const fetchAddresses = async () => {
-        const res = await fetch('/api/user/address');
-        if (res.ok) {
-            const data = await res.json();
-            setAddresses(data.addresses);
+        try {
+            const res = await secureFetch('/api/user/address');
+            if (res.ok) {
+                const data = await res.json();
+                setAddresses(data.addresses || []);
+            }
+        } catch (e) {
+            console.error("Failed to fetch addresses", e);
         }
     };
 
     const fetchOrders = async () => {
-        const res = await fetch('/api/orders/list');
-        if (res.ok) {
-            const data = await res.json();
-            setOrders(data.orders);
+        try {
+            const res = await secureFetch('/api/orders/list');
+            if (res.ok) {
+                const data = await res.json();
+                setOrders(data.orders || []);
+            }
+        } catch (e) {
+            console.error("Failed to fetch orders", e);
         }
     };
 
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/giris');
-        }
-    }, [user, loading, router]);
-
     useEffect(() => {
         if (user) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchAddresses();
             fetchOrders();
-
-            // Check for tab param
-            const tabParam = searchParams.get('tab');
-            if (tabParam === 'orders') {
-                setActiveTab('orders');
-            } else if (tabParam === 'addresses') {
-                setActiveTab('addresses');
-            }
         }
-    }, [user, searchParams]);
+    }, [user]);
+
+    // Auto-hide messages
+    useEffect(() => {
+        if (msg) {
+            const timer = setTimeout(() => setMsg(''), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [msg]);
 
     const handleAddAddress = async (e: React.FormEvent) => {
         e.preventDefault();
-        const res = await fetch('/api/user/address', {
+        const res = await secureFetch('/api/user/address', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newAddress)
         });
         if (res.ok) {
@@ -97,15 +103,17 @@ export default function ProfilePage() {
     };
 
     const handleDeleteAddress = async (id: number) => {
-        const res = await fetch(`/api/user/address?id=${id}`, { method: 'DELETE' });
+        // DELETE usually doesn't have body, so secureFetch will just pass it.
+        // If we want to hide the ID, we should use POST with body, but REST uses DELETE.
+        // secureFetch doesn't encrypt URL params.
+        const res = await secureFetch(`/api/user/address?id=${id}`, { method: 'DELETE' });
         if (res.ok) fetchAddresses();
     };
 
     const handleEditAddress = async () => {
         if (!editingAddress) return;
-        const res = await fetch('/api/user/address', {
+        const res = await secureFetch('/api/user/address', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(editingAddress)
         });
         if (res.ok) {
@@ -116,9 +124,8 @@ export default function ProfilePage() {
     };
 
     const handleSetDefaultAddress = async (id: number) => {
-        const res = await fetch('/api/user/address', {
+        const res = await secureFetch('/api/user/address', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id })
         });
         if (res.ok) {
@@ -129,9 +136,8 @@ export default function ProfilePage() {
 
     const handleCreateOrder = async (e: React.FormEvent) => {
         e.preventDefault();
-        const res = await fetch('/api/orders/create', {
+        const res = await secureFetch('/api/orders/create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderForm)
         });
         if (res.ok) {

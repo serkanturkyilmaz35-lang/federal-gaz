@@ -3,6 +3,7 @@ import { Order, User, connectToDatabase } from '@/lib/models';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { sendEmail, getOrderNotificationEmail } from '@/lib/email';
+import { decryptRequest, encryptResponse } from '@/lib/server-secure';
 
 export async function POST(req: Request) {
     try {
@@ -13,7 +14,8 @@ export async function POST(req: Request) {
         const decoded = verifyToken(token) as { id: number; email: string };
         if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { details, address, products, notes } = await req.json();
+        // Decrypt Request Body
+        const { details, address, products, notes } = await decryptRequest(req);
         if (!details) return NextResponse.json({ error: 'Missing details' }, { status: 400 });
 
         await connectToDatabase();
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
             // Don't fail the request if email fails
         }
 
-        return NextResponse.json({ order }, { status: 201 });
+        return await encryptResponse({ order }, 201);
     } catch (error) {
         console.error('Create Order Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

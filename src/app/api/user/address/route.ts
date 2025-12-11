@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Address, connectToDatabase } from '@/lib/models';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { decryptRequest, encryptResponse } from '@/lib/server-secure';
 
 async function getUser(req: Request) {
     const cookieStore = await cookies();
@@ -22,7 +23,8 @@ export async function GET(req: Request) {
             order: [['isDefault', 'DESC'], ['createdAt', 'DESC']]
         });
 
-        return NextResponse.json({ addresses });
+        // Use encryptResponse
+        return await encryptResponse({ addresses });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
@@ -33,7 +35,8 @@ export async function POST(req: Request) {
         const userId = await getUser(req);
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { title, address } = await req.json();
+        // Decrypt Request Body
+        const { title, address } = await decryptRequest(req);
         if (!title || !address) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
         await connectToDatabase();
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
             isDefault: true // New address is always default
         });
 
-        return NextResponse.json({ address: newAddress }, { status: 201 });
+        return await encryptResponse({ address: newAddress }, 201);
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
@@ -75,7 +78,7 @@ export async function DELETE(req: Request) {
 
         if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-        return NextResponse.json({ success: true });
+        return await encryptResponse({ success: true });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
@@ -86,7 +89,8 @@ export async function PUT(req: Request) {
         const userId = await getUser(req);
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { id, title, address } = await req.json();
+        // Decrypt Request Body
+        const { id, title, address } = await decryptRequest(req);
         if (!id || !title || !address) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
         await connectToDatabase();
@@ -98,7 +102,7 @@ export async function PUT(req: Request) {
 
         if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-        return NextResponse.json({ success: true });
+        return await encryptResponse({ success: true });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
@@ -110,7 +114,8 @@ export async function PATCH(req: Request) {
         const userId = await getUser(req);
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { id } = await req.json();
+        // Decrypt Request Body
+        const { id } = await decryptRequest(req);
         if (!id) return NextResponse.json({ error: 'Missing address ID' }, { status: 400 });
 
         await connectToDatabase();
@@ -126,7 +131,7 @@ export async function PATCH(req: Request) {
 
         if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-        return NextResponse.json({ success: true, message: 'Varsayılan adres güncellendi' });
+        return await encryptResponse({ success: true, message: 'Varsayılan adres güncellendi' });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

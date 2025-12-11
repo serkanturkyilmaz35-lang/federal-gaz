@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Order, connectToDatabase } from '@/lib/models';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { encryptResponse } from '@/lib/server-secure';
 
 export async function GET(req: Request) {
     try {
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
             };
         });
 
-        return NextResponse.json({ orders: parsedOrders });
+        return await encryptResponse({ orders: parsedOrders });
     } catch (error) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

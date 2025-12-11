@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSettings } from "@/context/SettingsContext";
+import { useEncryption } from "@/context/EncryptionContext";
 import SuccessModal from "@/components/SuccessModal";
 
 const translations = {
@@ -57,6 +58,7 @@ const translations = {
 export default function IletisimPage() {
     const { language } = useLanguage();
     const { settings } = useSettings();
+    const { secureFetch } = useEncryption();
     const t = translations[language];
     const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
     const [isLoading, setIsLoading] = useState(false);
@@ -70,9 +72,8 @@ export default function IletisimPage() {
         setIsLoading(true);
 
         try {
-            const res = await fetch('/api/contact', {
+            const res = await secureFetch('/api/contact', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
 
@@ -154,7 +155,7 @@ export default function IletisimPage() {
                                                             {settings.contact_phone_2}
                                                         </a>
                                                         {settings.contact_phone_2_label && (
-                                                            <span className="text-xs text-gray-500 ml-2">- {settings.contact_phone_2_label}</span>
+                                                            <span className="ml-2">- {settings.contact_phone_2_label}</span>
                                                         )}
                                                         <br />
                                                     </>
@@ -165,7 +166,7 @@ export default function IletisimPage() {
                                                             {settings.contact_phone_3}
                                                         </a>
                                                         {settings.contact_phone_3_label && (
-                                                            <span className="text-xs text-gray-500 ml-2">- {settings.contact_phone_3_label}</span>
+                                                            <span className="ml-2">- {settings.contact_phone_3_label}</span>
                                                         )}
                                                     </>
                                                 )}

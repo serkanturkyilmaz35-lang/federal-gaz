@@ -1,35 +1,64 @@
 import { NextResponse } from 'next/server';
-import { User, connectToDatabase } from '@/lib/models'; // Import initialized models
+import { User, connectToDatabase } from '@/lib/models';
+import { signToken } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import { decryptRequest, encryptResponse } from '@/lib/server-secure';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
     try {
-        await connectToDatabase(); // Ensure DB is connected
+        await connectToDatabase();
 
-        const { name, email, password, phone } = await request.json();
+        // Decrypt Request Body
+        const { name, email, phone, password } = await decryptRequest(req);
 
+        // Validate
         if (!name || !email || !password) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+            return NextResponse.json({ error: 'Tüm alanlar zorunludur.' }, { status: 400 });
         }
 
+        // Check existing user
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
-            return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+            return NextResponse.json({ error: 'Bu e-posta adresi zaten kullanımda.' }, { status: 400 });
         }
 
+        // Create User
+        // Provide the decrypted plain password; the User model hook will hash it
         const user = await User.create({
             name,
             email,
-            password_hash: password, // Will be hashed by hook
-            phone
+            phone,
+            password_hash: password, // Will be hashed by beforeCreate hook
+            role: 'user'
         });
 
-        // Don't return password hash
+        // Generate Token
+        const token = signToken({
+            id: user.id,
+            email: user.email,
+            role: user.role
+        });
+
+        const cookieStore = await cookies();
+        cookieStore.set('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+            path: '/'
+        });
+
         const { password_hash, ...userWithoutPassword } = user.toJSON();
 
-        return NextResponse.json(userWithoutPassword, { status: 201 });
+        // Encrypt Response
+        return await encryptResponse({
+            success: true,
+            token,
+            user: userWithoutPassword
+        }, 201);
 
     } catch (error) {
-        console.error('Registration Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error("Registration Error:", error);
+        return NextResponse.json({ error: 'Kayıt işlemi başarısız.' }, { status: 500 });
     }
 }

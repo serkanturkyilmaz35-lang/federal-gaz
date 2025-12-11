@@ -2,70 +2,37 @@ import { NextResponse } from 'next/server';
 import { User, connectToDatabase } from '@/lib/models';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { checkRateLimit, getClientIP, rateLimitResponse, RATE_LIMITS } from '@/lib/rateLimit';
+import { decryptRequest, encryptResponse } from '@/lib/server-secure';
 
-// Timeout wrapper function
-const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
-    const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Database timeout')), ms)
-    );
-    return Promise.race([promise, timeout]);
-};
-
-export async function POST(request: Request) {
-    // Rate limiting check
-    const clientIP = getClientIP(request);
-    const rateLimitResult = checkRateLimit(`login:${clientIP}`, RATE_LIMITS.login);
-
-    if (rateLimitResult.limited) {
-        return rateLimitResponse(rateLimitResult.resetIn);
-    }
-
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
-        return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
-    }
-
+export async function POST(req: Request) {
     try {
-        // Wrap entire database operation in timeout
-        const result = await withTimeout(
-            (async () => {
-                await connectToDatabase();
+        await connectToDatabase();
 
-                const user = await User.findOne({ where: { email } });
-                console.log(`[Login] User found: ${!!user} for email: ${email}`);
+        // Decrypt Request Body
+        const { email, password } = await decryptRequest(req);
 
-                if (!user) {
-                    return { status: 404, error: 'User not found' };
-                }
-
-                const isPasswordValid = await user.comparePassword(password);
-                console.log(`[Login] Password valid: ${isPasswordValid}`);
-
-                if (!isPasswordValid) {
-                    return { status: 401, error: 'Invalid credentials' };
-                }
-
-                return { status: 200, user };
-            })(),
-            5000 // 5 second timeout for entire operation
-        );
-
-        if (result.status === 404) {
-            return NextResponse.json({ error: result.error }, { status: 404 });
+        if (!email || !password) {
+            return NextResponse.json({ error: 'E-posta ve şifre gereklidir.' }, { status: 400 });
         }
 
-        if (result.status === 401) {
-            return NextResponse.json({ error: result.error }, { status: 401 });
+        // Find user by email
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return NextResponse.json({ error: 'Geçersiz e-posta veya şifre.' }, { status: 401 });
         }
 
-        // Success - set cookie and return user
+        // Validate password
+        // Use the decrypted password directly as it was encrypted during transport
+        const isValid = await user.comparePassword(password);
+        if (!isValid) {
+            return NextResponse.json({ error: 'Geçersiz e-posta veya şifre.' }, { status: 401 });
+        }
+
+        // Generate Token
         const token = signToken({
-            id: result.user!.id,
-            email: result.user!.email,
-            name: result.user!.name,
-            role: result.user!.role || 'user' // Default to user if undefined 
+            id: user.id,
+            email: user.email,
+            role: user.role
         });
 
         const cookieStore = await cookies();
@@ -73,18 +40,21 @@ export async function POST(request: Request) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 60 * 60 * 24 * 7,
-            path: '/',
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+            path: '/'
         });
 
-        const { password_hash, ...userWithoutPassword } = result.user!.toJSON();
-        return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
+        const { password_hash, ...userWithoutPassword } = user.toJSON();
+
+        // Encrypt Response
+        return await encryptResponse({
+            success: true,
+            token,
+            user: userWithoutPassword
+        });
 
     } catch (error) {
-        console.error('Login Error:', error);
-        if (error instanceof Error && error.message === 'Database timeout') {
-            return NextResponse.json({ error: 'Database timeout' }, { status: 503 });
-        }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error("Login Error:", error);
+        return NextResponse.json({ error: 'Giriş işlemi başarısız.' }, { status: 500 });
     }
 }

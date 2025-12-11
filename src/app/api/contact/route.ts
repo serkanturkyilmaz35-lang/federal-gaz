@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { ContactRequest, connectToDatabase } from '@/lib/models';
+import { decryptRequest } from '@/lib/server-secure';
 
 export async function POST(req: Request) {
     try {
         await connectToDatabase();
-        const { name, email, phone, message, company } = await req.json();
+        const { name, email, phone, message, company } = await decryptRequest(req);
 
         // 1. Save to Database
         await ContactRequest.create({

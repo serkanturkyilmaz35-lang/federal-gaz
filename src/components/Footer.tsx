@@ -61,7 +61,7 @@ export default function Footer() {
                             {/* Phone 1 */}
                             {settings.contact_phone && (
                                 <li>
-                                    {settings.contact_phone_1_label && <span className="text-xs text-gray-400 block">{settings.contact_phone_1_label}</span>}
+                                    {settings.contact_phone_1_label && <span className="block opacity-80">{settings.contact_phone_1_label}</span>}
                                     <a href={`tel:${formatPhone(settings.contact_phone)}`} title="Telefon" className="transition-colors hover:text-primary pt-1 block sm:pt-0 sm:inline">
                                         {settings.contact_phone}
                                     </a>
@@ -71,7 +71,7 @@ export default function Footer() {
                             {/* Phone 2 */}
                             {settings.contact_phone_2 && (
                                 <li>
-                                    {settings.contact_phone_2_label && <span className="text-xs text-gray-400 block">{settings.contact_phone_2_label}</span>}
+                                    {settings.contact_phone_2_label && <span className="block opacity-80">{settings.contact_phone_2_label}</span>}
                                     <a href={`tel:${formatPhone(settings.contact_phone_2)}`} title="GSM 1" className="transition-colors hover:text-primary">
                                         {settings.contact_phone_2}
                                     </a>
@@ -81,7 +81,7 @@ export default function Footer() {
                             {/* Phone 3 */}
                             {settings.contact_phone_3 && (
                                 <li>
-                                    {settings.contact_phone_3_label && <span className="text-xs text-gray-400 block">{settings.contact_phone_3_label}</span>}
+                                    {settings.contact_phone_3_label && <span className="block opacity-80">{settings.contact_phone_3_label}</span>}
                                     <a href={`tel:${formatPhone(settings.contact_phone_3)}`} title="GSM 2" className="transition-colors hover:text-primary">
                                         {settings.contact_phone_3}
                                     </a>

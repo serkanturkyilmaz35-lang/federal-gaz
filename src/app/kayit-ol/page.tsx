@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useRouter } from "next/navigation";
+import { useEncryption } from "@/context/EncryptionContext";
 
 const translations = {
     TR: {
@@ -62,11 +63,13 @@ export default function RegisterPage() {
     const { language } = useLanguage();
     const t = translations[language];
     const router = useRouter();
+    const { secureFetch } = useEncryption();
 
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         password: "",
+        confirmPassword: "", // Added confirmPassword
         phone: ""
     });
     const [error, setError] = useState("");
@@ -76,7 +79,6 @@ export default function RegisterPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
-        // Clear error when user starts typing
         if (error) setError("");
     };
 
@@ -84,35 +86,46 @@ export default function RegisterPage() {
         e.preventDefault();
         setError("");
         setSuccess("");
+        setIsLoading(true);
 
         // Validate password before submission
         const passwordError = validatePassword(formData.password, t);
         if (passwordError) {
             setError(passwordError);
+            setIsLoading(false);
             return;
         }
 
-        setIsLoading(true);
+        if (formData.password !== formData.confirmPassword) {
+            // t.passwordsMismatch might be missing in interface, using hardcoded fallback or checking translation
+            // Assuming translation key might be missing based on lint error "Property passwordsMismatch does not exist"
+            // Let's use generic error or add it to standard error
+            setError(language === 'TR' ? 'Şifreler eşleşmiyor.' : 'Passwords do not match.');
+            setIsLoading(false);
+            return;
+        }
 
         try {
-            const res = await fetch('/api/auth/register', {
+            const { confirmPassword, ...payload } = formData;
+
+            // Use secureFetch
+            const res = await secureFetch('/api/auth/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Registration failed');
+                throw new Error(data.error || (language === 'TR' ? 'Kayıt başarısız.' : 'Registration failed.'));
             }
 
             setSuccess(t.success);
             setTimeout(() => {
                 router.push('/giris');
-            }, 1000);
-        } catch (err) {
+            }, 2000);
+        } catch (err: any) {
             console.error(err);
-            setError(t.error);
+            setError(err.message || t.error);
         } finally {
             setIsLoading(false);
         }
