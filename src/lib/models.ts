@@ -738,7 +738,7 @@ interface SiteSettingsAttributes {
     id: number;
     key: string; // e.g., 'site_name', 'contact_phone', 'instagram_url'
     value: string;
-    category: 'general' | 'contact' | 'social' | 'seo';
+    category: 'general' | 'contact' | 'social' | 'seo' | 'content';
     description?: string;
 }
 
@@ -748,7 +748,7 @@ export class SiteSettings extends Model<SiteSettingsAttributes, SiteSettingsCrea
     declare id: number;
     declare key: string;
     declare value: string;
-    declare category: 'general' | 'contact' | 'social' | 'seo';
+    declare category: 'general' | 'contact' | 'social' | 'seo' | 'content';
     declare description: string | undefined;
 
     declare readonly createdAt: Date;
@@ -772,7 +772,7 @@ SiteSettings.init(
             allowNull: false,
         },
         category: {
-            type: DataTypes.ENUM('general', 'contact', 'social', 'seo'),
+            type: DataTypes.ENUM('general', 'contact', 'social', 'seo', 'content'),
             allowNull: false,
         },
         description: {
