@@ -49,9 +49,11 @@ export interface SiteSettingsData {
     contact_form_submitting?: string;
     contact_form_success_title?: string;
     contact_form_success_message?: string;
+    contact_form_fields?: string; // JSON array of FormField
 
     // ===== ORDER FORM SETTINGS =====
     order_form_title?: string;
+    order_form_fields?: string; // JSON array of FormField
     order_form_subtitle?: string;
     order_form_name_label?: string;
     order_form_company_label?: string;
@@ -82,6 +84,9 @@ export interface SiteSettingsData {
     order_form_other_popup_subtitle?: string;
     order_form_other_popup_label?: string;
     order_form_other_popup_placeholder?: string;
+
+    // Global Visibility Control
+    system_disabled_keys?: string; // JSON Array of keys that are disabled (passive)
 }
 
 // Default fallback settings (safe to use if API fails)
@@ -119,9 +124,11 @@ const defaultSettings: SiteSettingsData = {
     contact_form_submitting: "Gönderiliyor...",
     contact_form_success_title: "Mesajınız Gönderildi!",
     contact_form_success_message: "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.",
+    contact_form_fields: "[]",
 
     // Order Form Defaults
     order_form_title: "Sipariş Ver",
+    order_form_fields: "[]",
     order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
     order_form_name_label: "Ad Soyad *",
     order_form_company_label: "Firma *",
@@ -181,11 +188,34 @@ export const SettingsProvider = ({
 
     const [isLoading, setIsLoading] = useState(false);
 
-    // Optional: We could re-fetch on mount if needed, but server-passing is better for SEO/Performance
-    // For now, we trust the server-passed initialSettings.
+    // Filter out disabled settings
+    const processedSettings = React.useMemo(() => {
+        const finalSettings = { ...settings };
+        const disabledKeysString = finalSettings.system_disabled_keys;
+
+        let disabledKeys: string[] = [];
+        try {
+            if (disabledKeysString) {
+                disabledKeys = JSON.parse(disabledKeysString);
+            }
+        } catch (e) {
+            console.error("Failed to parse disabled keys:", e);
+        }
+
+        // If a key is disabled, set its value to empty string to hide it in UI checks
+        disabledKeys.forEach(key => {
+            if (key in finalSettings) {
+                // specialized handling: if it's marquee text, set to empty
+                // typescript trick to allow indexing
+                (finalSettings as any)[key] = "";
+            }
+        });
+
+        return finalSettings;
+    }, [settings]);
 
     return (
-        <SettingsContext.Provider value={{ settings, isLoading }}>
+        <SettingsContext.Provider value={{ settings: processedSettings, isLoading }}>
             {children}
         </SettingsContext.Provider>
     );

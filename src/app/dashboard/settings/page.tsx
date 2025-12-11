@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import SettingFieldWrapper from "@/components/dashboard/SettingFieldWrapper";
+import DynamicFieldBuilder, { FormField } from "@/components/dashboard/DynamicFieldBuilder";
 
 // Default settings structure
 const defaultSettings = {
@@ -88,22 +90,41 @@ const defaultSettings = {
     order_form_other_popup_subtitle: "'Diğer' seçeneği için detay giriniz",
     order_form_other_popup_label: "Hangi ürünü istiyorsunuz? *",
     order_form_other_popup_placeholder: "Örn: 10 adet 50 litrelik helyum tüpü, balon dolumu için...",
-};
 
+    // System & Dynamic Fields
+    system_disabled_keys: "[]",
+    contact_form_fields: "[]",
+    order_form_fields: "[]",
+};
 type SettingsKey = keyof typeof defaultSettings;
+
+// ... existing code ...
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState(defaultSettings);
-    const [originalSettings, setOriginalSettings] = useState(defaultSettings); // Track original values for comparison
+    const [originalSettings, setOriginalSettings] = useState(defaultSettings);
+    const [disabledKeys, setDisabledKeys] = useState<string[]>([]); // New state for toggles
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo'>('general');
-    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const router = useRouter();
 
-    useEffect(() => {
-        fetchSettings();
-    }, []);
+    // Missing state restored
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo'>('general');
+    const [saving, setSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    // ... existing state ...
+
+    // toggle handler
+    const handleToggle = (key: string, enabled: boolean) => {
+        setDisabledKeys(prev => {
+            if (enabled) {
+                return prev.filter(k => k !== key); // Enable = remove from disabled list
+            } else {
+                return [...prev, key]; // Disable = add to list
+            }
+        });
+        // We mark save status as idle so user can save
+        if (saveStatus !== 'idle') setSaveStatus('idle');
+    };
 
     const fetchSettings = async () => {
         try {
@@ -112,16 +133,16 @@ export default function SettingsPage() {
             if (data.settings) {
                 const newSettings = { ...defaultSettings, ...data.settings };
 
-                // Apply defaults for all empty fields
-                Object.keys(defaultSettings).forEach(key => {
-                    const k = key as keyof typeof defaultSettings;
-                    if (!newSettings[k] || newSettings[k] === '') {
-                        newSettings[k] = defaultSettings[k];
-                    }
-                });
+                // Parse system_disabled_keys
+                try {
+                    const keys = JSON.parse(newSettings.system_disabled_keys || "[]");
+                    setDisabledKeys(Array.isArray(keys) ? keys : []);
+                } catch {
+                    setDisabledKeys([]);
+                }
 
                 setSettings(newSettings);
-                setOriginalSettings(newSettings); // Store original values
+                setOriginalSettings(newSettings);
             }
         } catch (error) {
             console.error('Failed to fetch settings:', error);
@@ -130,29 +151,29 @@ export default function SettingsPage() {
         }
     };
 
-    // Manual save function (only when clicking Save button)
     const handleSave = useCallback(async () => {
-        // Find changed settings
-        const changedSettings = Object.entries(settings).filter(([key, value]) => {
-            return value !== originalSettings[key as keyof typeof originalSettings];
-        });
+        // Sync disabledKeys to settings object before saving
+        const currentSettings = {
+            ...settings,
+            system_disabled_keys: JSON.stringify(disabledKeys)
+        };
 
-        if (changedSettings.length === 0) {
-            setSaveStatus('success');
-            setTimeout(() => setSaveStatus('idle'), 2000);
-            return;
-        }
+        // Find changed settings (compare against originalSettings, but simpler to just save keys modified)
+        // ... (rest of save logic needs update to use currentSettings)
 
+        // Simpler approach: Just save everything that might have changed + disabled keys
         setSaving(true);
         setSaveStatus('idle');
 
         try {
-            const settingsArray = changedSettings.map(([key, value]) => {
+            // Prepare array using currentSettings (which includes updated system_disabled_keys)
+            const settingsArray = Object.entries(currentSettings).map(([key, value]) => {
                 let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
-                if (key.startsWith('contact_') || key.startsWith('order_form_')) category = 'contact';
+                if (key.startsWith('contact_') || key.startsWith('order_form_') || key === 'contact_form_fields' || key === 'order_form_fields') category = 'contact';
                 else if (key.startsWith('seo_')) category = 'seo';
-                else if (key === 'instagram_url' || key === 'facebook_url' || key === 'twitter_url' || key === 'linkedin_url' || key === 'youtube_url') category = 'social';
-                else category = 'general'; // homepage_ and all other fields go to general
+                else if (['instagram_url', 'facebook_url', 'twitter_url', 'linkedin_url', 'youtube_url'].includes(key)) category = 'social';
+                else category = 'general';
+
                 return { key, value: String(value ?? ""), category };
             });
 
@@ -162,24 +183,27 @@ export default function SettingsPage() {
                 body: JSON.stringify({ settings: settingsArray }),
             });
 
-            const data = await res.json();
-
-            if (res.ok && data.success) {
+            // ... handling response
+            if (res.ok) {
                 setSaveStatus('success');
-                setOriginalSettings(settings); // Update original settings to match current
+                setOriginalSettings(currentSettings); // Update baseline
                 setTimeout(() => setSaveStatus('idle'), 3000);
                 router.refresh();
             } else {
-                console.error('Save failed:', data);
                 setSaveStatus('error');
             }
+
         } catch (error) {
             console.error('Failed to save settings:', error);
             setSaveStatus('error');
         } finally {
             setSaving(false);
         }
-    }, [settings, originalSettings, router]);
+    }, [settings, disabledKeys, router]);
+
+    // Helper to check compatibility with legacy defaultSettings usage
+    // ...
+
 
     const updateSetting = (key: SettingsKey, value: string) => {
         const newSettings = { ...settings, [key]: value };
@@ -278,45 +302,69 @@ export default function SettingsPage() {
                     {activeTab === 'general' && (
                         <div className="space-y-6 max-w-4xl">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Site Adı</label>
-                                <input
-                                    type="text"
-                                    value={settings.site_name}
-                                    onChange={(e) => updateSetting('site_name', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="site_name"
+                                    label="Site Adı"
+                                    enabled={!disabledKeys.includes('site_name')}
+                                    onToggle={handleToggle}
+                                >
+                                    <input
+                                        type="text"
+                                        value={settings.site_name}
+                                        onChange={(e) => updateSetting('site_name', e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Slogan</label>
-                                <input
-                                    type="text"
-                                    value={settings.site_slogan}
-                                    onChange={(e) => updateSetting('site_slogan', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="site_slogan"
+                                    label="Slogan"
+                                    enabled={!disabledKeys.includes('site_slogan')}
+                                    onToggle={handleToggle}
+                                >
+                                    <input
+                                        type="text"
+                                        value={settings.site_slogan}
+                                        onChange={(e) => updateSetting('site_slogan', e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Logo URL</label>
-                                    <input
-                                        type="text"
-                                        value={settings.logo_url}
-                                        onChange={(e) => updateSetting('logo_url', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                    />
+                                    <SettingFieldWrapper
+                                        settingKey="logo_url"
+                                        label="Logo URL"
+                                        enabled={!disabledKeys.includes('logo_url')}
+                                        onToggle={handleToggle}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={settings.logo_url}
+                                            onChange={(e) => updateSetting('logo_url', e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                        />
+                                    </SettingFieldWrapper>
                                     <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[14px]">info</span>
                                         Önerilen: 512x512px, PNG veya WebP formatı. Medya kütüphanesinden URL kopyalayabilirsiniz.
                                     </p>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Favicon URL</label>
-                                    <input
-                                        type="text"
-                                        value={settings.favicon_url}
-                                        onChange={(e) => updateSetting('favicon_url', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                    />
+                                    <SettingFieldWrapper
+                                        settingKey="favicon_url"
+                                        label="Favicon URL"
+                                        enabled={!disabledKeys.includes('favicon_url')}
+                                        onToggle={handleToggle}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={settings.favicon_url}
+                                            onChange={(e) => updateSetting('favicon_url', e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                        />
+                                    </SettingFieldWrapper>
                                     <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[14px]">info</span>
                                         Önerilen: 32x32px veya 16x16px, .ico veya .png formatı.
@@ -330,33 +378,53 @@ export default function SettingsPage() {
                     {activeTab === 'contact' && (
                         <div className="space-y-6 max-w-4xl">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Adres</label>
-                                <textarea
-                                    value={settings.contact_address}
-                                    onChange={(e) => updateSetting('contact_address', e.target.value)}
-                                    rows={3}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="contact_address"
+                                    label="Adres"
+                                    enabled={!disabledKeys.includes('contact_address')}
+                                    onToggle={handleToggle}
+                                >
+                                    <textarea
+                                        value={settings.contact_address}
+                                        onChange={(e) => updateSetting('contact_address', e.target.value)}
+                                        rows={3}
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1.5">Footer ve İletişim sayfasında görünür.</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
                                 <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Telefon 1 Etiket (Örn: Merkez)</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_phone_1_label || ''}
-                                        onChange={(e) => updateSetting('contact_phone_1_label', e.target.value)}
-                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white mb-3"
-                                        placeholder="Etiket (Opsiyonel)"
-                                    />
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 1</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_phone}
-                                        onChange={(e) => updateSetting('contact_phone', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                    />
+                                    <SettingFieldWrapper
+                                        settingKey="contact_phone_1_label"
+                                        enabled={!disabledKeys.includes('contact_phone_1_label')}
+                                        onToggle={handleToggle}
+                                        className="mb-3"
+                                    >
+                                        <label className="block text-xs text-gray-400 mb-1">Telefon 1 Etiket (Örn: Merkez)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_phone_1_label || ''}
+                                            onChange={(e) => updateSetting('contact_phone_1_label', e.target.value)}
+                                            className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                            placeholder="Etiket (Opsiyonel)"
+                                        />
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper
+                                        settingKey="contact_phone"
+                                        enabled={!disabledKeys.includes('contact_phone')}
+                                        onToggle={handleToggle}
+                                    >
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 1</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_phone}
+                                            onChange={(e) => updateSetting('contact_phone', e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </SettingFieldWrapper>
                                 </div>
                                 <div className="self-center hidden md:block">
                                     <p className="text-xs text-gray-500">Footer ve İletişim sayfasında görünür.</p>
@@ -365,21 +433,35 @@ export default function SettingsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
                                 <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Telefon 2 Etiket (Örn: Satış)</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_phone_2_label || ''}
-                                        onChange={(e) => updateSetting('contact_phone_2_label', e.target.value)}
-                                        className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white mb-3"
-                                        placeholder="Etiket (Opsiyonel)"
-                                    />
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 2 (GSM)</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_phone_2}
-                                        onChange={(e) => updateSetting('contact_phone_2', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                    />
+                                    <SettingFieldWrapper
+                                        settingKey="contact_phone_2_label"
+                                        enabled={!disabledKeys.includes('contact_phone_2_label')}
+                                        onToggle={handleToggle}
+                                        className="mb-3"
+                                    >
+                                        <label className="block text-xs text-gray-400 mb-1">Telefon 2 Etiket (Örn: Satış)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_phone_2_label || ''}
+                                            onChange={(e) => updateSetting('contact_phone_2_label', e.target.value)}
+                                            className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                            placeholder="Etiket (Opsiyonel)"
+                                        />
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper
+                                        settingKey="contact_phone_2"
+                                        enabled={!disabledKeys.includes('contact_phone_2')}
+                                        onToggle={handleToggle}
+                                    >
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Telefon 2 (GSM)</label>
+                                        <input
+                                            type="text"
+                                            value={settings.contact_phone_2}
+                                            onChange={(e) => updateSetting('contact_phone_2', e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </SettingFieldWrapper>
                                 </div>
                                 <div className="self-center hidden md:block">
                                     <p className="text-xs text-gray-500">Footer ve İletişim sayfasında görünür.</p>
@@ -426,64 +508,94 @@ export default function SettingsPage() {
                     {activeTab === 'social' && (
                         <div className="space-y-6 max-w-4xl">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-pink-500">photo_camera</span> Instagram
-                                </label>
-                                <input
-                                    type="url"
-                                    value={settings.instagram_url}
-                                    onChange={(e) => updateSetting('instagram_url', e.target.value)}
-                                    placeholder="https://instagram.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="instagram_url"
+                                    enabled={!disabledKeys.includes('instagram_url')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-pink-500">photo_camera</span> Instagram
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={settings.instagram_url}
+                                        onChange={(e) => updateSetting('instagram_url', e.target.value)}
+                                        placeholder="https://instagram.com/..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-blue-500">facebook</span> Facebook
-                                </label>
-                                <input
-                                    type="url"
-                                    value={settings.facebook_url}
-                                    onChange={(e) => updateSetting('facebook_url', e.target.value)}
-                                    placeholder="https://facebook.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="facebook_url"
+                                    enabled={!disabledKeys.includes('facebook_url')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-blue-500">facebook</span> Facebook
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={settings.facebook_url}
+                                        onChange={(e) => updateSetting('facebook_url', e.target.value)}
+                                        placeholder="https://facebook.com/..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sky-400">tag</span> Twitter / X
-                                </label>
-                                <input
-                                    type="url"
-                                    value={settings.twitter_url}
-                                    onChange={(e) => updateSetting('twitter_url', e.target.value)}
-                                    placeholder="https://twitter.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="twitter_url"
+                                    enabled={!disabledKeys.includes('twitter_url')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sky-400">tag</span> Twitter / X
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={settings.twitter_url}
+                                        onChange={(e) => updateSetting('twitter_url', e.target.value)}
+                                        placeholder="https://twitter.com/..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-blue-600">work</span> LinkedIn
-                                </label>
-                                <input
-                                    type="url"
-                                    value={settings.linkedin_url}
-                                    onChange={(e) => updateSetting('linkedin_url', e.target.value)}
-                                    placeholder="https://linkedin.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="linkedin_url"
+                                    enabled={!disabledKeys.includes('linkedin_url')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-blue-600">work</span> LinkedIn
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={settings.linkedin_url}
+                                        onChange={(e) => updateSetting('linkedin_url', e.target.value)}
+                                        placeholder="https://linkedin.com/..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-red-500">play_circle</span> YouTube
-                                </label>
-                                <input
-                                    type="url"
-                                    value={settings.youtube_url}
-                                    onChange={(e) => updateSetting('youtube_url', e.target.value)}
-                                    placeholder="https://youtube.com/..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="youtube_url"
+                                    enabled={!disabledKeys.includes('youtube_url')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-red-500">play_circle</span> YouTube
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={settings.youtube_url}
+                                        onChange={(e) => updateSetting('youtube_url', e.target.value)}
+                                        placeholder="https://youtube.com/..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                             </div>
                         </div>
                     )}
@@ -493,17 +605,23 @@ export default function SettingsPage() {
                         <div className="space-y-6 max-w-4xl">
                             {/* Marquee / Kayan Yazı */}
                             <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-yellow-500">text_rotation_none</span>
-                                    Kayan Yazı (Duyuru Bandı)
-                                </label>
-                                <textarea
-                                    value={settings.homepage_marquee_text}
-                                    onChange={(e) => updateSetting('homepage_marquee_text', e.target.value)}
-                                    rows={2}
-                                    placeholder="Ana sayfada görünen kayan duyuru metni..."
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="homepage_marquee_text"
+                                    enabled={!disabledKeys.includes('homepage_marquee_text')}
+                                    onToggle={handleToggle}
+                                >
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-yellow-500">text_rotation_none</span>
+                                        Kayan Yazı (Duyuru Bandı)
+                                    </label>
+                                    <textarea
+                                        value={settings.homepage_marquee_text}
+                                        onChange={(e) => updateSetting('homepage_marquee_text', e.target.value)}
+                                        rows={2}
+                                        placeholder="Ana sayfada görünen kayan duyuru metni..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
                                     <span className="material-symbols-outlined text-[14px]">info</span>
                                     Ana sayfanın en üstünde kayan sarı bant üzerinde görünür.
@@ -518,24 +636,36 @@ export default function SettingsPage() {
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Enlem (Latitude)</label>
-                                        <input
-                                            type="text"
-                                            value={settings.contact_map_lat}
-                                            onChange={(e) => updateSetting('contact_map_lat', e.target.value)}
-                                            placeholder="39.9876"
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                        />
+                                        <SettingFieldWrapper
+                                            settingKey="contact_map_lat"
+                                            enabled={!disabledKeys.includes('contact_map_lat')}
+                                            onToggle={handleToggle}
+                                        >
+                                            <label className="block text-xs text-gray-400 mb-1">Enlem (Latitude)</label>
+                                            <input
+                                                type="text"
+                                                value={settings.contact_map_lat}
+                                                onChange={(e) => updateSetting('contact_map_lat', e.target.value)}
+                                                placeholder="39.9876"
+                                                className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                            />
+                                        </SettingFieldWrapper>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Boylam (Longitude)</label>
-                                        <input
-                                            type="text"
-                                            value={settings.contact_map_lng}
-                                            onChange={(e) => updateSetting('contact_map_lng', e.target.value)}
-                                            placeholder="32.7543"
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                        />
+                                        <SettingFieldWrapper
+                                            settingKey="contact_map_lng"
+                                            enabled={!disabledKeys.includes('contact_map_lng')}
+                                            onToggle={handleToggle}
+                                        >
+                                            <label className="block text-xs text-gray-400 mb-1">Boylam (Longitude)</label>
+                                            <input
+                                                type="text"
+                                                value={settings.contact_map_lng}
+                                                onChange={(e) => updateSetting('contact_map_lng', e.target.value)}
+                                                placeholder="32.7543"
+                                                className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                            />
+                                        </SettingFieldWrapper>
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
@@ -557,55 +687,73 @@ export default function SettingsPage() {
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
-                                        <input type="text" value={settings.contact_form_title} onChange={(e) => updateSetting('contact_form_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        <SettingFieldWrapper settingKey="contact_form_title" enabled={!disabledKeys.includes('contact_form_title')} onToggle={handleToggle}>
+                                            <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
+                                            <input type="text" value={settings.contact_form_title} onChange={(e) => updateSetting('contact_form_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        </SettingFieldWrapper>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
-                                        <input type="text" value={settings.contact_form_subtitle} onChange={(e) => updateSetting('contact_form_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        <SettingFieldWrapper settingKey="contact_form_subtitle" enabled={!disabledKeys.includes('contact_form_subtitle')} onToggle={handleToggle}>
+                                            <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
+                                            <input type="text" value={settings.contact_form_subtitle} onChange={(e) => updateSetting('contact_form_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        </SettingFieldWrapper>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Form Fields */}
+                            {/* Custom Dynamic Fields */}
+                            <DynamicFieldBuilder
+                                title="İletişim Formu Alanları"
+                                initialFields={JSON.parse(settings.contact_form_fields || "[]")}
+                                onChange={(newFields) => updateSetting('contact_form_fields', JSON.stringify(newFields))}
+                            />
+
+                            {/* Standard Fields Config (Labels only) */}
                             <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                                 <h3 className="text-white font-medium mb-4 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-green-400">input</span>
-                                    Form Alanları
+                                    Sabit Form Alanları ve Etiketleri
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="contact_form_name_label" enabled={!disabledKeys.includes('contact_form_name_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ad Soyad Etiketi</label>
                                         <input type="text" value={settings.contact_form_name_label} onChange={(e) => updateSetting('contact_form_name_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_name_placeholder" enabled={!disabledKeys.includes('contact_form_name_placeholder')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ad Soyad Placeholder</label>
                                         <input type="text" value={settings.contact_form_name_placeholder} onChange={(e) => updateSetting('contact_form_name_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_email_label" enabled={!disabledKeys.includes('contact_form_email_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">E-posta Etiketi</label>
                                         <input type="text" value={settings.contact_form_email_label} onChange={(e) => updateSetting('contact_form_email_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_email_placeholder" enabled={!disabledKeys.includes('contact_form_email_placeholder')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">E-posta Placeholder</label>
                                         <input type="text" value={settings.contact_form_email_placeholder} onChange={(e) => updateSetting('contact_form_email_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_phone_label" enabled={!disabledKeys.includes('contact_form_phone_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Telefon Etiketi</label>
                                         <input type="text" value={settings.contact_form_phone_label} onChange={(e) => updateSetting('contact_form_phone_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_phone_placeholder" enabled={!disabledKeys.includes('contact_form_phone_placeholder')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Telefon Placeholder</label>
                                         <input type="text" value={settings.contact_form_phone_placeholder} onChange={(e) => updateSetting('contact_form_phone_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_message_label" enabled={!disabledKeys.includes('contact_form_message_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Mesaj Etiketi</label>
                                         <input type="text" value={settings.contact_form_message_label} onChange={(e) => updateSetting('contact_form_message_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_message_placeholder" enabled={!disabledKeys.includes('contact_form_message_placeholder')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Mesaj Placeholder</label>
                                         <input type="text" value={settings.contact_form_message_placeholder} onChange={(e) => updateSetting('contact_form_message_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
+                                    </SettingFieldWrapper>
                                 </div>
                             </div>
 
@@ -616,22 +764,25 @@ export default function SettingsPage() {
                                     Butonlar ve Mesajlar
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="contact_form_submit_btn" enabled={!disabledKeys.includes('contact_form_submit_btn')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Gönder Butonu</label>
                                         <input type="text" value={settings.contact_form_submit_btn} onChange={(e) => updateSetting('contact_form_submit_btn', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_submitting" enabled={!disabledKeys.includes('contact_form_submitting')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Gönderiliyor Mesajı</label>
                                         <input type="text" value={settings.contact_form_submitting} onChange={(e) => updateSetting('contact_form_submitting', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_success_title" enabled={!disabledKeys.includes('contact_form_success_title')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Başarı Başlığı</label>
                                         <input type="text" value={settings.contact_form_success_title} onChange={(e) => updateSetting('contact_form_success_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="contact_form_success_message" enabled={!disabledKeys.includes('contact_form_success_message')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Başarı Mesajı</label>
                                         <input type="text" value={settings.contact_form_success_message} onChange={(e) => updateSetting('contact_form_success_message', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
+                                    </SettingFieldWrapper>
                                 </div>
                             </div>
                         </div>
@@ -647,43 +798,55 @@ export default function SettingsPage() {
                                     Sayfa Başlıkları
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="order_form_title" enabled={!disabledKeys.includes('order_form_title')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
                                         <input type="text" value={settings.order_form_title} onChange={(e) => updateSetting('order_form_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_subtitle" enabled={!disabledKeys.includes('order_form_subtitle')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
                                         <input type="text" value={settings.order_form_subtitle} onChange={(e) => updateSetting('order_form_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
+                                    </SettingFieldWrapper>
                                 </div>
                             </div>
 
-                            {/* Product List */}
+                            {/* Dynamic Fields */}
+                            <DynamicFieldBuilder
+                                title="Sipariş Formu Alanları"
+                                initialFields={JSON.parse(settings.order_form_fields || "[]")}
+                                onChange={(newFields) => updateSetting('order_form_fields', JSON.stringify(newFields))}
+                            />
+
+                            {/* Product & Unit Definitions (Lists) */}
                             <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                                 <h3 className="text-white font-medium mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-purple-400">inventory_2</span>
-                                    Ürün Listesi
+                                    <span className="material-symbols-outlined text-purple-400">list</span>
+                                    Ürün ve Birim Listeleri
                                 </h3>
                                 <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Ürünler (virgülle ayırın)</label>
-                                    <textarea
-                                        value={(() => { try { return JSON.parse(settings.order_form_products).join(', '); } catch { return settings.order_form_products; } })()}
-                                        onChange={(e) => updateSetting('order_form_products', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
-                                        rows={2}
-                                        placeholder="Oksijen, Argon, Azot, ..."
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                    />
+                                    <SettingFieldWrapper settingKey="order_form_products" enabled={!disabledKeys.includes('order_form_products')} onToggle={handleToggle}>
+                                        <label className="block text-xs text-gray-400 mb-1">Ürünler (virgülle ayırın)</label>
+                                        <input
+                                            type="text"
+                                            value={(() => { try { return JSON.parse(settings.order_form_products).join(', '); } catch { return settings.order_form_products; } })()}
+                                            onChange={(e) => updateSetting('order_form_products', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
+                                            placeholder="Oksijen, Argon, Azot"
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </SettingFieldWrapper>
                                     <p className="text-xs text-gray-500 mt-1">Örn: Oksijen, Karışım, Argon, ...</p>
                                 </div>
                                 <div className="mt-4">
-                                    <label className="block text-xs text-gray-400 mb-1">Birimler (virgülle ayırın)</label>
-                                    <input
-                                        type="text"
-                                        value={(() => { try { return JSON.parse(settings.order_form_units).join(', '); } catch { return settings.order_form_units; } })()}
-                                        onChange={(e) => updateSetting('order_form_units', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
-                                        placeholder="Adet, m³, kg, Litre"
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                    />
+                                    <SettingFieldWrapper settingKey="order_form_units" enabled={!disabledKeys.includes('order_form_units')} onToggle={handleToggle}>
+                                        <label className="block text-xs text-gray-400 mb-1">Birimler (virgülle ayırın)</label>
+                                        <input
+                                            type="text"
+                                            value={(() => { try { return JSON.parse(settings.order_form_units).join(', '); } catch { return settings.order_form_units; } })()}
+                                            onChange={(e) => updateSetting('order_form_units', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
+                                            placeholder="Adet, m³, kg, Litre"
+                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                        />
+                                    </SettingFieldWrapper>
                                 </div>
                             </div>
 
@@ -694,49 +857,61 @@ export default function SettingsPage() {
                                     Form Alan Etiketleri
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="order_form_name_label" enabled={!disabledKeys.includes('order_form_name_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ad Soyad</label>
                                         <input type="text" value={settings.order_form_name_label} onChange={(e) => updateSetting('order_form_name_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_company_label" enabled={!disabledKeys.includes('order_form_company_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Firma</label>
                                         <input type="text" value={settings.order_form_company_label} onChange={(e) => updateSetting('order_form_company_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_email_label" enabled={!disabledKeys.includes('order_form_email_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">E-posta</label>
                                         <input type="text" value={settings.order_form_email_label} onChange={(e) => updateSetting('order_form_email_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_phone_label" enabled={!disabledKeys.includes('order_form_phone_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Telefon</label>
                                         <input type="text" value={settings.order_form_phone_label} onChange={(e) => updateSetting('order_form_phone_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_address_label" enabled={!disabledKeys.includes('order_form_address_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Teslimat Adresi</label>
                                         <input type="text" value={settings.order_form_address_label} onChange={(e) => updateSetting('order_form_address_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_product_label" enabled={!disabledKeys.includes('order_form_product_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ürün Seçimi</label>
                                         <input type="text" value={settings.order_form_product_label} onChange={(e) => updateSetting('order_form_product_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_select_product" enabled={!disabledKeys.includes('order_form_select_product')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ürün Seçiniz (placeholder)</label>
                                         <input type="text" value={settings.order_form_select_product} onChange={(e) => updateSetting('order_form_select_product', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_amount_label" enabled={!disabledKeys.includes('order_form_amount_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Miktar</label>
                                         <input type="text" value={settings.order_form_amount_label} onChange={(e) => updateSetting('order_form_amount_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_unit_label" enabled={!disabledKeys.includes('order_form_unit_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Birim</label>
                                         <input type="text" value={settings.order_form_unit_label} onChange={(e) => updateSetting('order_form_unit_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_notes_label" enabled={!disabledKeys.includes('order_form_notes_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ek Notlar</label>
                                         <input type="text" value={settings.order_form_notes_label} onChange={(e) => updateSetting('order_form_notes_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
+                                    </SettingFieldWrapper>
+
                                     <div className="col-span-2">
-                                        <label className="block text-xs text-gray-400 mb-1">Ek Notlar Placeholder</label>
-                                        <input type="text" value={settings.order_form_notes_placeholder} onChange={(e) => updateSetting('order_form_notes_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        <SettingFieldWrapper settingKey="order_form_notes_placeholder" enabled={!disabledKeys.includes('order_form_notes_placeholder')} onToggle={handleToggle}>
+                                            <label className="block text-xs text-gray-400 mb-1">Ek Notlar Placeholder</label>
+                                            <input type="text" value={settings.order_form_notes_placeholder} onChange={(e) => updateSetting('order_form_notes_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        </SettingFieldWrapper>
                                     </div>
                                 </div>
                             </div>
@@ -748,26 +923,30 @@ export default function SettingsPage() {
                                     Butonlar
                                 </h3>
                                 <div className="grid grid-cols-3 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="order_form_basket_title" enabled={!disabledKeys.includes('order_form_basket_title')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Sepet Başlığı</label>
                                         <input type="text" value={settings.order_form_basket_title} onChange={(e) => updateSetting('order_form_basket_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_add_product_btn" enabled={!disabledKeys.includes('order_form_add_product_btn')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Ürün Ekle Butonu</label>
                                         <input type="text" value={settings.order_form_add_product_btn} onChange={(e) => updateSetting('order_form_add_product_btn', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_submit_btn" enabled={!disabledKeys.includes('order_form_submit_btn')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Sipariş Ver Butonu</label>
                                         <input type="text" value={settings.order_form_submit_btn} onChange={(e) => updateSetting('order_form_submit_btn', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_empty_basket" enabled={!disabledKeys.includes('order_form_empty_basket')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Boş Sepet Mesajı</label>
                                         <input type="text" value={settings.order_form_empty_basket} onChange={(e) => updateSetting('order_form_empty_basket', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_submitting" enabled={!disabledKeys.includes('order_form_submitting')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Gönderiliyor Mesajı</label>
                                         <input type="text" value={settings.order_form_submitting} onChange={(e) => updateSetting('order_form_submitting', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
+                                    </SettingFieldWrapper>
                                 </div>
                             </div>
 
@@ -778,25 +957,31 @@ export default function SettingsPage() {
                                     Başarı ve Hata Mesajları
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="order_form_success_title" enabled={!disabledKeys.includes('order_form_success_title')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Başarı Başlığı</label>
                                         <input type="text" value={settings.order_form_success_title} onChange={(e) => updateSetting('order_form_success_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_success_message" enabled={!disabledKeys.includes('order_form_success_message')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Başarı Mesajı</label>
                                         <input type="text" value={settings.order_form_success_message} onChange={(e) => updateSetting('order_form_success_message', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_error_message" enabled={!disabledKeys.includes('order_form_error_message')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Hata Mesajı</label>
                                         <input type="text" value={settings.order_form_error_message} onChange={(e) => updateSetting('order_form_error_message', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_max_items_error" enabled={!disabledKeys.includes('order_form_max_items_error')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Max Ürün Hatası</label>
                                         <input type="text" value={settings.order_form_max_items_error} onChange={(e) => updateSetting('order_form_max_items_error', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
+                                    </SettingFieldWrapper>
+
                                     <div className="col-span-2">
-                                        <label className="block text-xs text-gray-400 mb-1">Ürün Seçim Hatası</label>
-                                        <input type="text" value={settings.order_form_fill_product_error} onChange={(e) => updateSetting('order_form_fill_product_error', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        <SettingFieldWrapper settingKey="order_form_fill_product_error" enabled={!disabledKeys.includes('order_form_fill_product_error')} onToggle={handleToggle}>
+                                            <label className="block text-xs text-gray-400 mb-1">Ürün Seçim Hatası</label>
+                                            <input type="text" value={settings.order_form_fill_product_error} onChange={(e) => updateSetting('order_form_fill_product_error', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        </SettingFieldWrapper>
                                     </div>
                                 </div>
                             </div>
@@ -808,29 +993,37 @@ export default function SettingsPage() {
                                     "Diğer" Ürün Popup Metinleri
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <SettingFieldWrapper settingKey="order_form_other_popup_title" enabled={!disabledKeys.includes('order_form_other_popup_title')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Popup Başlığı</label>
                                         <input type="text" value={settings.order_form_other_popup_title} onChange={(e) => updateSetting('order_form_other_popup_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_other_popup_subtitle" enabled={!disabledKeys.includes('order_form_other_popup_subtitle')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Popup Alt Başlık</label>
                                         <input type="text" value={settings.order_form_other_popup_subtitle} onChange={(e) => updateSetting('order_form_other_popup_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_other_popup_label" enabled={!disabledKeys.includes('order_form_other_popup_label')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Popup Etiket</label>
                                         <input type="text" value={settings.order_form_other_popup_label} onChange={(e) => updateSetting('order_form_other_popup_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div>
+                                    </SettingFieldWrapper>
+
+                                    <SettingFieldWrapper settingKey="order_form_other_popup_placeholder" enabled={!disabledKeys.includes('order_form_other_popup_placeholder')} onToggle={handleToggle}>
                                         <label className="block text-xs text-gray-400 mb-1">Popup Placeholder</label>
                                         <input type="text" value={settings.order_form_other_popup_placeholder} onChange={(e) => updateSetting('order_form_other_popup_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </SettingFieldWrapper>
+
+                                    <div className="col-span-2">
+                                        <SettingFieldWrapper settingKey="order_form_other_note_required" enabled={!disabledKeys.includes('order_form_other_note_required')} onToggle={handleToggle}>
+                                            <label className="block text-xs text-gray-400 mb-1">"Diğer" Not Gerekli Hatası</label>
+                                            <input type="text" value={settings.order_form_other_note_required} onChange={(e) => updateSetting('order_form_other_note_required', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        </SettingFieldWrapper>
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-xs text-gray-400 mb-1">"Diğer" Not Gerekli Hatası</label>
-                                        <input type="text" value={settings.order_form_other_note_required} onChange={(e) => updateSetting('order_form_other_note_required', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-xs text-gray-400 mb-1">"Diğer" Eklenmedi Hatası</label>
-                                        <input type="text" value={settings.order_form_other_not_added} onChange={(e) => updateSetting('order_form_other_not_added', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        <SettingFieldWrapper settingKey="order_form_other_not_added" enabled={!disabledKeys.includes('order_form_other_not_added')} onToggle={handleToggle}>
+                                            <label className="block text-xs text-gray-400 mb-1">"Diğer" Eklenmedi Hatası</label>
+                                            <input type="text" value={settings.order_form_other_not_added} onChange={(e) => updateSetting('order_form_other_not_added', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                        </SettingFieldWrapper>
                                     </div>
                                 </div>
                             </div>
@@ -841,38 +1034,56 @@ export default function SettingsPage() {
                     {activeTab === 'seo' && (
                         <div className="space-y-6 max-w-4xl">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Meta Title</label>
-                                <input
-                                    type="text"
-                                    value={settings.seo_title}
-                                    onChange={(e) => updateSetting('seo_title', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="seo_title"
+                                    label="Meta Title"
+                                    enabled={!disabledKeys.includes('seo_title')}
+                                    onToggle={handleToggle}
+                                >
+                                    <input
+                                        type="text"
+                                        value={settings.seo_title}
+                                        onChange={(e) => updateSetting('seo_title', e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1">
                                     {settings.seo_title.length}/60 karakter (önerilen)
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Meta Description</label>
-                                <textarea
-                                    value={settings.seo_description}
-                                    onChange={(e) => updateSetting('seo_description', e.target.value)}
-                                    rows={3}
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="seo_description"
+                                    label="Meta Description"
+                                    enabled={!disabledKeys.includes('seo_description')}
+                                    onToggle={handleToggle}
+                                >
+                                    <textarea
+                                        value={settings.seo_description}
+                                        onChange={(e) => updateSetting('seo_description', e.target.value)}
+                                        rows={3}
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1">
                                     {settings.seo_description.length}/160 karakter (önerilen)
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Keywords</label>
-                                <textarea
-                                    value={settings.seo_keywords}
-                                    onChange={(e) => updateSetting('seo_keywords', e.target.value)}
-                                    rows={2}
-                                    placeholder="keyword1, keyword2, keyword3"
-                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                />
+                                <SettingFieldWrapper
+                                    settingKey="seo_keywords"
+                                    label="Keywords"
+                                    enabled={!disabledKeys.includes('seo_keywords')}
+                                    onToggle={handleToggle}
+                                >
+                                    <textarea
+                                        value={settings.seo_keywords}
+                                        onChange={(e) => updateSetting('seo_keywords', e.target.value)}
+                                        rows={2}
+                                        placeholder="keyword1, keyword2, keyword3"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                    />
+                                </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
                             </div>
                         </div>

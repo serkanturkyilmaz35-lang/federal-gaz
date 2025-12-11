@@ -355,6 +355,8 @@ export default function SiparisPage() {
         submitOrder();
     };
 
+    const [customValues, setCustomValues] = useState<Record<string, string>>({});
+
     const submitOrder = async () => {
         setIsLoading(true);
         setError("");
@@ -367,8 +369,17 @@ export default function SiparisPage() {
         }];
 
         try {
+            let finalNotes = contactData.notes;
+            if (Object.keys(customValues).length > 0) {
+                finalNotes += "\n\n--- Ek Bilgiler ---\n";
+                Object.entries(customValues).forEach(([key, val]) => {
+                    finalNotes += `${key}: ${val}\n`;
+                });
+            }
+
             const orderData = {
                 ...contactData,
+                notes: finalNotes,
                 items: orderItems
             };
 
@@ -688,6 +699,84 @@ export default function SiparisPage() {
                         </div>
 
                         {/* 3. Notes */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{settings.order_form_notes_label || t.notes}</h3>
+                            <textarea ref={notesRef} name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={settings.order_form_notes_placeholder || t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                        </div>
+
+                        {error && (
+                            <div className="rounded-lg bg-red-100 p-4 text-center text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full transform rounded-xl bg-primary py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
+                        >
+                            {isLoading
+                                ? (settings.order_form_submitting || t.submitting)
+                                : (settings.order_form_submit_btn || t.submitBtn)}
+                        </button>
+                        {/* 3. Products Basket (Already existing logic above this) */}
+
+                        {/* 4. Dynamic Fields */}
+                        <div className="space-y-4">
+                            {(() => {
+                                try {
+                                    const fields: any[] = JSON.parse(settings.order_form_fields || "[]");
+                                    if (fields.length === 0) return null;
+
+                                    return (
+                                        <>
+                                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">Ek Bilgiler</h3>
+                                            <div className="grid gap-4 md:grid-cols-2">
+                                                {fields.map((field) => {
+                                                    if (!field.enabled) return null;
+                                                    return (
+                                                        <div key={field.id} className={`${field.width === 'half' ? 'md:col-span-1' : 'md:col-span-2'}`}>
+                                                            <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">
+                                                                {field.label} {field.required && '*'}
+                                                            </label>
+                                                            {field.type === 'textarea' ? (
+                                                                <textarea
+                                                                    className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base"
+                                                                    placeholder={field.placeholder}
+                                                                    required={field.required}
+                                                                    onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
+                                                                />
+                                                            ) : field.type === 'select' ? (
+                                                                <select
+                                                                    className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base"
+                                                                    required={field.required}
+                                                                    onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
+                                                                >
+                                                                    <option value="">Seçiniz</option>
+                                                                    {field.options?.map((opt: string, i: number) => (
+                                                                        <option key={i} value={opt}>{opt}</option>
+                                                                    ))}
+                                                                </select>
+                                                            ) : (
+                                                                <input
+                                                                    type={field.type}
+                                                                    className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base"
+                                                                    placeholder={field.placeholder}
+                                                                    required={field.required}
+                                                                    onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    );
+                                } catch { return null; }
+                            })()}
+                        </div>
+
+                        {/* 5. Notes */}
                         <div className="space-y-4">
                             <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{settings.order_form_notes_label || t.notes}</h3>
                             <textarea ref={notesRef} name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={settings.order_form_notes_placeholder || t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />

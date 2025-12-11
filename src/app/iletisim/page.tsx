@@ -61,6 +61,7 @@ export default function IletisimPage() {
     const { secureFetch } = useEncryption();
     const t = translations[language];
     const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+    const [customValues, setCustomValues] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -72,14 +73,24 @@ export default function IletisimPage() {
         setIsLoading(true);
 
         try {
+            // Append custom fields to message
+            let finalMessage = formData.message;
+            if (Object.keys(customValues).length > 0) {
+                finalMessage += "\n\n--- Ek Bilgiler ---\n";
+                Object.entries(customValues).forEach(([key, val]) => {
+                    finalMessage += `${key}: ${val}\n`;
+                });
+            }
+
             const res = await secureFetch('/api/contact', {
                 method: 'POST',
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, message: finalMessage })
             });
 
             if (res.ok) {
                 setShowSuccess(true);
                 setFormData({ name: '', email: '', phone: '', message: '' });
+                setCustomValues({});
             }
         } catch (error) {
             console.error(error);
@@ -220,6 +231,7 @@ export default function IletisimPage() {
                         <div className="flex flex-col rounded-xl bg-white p-8 shadow-md dark:bg-background-dark">
                             <h2 className="text-2xl font-bold text-secondary dark:text-white">{t.formTitle}</h2>
                             <form onSubmit={handleSubmit} className="mt-6 flex flex-1 flex-col gap-4">
+                                {/* Standard Fields */}
                                 <div>
                                     <label className="text-sm font-medium text-secondary dark:text-white">
                                         {settings.contact_form_name_label || t.formName}
@@ -259,6 +271,52 @@ export default function IletisimPage() {
                                         required
                                     />
                                 </div>
+
+                                {/* Dynamic Fields */}
+                                {(() => {
+                                    try {
+                                        const fields: any[] = JSON.parse(settings.contact_form_fields || "[]");
+                                        return fields.map((field) => {
+                                            if (!field.enabled) return null;
+                                            return (
+                                                <div key={field.id} className={`${field.width === 'half' ? 'w-full md:w-[48%]' : 'w-full'}`}>
+                                                    <label className="text-sm font-medium text-secondary dark:text-white mb-1 block">
+                                                        {field.label} {field.required && '*'}
+                                                    </label>
+                                                    {field.type === 'textarea' ? (
+                                                        <textarea
+                                                            className="w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
+                                                            placeholder={field.placeholder}
+                                                            required={field.required}
+                                                            onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
+                                                        />
+                                                    ) : field.type === 'select' ? (
+                                                        <select
+                                                            className="w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
+                                                            required={field.required}
+                                                            onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
+                                                        >
+                                                            <option value="">Seçiniz</option>
+                                                            {field.options?.map((opt: string, i: number) => (
+                                                                <option key={i} value={opt}>{opt}</option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
+                                                        <input
+                                                            type={field.type}
+                                                            className="w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
+                                                            placeholder={field.placeholder}
+                                                            required={field.required}
+                                                            onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
+                                                        />
+                                                    )}
+                                                </div>
+                                            );
+                                        });
+                                    } catch { return null; }
+                                })()}
+
+                                {/* Message Field */}
                                 <div className="flex flex-1 flex-col">
                                     <label className="text-sm font-medium text-secondary dark:text-white">
                                         {settings.contact_form_message_label || t.formMessage}
