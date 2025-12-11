@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // Default settings structure
@@ -14,13 +14,12 @@ const defaultSettings = {
     // Contact
     contact_address: "İvedik OSB, 1550. Cad. No:1, 06378 Yenimahalle/Ankara",
     contact_phone: "(0312) 395 35 95",
-    contact_phone_1_label: "", // New
+    contact_phone_1_label: "Merkez",
     contact_phone_2: "(+90) 543 455 45 63",
-    contact_phone_2_label: "", // New
+    contact_phone_2_label: "Satış",
     contact_phone_3: "(+90) 532 422 45 15",
-    contact_phone_3_label: "", // New
+    contact_phone_3_label: "Muhasebe",
     contact_email: "federal.gaz@hotmail.com",
-    contact_whatsapp: "+905434554563",
 
     // Social Media
     instagram_url: "https://www.instagram.com/federal_gaz/",
@@ -42,7 +41,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'social' | 'seo'>('general');
-    const [successMessage, setSuccessMessage] = useState("");
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const router = useRouter();
 
     useEffect(() => {
@@ -54,7 +53,17 @@ export default function SettingsPage() {
             const res = await fetch('/api/dashboard/settings');
             const data = await res.json();
             if (data.settings) {
-                setSettings({ ...defaultSettings, ...data.settings });
+                setSettings(prev => {
+                    const newSettings = { ...prev, ...data.settings };
+                    // If values are empty, use defaults to show what's actually being used on the site
+                    if (!newSettings.logo_url) newSettings.logo_url = defaultSettings.logo_url;
+                    if (!newSettings.favicon_url) newSettings.favicon_url = defaultSettings.favicon_url;
+                    // Phone labels
+                    if (!newSettings.contact_phone_1_label) newSettings.contact_phone_1_label = defaultSettings.contact_phone_1_label;
+                    if (!newSettings.contact_phone_2_label) newSettings.contact_phone_2_label = defaultSettings.contact_phone_2_label;
+                    if (!newSettings.contact_phone_3_label) newSettings.contact_phone_3_label = defaultSettings.contact_phone_3_label;
+                    return newSettings;
+                });
             }
         } catch (error) {
             console.error('Failed to fetch settings:', error);
@@ -63,18 +72,22 @@ export default function SettingsPage() {
         }
     };
 
-    const handleSave = async () => {
+    // Debounce ref for auto-save
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Auto-save function
+    const autoSave = useCallback(async (newSettings: typeof defaultSettings) => {
         setSaving(true);
-        setSuccessMessage("");
+        setSaveStatus('idle');
 
         try {
-            const settingsArray = Object.entries(settings).map(([key, value]) => {
+            const settingsArray = Object.entries(newSettings).map(([key, value]) => {
                 let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
                 if (key.startsWith('contact_')) category = 'contact';
-                else if (key.includes('_url') && !key.startsWith('seo_')) category = 'social';
                 else if (key.startsWith('seo_')) category = 'seo';
-
-                return { key, value, category };
+                else if (key === 'instagram_url' || key === 'facebook_url' || key === 'twitter_url' || key === 'linkedin_url' || key === 'youtube_url') category = 'social';
+                else category = 'general';
+                return { key, value: String(value ?? ""), category };
             });
 
             const res = await fetch('/api/dashboard/settings', {
@@ -84,22 +97,32 @@ export default function SettingsPage() {
             });
 
             if (res.ok) {
-                setSuccessMessage("Tüm ayarlar başarıyla kaydedildi ve yayınlandı.");
-                setTimeout(() => setSuccessMessage(""), 5000);
-                router.refresh(); // Force server components to re-fetch settings
+                setSaveStatus('success');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+                router.refresh();
             } else {
-                alert("Kaydetme sırasında bir hata oluştu.");
+                setSaveStatus('error');
             }
         } catch (error) {
             console.error('Failed to save settings:', error);
-            alert("Bağlantı hatası oluştu.");
+            setSaveStatus('error');
         } finally {
             setSaving(false);
         }
-    };
+    }, [router]);
 
     const updateSetting = (key: SettingsKey, value: string) => {
-        setSettings(prev => ({ ...prev, [key]: value }));
+        const newSettings = { ...settings, [key]: value };
+        setSettings(newSettings);
+        if (saveStatus !== 'idle') setSaveStatus('idle');
+
+        // Debounced auto-save (waits 800ms after last change)
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            autoSave(newSettings);
+        }, 800);
     };
 
     const tabs = [
@@ -129,25 +152,32 @@ export default function SettingsPage() {
                         Site ayarlarını yönetin.
                     </p>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors shadow-lg shadow-[#137fec]/20"
-                >
-                    <span className="material-symbols-outlined text-sm">
-                        {saving ? "hourglass_empty" : "save"}
-                    </span>
-                    {saving ? "Kaydediliyor..." : "Kaydet"}
-                </button>
-            </div>
 
-            {/* Success Message */}
-            {successMessage && (
-                <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-4 rounded-lg flex items-center gap-3 animate-fade-in">
-                    <span className="material-symbols-outlined text-2xl">check_circle</span>
-                    <span className="font-medium">{successMessage}</span>
+                {/* Centered Status Message */}
+                <div className="flex-1 flex justify-center">
+                    {saving && (
+                        <span className="flex items-center gap-1.5 text-blue-400 text-sm font-medium animate-pulse">
+                            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                            Kaydediliyor...
+                        </span>
+                    )}
+                    {!saving && saveStatus === 'success' && (
+                        <span className="flex items-center gap-1.5 text-green-400 text-sm font-medium animate-fade-in">
+                            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                            Güncellendi
+                        </span>
+                    )}
+                    {!saving && saveStatus === 'error' && (
+                        <span className="flex items-center gap-1.5 text-red-400 text-sm font-medium animate-fade-in">
+                            <span className="material-symbols-outlined text-[18px]">error</span>
+                            Kaydetme Hatası
+                        </span>
+                    )}
                 </div>
-            )}
+
+                {/* Empty div for spacing balance */}
+                <div className="hidden lg:block w-24"></div>
+            </div>
 
             {/* Main Card */}
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden border border-[#3b4754]">
@@ -234,6 +264,7 @@ export default function SettingsPage() {
                                     rows={3}
                                     className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                 />
+                                <p className="text-xs text-gray-500 mt-1.5">Footer ve İletişim sayfasında görünür.</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
@@ -255,7 +286,7 @@ export default function SettingsPage() {
                                     />
                                 </div>
                                 <div className="self-center hidden md:block">
-                                    <p className="text-xs text-gray-500">Ana iletişim numarasıdır. Footer ve genel iletişim alanlarında görünür.</p>
+                                    <p className="text-xs text-gray-500">Footer ve İletişim sayfasında görünür.</p>
                                 </div>
                             </div>
 
@@ -278,7 +309,7 @@ export default function SettingsPage() {
                                     />
                                 </div>
                                 <div className="self-center hidden md:block">
-                                    <p className="text-xs text-gray-500">Ek iletişim veya GSM numarası.</p>
+                                    <p className="text-xs text-gray-500">Footer ve İletişim sayfasında görünür.</p>
                                 </div>
                             </div>
 
@@ -301,30 +332,19 @@ export default function SettingsPage() {
                                     />
                                 </div>
                                 <div className="self-center hidden md:block">
-                                    <p className="text-xs text-gray-500">Ek iletişim veya GSM numarası.</p>
+                                    <p className="text-xs text-gray-500">Footer ve İletişim sayfasında görünür.</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">E-posta</label>
-                                    <input
-                                        type="email"
-                                        value={settings.contact_email}
-                                        onChange={(e) => updateSetting('contact_email', e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">WhatsApp Numarası</label>
-                                    <input
-                                        type="text"
-                                        value={settings.contact_whatsapp}
-                                        onChange={(e) => updateSetting('contact_whatsapp', e.target.value)}
-                                        placeholder="+905xxxxxxxxx"
-                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                    />
-                                </div>
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">E-posta</label>
+                                <input
+                                    type="email"
+                                    value={settings.contact_email}
+                                    onChange={(e) => updateSetting('contact_email', e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                />
+                                <p className="text-xs text-gray-500 mt-1.5">Footer ve İletişim sayfasında görünür.</p>
                             </div>
                         </div>
                     )}

@@ -13,13 +13,12 @@ export interface SiteSettingsData {
     // Contact
     contact_address: string;
     contact_phone: string;
-    contact_phone_1_label?: string; // New label
+    contact_phone_1_label?: string; // Label for phone 1
     contact_phone_2: string;
-    contact_phone_2_label?: string; // New label
+    contact_phone_2_label?: string; // Label for phone 2
     contact_phone_3: string;
-    contact_phone_3_label?: string; // New label
+    contact_phone_3_label?: string; // Label for phone 3
     contact_email: string;
-    contact_whatsapp: string;
 
     // Social
     instagram_url: string;
@@ -40,7 +39,6 @@ const defaultSettings: SiteSettingsData = {
     contact_phone_2: "(+90) 543 455 45 63",
     contact_phone_3: "(+90) 532 422 45 15",
     contact_email: "federal.gaz@hotmail.com",
-    contact_whatsapp: "+905434554563",
     instagram_url: "https://www.instagram.com/federal_gaz/",
     facebook_url: "",
     twitter_url: "",

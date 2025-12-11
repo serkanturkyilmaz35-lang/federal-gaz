@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import { useSettings } from "@/context/SettingsContext"; // Import settings
 import { useState } from "react";
 
 const translations = {
@@ -40,6 +41,7 @@ const translations = {
 export default function Header() {
     const { language, setLanguage, toggleLanguage } = useLanguage();
     const { user, loading } = useAuth();
+    const { settings } = useSettings(); // Use settings context
     const pathname = usePathname();
     const t = translations[language];
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -91,7 +93,12 @@ export default function Header() {
 
                         {/* Logo (Centered on Mobile, Left on Desktop) */}
                         <Link href="/" className="relative flex items-center justify-center lg:justify-start">
-                            <img src="/logo.jpg" alt="Federal Gaz Logo" className="h-16 lg:h-24 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} />
+                            <img
+                                src={settings.logo_url || "/logo.jpg"}
+                                alt={settings.site_name || "Federal Gaz Logo"}
+                                className="h-16 lg:h-24 w-auto object-contain"
+                                style={{ mixBlendMode: 'multiply' }}
+                            />
                         </Link>
 
                         {/* Mobile Login Button (Right) */}
@@ -162,7 +169,12 @@ export default function Header() {
 
                             {/* Logo (Center) */}
                             <div className="relative flex items-center justify-center">
-                                <img src="/logo.jpg" alt="Federal Gaz Logo" className="h-16 w-auto object-contain" style={{ mixBlendMode: 'multiply' }} />
+                                <img
+                                    src={settings.logo_url || "/logo.jpg"}
+                                    alt={settings.site_name || "Federal Gaz Logo"}
+                                    className="h-16 w-auto object-contain"
+                                    style={{ mixBlendMode: 'multiply' }}
+                                />
                             </div>
 
                             {/* Login Button (Right) */}

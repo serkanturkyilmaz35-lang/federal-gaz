@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useSettings } from "@/context/SettingsContext";
 import SuccessModal from "@/components/SuccessModal";
 
 const translations = {
@@ -10,7 +11,6 @@ const translations = {
         subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
         infoTitle: "İletişim Bilgilerimiz",
         addressTitle: "Adres",
-        address: "İvedik OSB, 1550. Cad. No:1\n06378 Yenimahalle/Ankara",
         phoneTitle: "Telefon",
         gsmTitle: "GSM",
         emailTitle: "E-posta",
@@ -34,7 +34,6 @@ const translations = {
         subtitle: "Contact us, we will be happy to assist you.",
         infoTitle: "Contact Information",
         addressTitle: "Address",
-        address: "İvedik OSB, 1550. Cad. No:1\n06378 Yenimahalle/Ankara (Turkey)",
         phoneTitle: "Phone",
         gsmTitle: "GSM",
         emailTitle: "Email",
@@ -57,10 +56,14 @@ const translations = {
 
 export default function IletisimPage() {
     const { language } = useLanguage();
+    const { settings } = useSettings();
     const t = translations[language];
     const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+
+    // Helper to format phone for href (remove spaces, parens)
+    const formatPhone = (phone: string) => phone.replace(/[^0-9+]/g, '');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -99,6 +102,7 @@ export default function IletisimPage() {
                         <div>
                             <h2 className="text-3xl font-bold text-secondary dark:text-white">{t.infoTitle}</h2>
                             <div className="mt-8 space-y-6">
+                                {/* Address */}
                                 <div className="flex gap-4">
                                     <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                                         <span className="material-symbols-outlined text-2xl text-primary">location_on</span>
@@ -106,44 +110,80 @@ export default function IletisimPage() {
                                     <div>
                                         <h3 className="font-bold text-secondary dark:text-white">{t.addressTitle}</h3>
                                         <p className="mt-1 whitespace-pre-line text-secondary/70 dark:text-white/60">
-                                            {t.address}
+                                            {settings.contact_address}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex gap-4">
-                                    <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                        <span className="material-symbols-outlined text-2xl text-primary">phone</span>
+
+                                {/* Phone 1 - Merkez */}
+                                {settings.contact_phone && (
+                                    <div className="flex gap-4">
+                                        <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                                            <span className="material-symbols-outlined text-2xl text-primary">phone</span>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-secondary dark:text-white">{t.phoneTitle}</h3>
+                                            <p className="mt-1 text-secondary/70 dark:text-white/60">
+                                                <a href={`tel:${formatPhone(settings.contact_phone)}`} className="hover:text-primary transition-colors">
+                                                    {settings.contact_phone}
+                                                </a>
+                                                {settings.contact_phone_1_label && (
+                                                    <span className="text-xs text-gray-500 ml-2">({settings.contact_phone_1_label})</span>
+                                                )}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-secondary dark:text-white">{t.phoneTitle}</h3>
-                                        <p className="mt-1 text-secondary/70 dark:text-white/60">
-                                            <a href="tel:+903123953595" className="hover:text-primary transition-colors">(0312) 395 35 95</a>
-                                        </p>
+                                )}
+
+                                {/* GSM Numbers */}
+                                {(settings.contact_phone_2 || settings.contact_phone_3) && (
+                                    <div className="flex gap-4">
+                                        <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                                            <span className="material-symbols-outlined text-2xl text-primary">smartphone</span>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-secondary dark:text-white">{t.gsmTitle}</h3>
+                                            <p className="mt-1 text-secondary/70 dark:text-white/60">
+                                                {settings.contact_phone_2 && (
+                                                    <>
+                                                        <a href={`tel:${formatPhone(settings.contact_phone_2)}`} className="hover:text-primary transition-colors">
+                                                            {settings.contact_phone_2}
+                                                        </a>
+                                                        {settings.contact_phone_2_label && (
+                                                            <span className="text-xs text-gray-500 ml-2">- {settings.contact_phone_2_label}</span>
+                                                        )}
+                                                        <br />
+                                                    </>
+                                                )}
+                                                {settings.contact_phone_3 && (
+                                                    <>
+                                                        <a href={`tel:${formatPhone(settings.contact_phone_3)}`} className="hover:text-primary transition-colors">
+                                                            {settings.contact_phone_3}
+                                                        </a>
+                                                        {settings.contact_phone_3_label && (
+                                                            <span className="text-xs text-gray-500 ml-2">- {settings.contact_phone_3_label}</span>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                        <span className="material-symbols-outlined text-2xl text-primary">smartphone</span>
+                                )}
+
+                                {/* Email */}
+                                {settings.contact_email && (
+                                    <div className="flex gap-4">
+                                        <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                                            <span className="material-symbols-outlined text-2xl text-primary">mail</span>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-secondary dark:text-white">{t.emailTitle}</h3>
+                                            <p className="mt-1 text-secondary/70 dark:text-white/60">
+                                                <a href={`mailto:${settings.contact_email}`} className="hover:text-primary transition-colors">{settings.contact_email}</a>
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-secondary dark:text-white">{t.gsmTitle}</h3>
-                                        <p className="mt-1 text-secondary/70 dark:text-white/60">
-                                            <a href="tel:+905434554563" className="hover:text-primary transition-colors">(+90) 543 455 45 63</a> - Ziya Türkyılmaz<br />
-                                            <a href="tel:+905324224515" className="hover:text-primary transition-colors">(+90) 532 422 45 15</a> - Bayram Tıraş
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                        <span className="material-symbols-outlined text-2xl text-primary">mail</span>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-secondary dark:text-white">{t.emailTitle}</h3>
-                                        <p className="mt-1 text-secondary/70 dark:text-white/60">
-                                            <a href="mailto:federal.gaz@hotmail.com" className="hover:text-primary transition-colors">federal.gaz@hotmail.com</a>
-                                        </p>
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Map and Directions */}
@@ -241,4 +281,3 @@ export default function IletisimPage() {
         </>
     );
 }
-
