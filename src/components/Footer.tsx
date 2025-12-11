@@ -118,7 +118,35 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="mt-8 border-t border-white/20 pt-8 text-center text-sm">
-                    <p>{settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`}</p>
+                    <div className="text-white/80">
+                        {(() => {
+                            const text = settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`;
+
+                            // Split by space to find URLs
+                            const parts = text.split(/(\s+)/);
+
+                            return parts.map((part, i) => {
+                                // Simple URL detection for http/https/www
+                                const isUrl = /^(https?:\/\/|www\.)/i.test(part);
+
+                                if (isUrl) {
+                                    const href = part.startsWith('www.') ? `https://${part}` : part;
+                                    return (
+                                        <a
+                                            key={i}
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-semibold transition-colors hover:text-primary"
+                                        >
+                                            {part}
+                                        </a>
+                                    );
+                                }
+                                return part;
+                            });
+                        })()}
+                    </div>
                 </div>
             </div>
         </footer>
