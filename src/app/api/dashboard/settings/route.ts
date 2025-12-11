@@ -72,7 +72,12 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         console.error('Settings POST Error:', error);
-        return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({
+            error: 'Failed to save settings',
+            details: errorMessage,
+            stack: error instanceof Error ? error.stack : undefined
+        }, { status: 500 });
     }
 }
 
