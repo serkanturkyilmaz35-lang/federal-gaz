@@ -36,15 +36,58 @@ const defaultSettings = {
     // Homepage & Content
     homepage_marquee_text: "Önemli Duyuru: Federal Gaz sipariş ve destek talepleriniz için 7/24 iletişim e-posta adresimiz federal.gaz@hotmail.com",
 
-    // Form Titles
-    contact_form_title: "İletişim",
-    contact_form_subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
-    order_form_title: "Sipariş Ver",
-    order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
-
-    // Map Coordinates (Federal Gaz lokasyonu)
+    // Map Coordinates
     contact_map_lat: "39.9876",
     contact_map_lng: "32.7543",
+
+    // Contact Form
+    contact_form_title: "İletişim",
+    contact_form_subtitle: "Bizimle iletişime geçin, size yardımcı olmaktan mutluluk duyarız.",
+    contact_form_name_label: "Ad Soyad",
+    contact_form_name_placeholder: "Adınız Soyadınız",
+    contact_form_email_label: "E-posta",
+    contact_form_email_placeholder: "ornek@email.com",
+    contact_form_phone_label: "Telefon",
+    contact_form_phone_placeholder: "+90 (5XX) XXX XX XX",
+    contact_form_message_label: "Mesajınız",
+    contact_form_message_placeholder: "Mesajınızı buraya yazın...",
+    contact_form_submit_btn: "Gönder",
+    contact_form_submitting: "Gönderiliyor...",
+    contact_form_success_title: "Mesajınız Gönderildi!",
+    contact_form_success_message: "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.",
+
+    // Order Form
+    order_form_title: "Sipariş Ver",
+    order_form_subtitle: "Hızlı ve güvenli sipariş için formu doldurun.",
+    order_form_name_label: "Ad Soyad *",
+    order_form_company_label: "Firma *",
+    order_form_email_label: "E-posta *",
+    order_form_phone_label: "Telefon *",
+    order_form_address_label: "Teslimat Adresi *",
+    order_form_product_label: "Ürün Seçimi",
+    order_form_select_product: "Ürün Seçiniz",
+    order_form_products: JSON.stringify(["Oksijen", "Karışım", "Argon", "Lpg", "Azot", "Karbondioksit", "Asetilen", "Propan", "Diğer"]),
+    order_form_amount_label: "Miktar",
+    order_form_unit_label: "Birim",
+    order_form_units: JSON.stringify(["Adet", "m³", "kg", "Litre"]),
+    order_form_notes_label: "Ek Notlar",
+    order_form_notes_placeholder: "Varsa ek taleplerinizi belirtin...",
+    order_form_submit_btn: "Sipariş Ver",
+    order_form_add_product_btn: "Ürün Ekle",
+    order_form_basket_title: "Sipariş Sepeti",
+    order_form_empty_basket: "Henüz ürün eklenmedi.",
+    order_form_submitting: "Gönderiliyor...",
+    order_form_success_title: "🎉 Siparişiniz Alındı!",
+    order_form_success_message: "Siparişiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz.",
+    order_form_error_message: "Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin.",
+    order_form_max_items_error: "Tek siparişte en fazla 5 ürün ekleyebilirsiniz.",
+    order_form_fill_product_error: "Lütfen ürün, miktar ve birim seçiniz.",
+    order_form_other_note_required: "'Diğer' seçeneği için lütfen Ek Notlar alanına hangi ürünü istediğinizi detaylı olarak yazın.",
+    order_form_other_not_added: "'Diğer' ürünü henüz sepete eklenmedi! Lütfen önce 'Ürün Ekle' butonuna tıklayın.",
+    order_form_other_popup_title: "Ürün Detayı Gerekli",
+    order_form_other_popup_subtitle: "'Diğer' seçeneği için detay giriniz",
+    order_form_other_popup_label: "Hangi ürünü istiyorsunuz? *",
+    order_form_other_popup_placeholder: "Örn: 10 adet 50 litrelik helyum tüpü, balon dolumu için...",
 };
 
 type SettingsKey = keyof typeof defaultSettings;
@@ -53,7 +96,7 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState(defaultSettings);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'social' | 'seo'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo'>('general');
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const router = useRouter();
 
@@ -149,8 +192,10 @@ export default function SettingsPage() {
 
     const tabs = [
         { id: 'general', label: 'Genel', icon: 'settings' },
-        { id: 'contact', label: 'İletişim', icon: 'phone' },
-        { id: 'content', label: 'İçerik', icon: 'edit_note' },
+        { id: 'contact', label: 'İletişim Bilgileri', icon: 'phone' },
+        { id: 'content', label: 'Sayfa İçerikleri', icon: 'edit_note' },
+        { id: 'contactForm', label: 'İletişim Formu', icon: 'contact_mail' },
+        { id: 'orderForm', label: 'Sipariş Formu', icon: 'shopping_cart' },
         { id: 'social', label: 'Sosyal Medya', icon: 'public' },
         { id: 'seo', label: 'SEO', icon: 'search' },
     ];
@@ -460,66 +505,6 @@ export default function SettingsPage() {
                                 </p>
                             </div>
 
-                            {/* Contact Form Settings */}
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-blue-400">contact_mail</span>
-                                    İletişim Formu
-                                </h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
-                                        <input
-                                            type="text"
-                                            value={settings.contact_form_title}
-                                            onChange={(e) => updateSetting('contact_form_title', e.target.value)}
-                                            placeholder="İletişim"
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
-                                        <input
-                                            type="text"
-                                            value={settings.contact_form_subtitle}
-                                            onChange={(e) => updateSetting('contact_form_subtitle', e.target.value)}
-                                            placeholder="Bizimle iletişime geçin..."
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Order Form Settings */}
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-green-400">shopping_cart</span>
-                                    Sipariş Formu
-                                </h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
-                                        <input
-                                            type="text"
-                                            value={settings.order_form_title}
-                                            onChange={(e) => updateSetting('order_form_title', e.target.value)}
-                                            placeholder="Sipariş Ver"
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
-                                        <input
-                                            type="text"
-                                            value={settings.order_form_subtitle}
-                                            onChange={(e) => updateSetting('order_form_subtitle', e.target.value)}
-                                            placeholder="Hızlı ve güvenli sipariş için..."
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Map Location Settings */}
                             <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                                 <h3 className="text-white font-medium mb-4 flex items-center gap-2">
@@ -552,6 +537,297 @@ export default function SettingsPage() {
                                     <span className="material-symbols-outlined text-[14px]">info</span>
                                     Google Maps'ten koordinatları kopyalayın. Örn: 39.9876, 32.7543
                                 </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Contact Form Settings Tab */}
+                    {activeTab === 'contactForm' && (
+                        <div className="space-y-6 max-w-4xl">
+                            {/* Page Titles */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-400">title</span>
+                                    Sayfa Başlıkları
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
+                                        <input type="text" value={settings.contact_form_title} onChange={(e) => updateSetting('contact_form_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
+                                        <input type="text" value={settings.contact_form_subtitle} onChange={(e) => updateSetting('contact_form_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Form Fields */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-green-400">input</span>
+                                    Form Alanları
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ad Soyad Etiketi</label>
+                                        <input type="text" value={settings.contact_form_name_label} onChange={(e) => updateSetting('contact_form_name_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ad Soyad Placeholder</label>
+                                        <input type="text" value={settings.contact_form_name_placeholder} onChange={(e) => updateSetting('contact_form_name_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">E-posta Etiketi</label>
+                                        <input type="text" value={settings.contact_form_email_label} onChange={(e) => updateSetting('contact_form_email_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">E-posta Placeholder</label>
+                                        <input type="text" value={settings.contact_form_email_placeholder} onChange={(e) => updateSetting('contact_form_email_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Telefon Etiketi</label>
+                                        <input type="text" value={settings.contact_form_phone_label} onChange={(e) => updateSetting('contact_form_phone_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Telefon Placeholder</label>
+                                        <input type="text" value={settings.contact_form_phone_placeholder} onChange={(e) => updateSetting('contact_form_phone_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Mesaj Etiketi</label>
+                                        <input type="text" value={settings.contact_form_message_label} onChange={(e) => updateSetting('contact_form_message_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Mesaj Placeholder</label>
+                                        <input type="text" value={settings.contact_form_message_placeholder} onChange={(e) => updateSetting('contact_form_message_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Buttons & Messages */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-yellow-400">notifications</span>
+                                    Butonlar ve Mesajlar
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Gönder Butonu</label>
+                                        <input type="text" value={settings.contact_form_submit_btn} onChange={(e) => updateSetting('contact_form_submit_btn', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Gönderiliyor Mesajı</label>
+                                        <input type="text" value={settings.contact_form_submitting} onChange={(e) => updateSetting('contact_form_submitting', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Başarı Başlığı</label>
+                                        <input type="text" value={settings.contact_form_success_title} onChange={(e) => updateSetting('contact_form_success_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Başarı Mesajı</label>
+                                        <input type="text" value={settings.contact_form_success_message} onChange={(e) => updateSetting('contact_form_success_message', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Order Form Settings Tab */}
+                    {activeTab === 'orderForm' && (
+                        <div className="space-y-6 max-w-4xl">
+                            {/* Page Titles */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-400">title</span>
+                                    Sayfa Başlıkları
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Sayfa Başlığı</label>
+                                        <input type="text" value={settings.order_form_title} onChange={(e) => updateSetting('order_form_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Alt Başlık</label>
+                                        <input type="text" value={settings.order_form_subtitle} onChange={(e) => updateSetting('order_form_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Product List */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-purple-400">inventory_2</span>
+                                    Ürün Listesi
+                                </h3>
+                                <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Ürünler (virgülle ayırın)</label>
+                                    <textarea
+                                        value={(() => { try { return JSON.parse(settings.order_form_products).join(', '); } catch { return settings.order_form_products; } })()}
+                                        onChange={(e) => updateSetting('order_form_products', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
+                                        rows={2}
+                                        placeholder="Oksijen, Argon, Azot, ..."
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Örn: Oksijen, Karışım, Argon, ...</p>
+                                </div>
+                                <div className="mt-4">
+                                    <label className="block text-xs text-gray-400 mb-1">Birimler (virgülle ayırın)</label>
+                                    <input
+                                        type="text"
+                                        value={(() => { try { return JSON.parse(settings.order_form_units).join(', '); } catch { return settings.order_form_units; } })()}
+                                        onChange={(e) => updateSetting('order_form_units', JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)))}
+                                        placeholder="Adet, m³, kg, Litre"
+                                        className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Form Field Labels */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-green-400">input</span>
+                                    Form Alan Etiketleri
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ad Soyad</label>
+                                        <input type="text" value={settings.order_form_name_label} onChange={(e) => updateSetting('order_form_name_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Firma</label>
+                                        <input type="text" value={settings.order_form_company_label} onChange={(e) => updateSetting('order_form_company_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">E-posta</label>
+                                        <input type="text" value={settings.order_form_email_label} onChange={(e) => updateSetting('order_form_email_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Telefon</label>
+                                        <input type="text" value={settings.order_form_phone_label} onChange={(e) => updateSetting('order_form_phone_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Teslimat Adresi</label>
+                                        <input type="text" value={settings.order_form_address_label} onChange={(e) => updateSetting('order_form_address_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ürün Seçimi</label>
+                                        <input type="text" value={settings.order_form_product_label} onChange={(e) => updateSetting('order_form_product_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ürün Seçiniz (placeholder)</label>
+                                        <input type="text" value={settings.order_form_select_product} onChange={(e) => updateSetting('order_form_select_product', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Miktar</label>
+                                        <input type="text" value={settings.order_form_amount_label} onChange={(e) => updateSetting('order_form_amount_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Birim</label>
+                                        <input type="text" value={settings.order_form_unit_label} onChange={(e) => updateSetting('order_form_unit_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ek Notlar</label>
+                                        <input type="text" value={settings.order_form_notes_label} onChange={(e) => updateSetting('order_form_notes_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs text-gray-400 mb-1">Ek Notlar Placeholder</label>
+                                        <input type="text" value={settings.order_form_notes_placeholder} onChange={(e) => updateSetting('order_form_notes_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-orange-400">smart_button</span>
+                                    Butonlar
+                                </h3>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Sepet Başlığı</label>
+                                        <input type="text" value={settings.order_form_basket_title} onChange={(e) => updateSetting('order_form_basket_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Ürün Ekle Butonu</label>
+                                        <input type="text" value={settings.order_form_add_product_btn} onChange={(e) => updateSetting('order_form_add_product_btn', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Sipariş Ver Butonu</label>
+                                        <input type="text" value={settings.order_form_submit_btn} onChange={(e) => updateSetting('order_form_submit_btn', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Boş Sepet Mesajı</label>
+                                        <input type="text" value={settings.order_form_empty_basket} onChange={(e) => updateSetting('order_form_empty_basket', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Gönderiliyor Mesajı</label>
+                                        <input type="text" value={settings.order_form_submitting} onChange={(e) => updateSetting('order_form_submitting', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Success & Error Messages */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-yellow-400">notifications</span>
+                                    Başarı ve Hata Mesajları
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Başarı Başlığı</label>
+                                        <input type="text" value={settings.order_form_success_title} onChange={(e) => updateSetting('order_form_success_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Başarı Mesajı</label>
+                                        <input type="text" value={settings.order_form_success_message} onChange={(e) => updateSetting('order_form_success_message', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Hata Mesajı</label>
+                                        <input type="text" value={settings.order_form_error_message} onChange={(e) => updateSetting('order_form_error_message', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Max Ürün Hatası</label>
+                                        <input type="text" value={settings.order_form_max_items_error} onChange={(e) => updateSetting('order_form_max_items_error', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs text-gray-400 mb-1">Ürün Seçim Hatası</label>
+                                        <input type="text" value={settings.order_form_fill_product_error} onChange={(e) => updateSetting('order_form_fill_product_error', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* "Diğer" Product Popup */}
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-red-400">edit_note</span>
+                                    "Diğer" Ürün Popup Metinleri
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Popup Başlığı</label>
+                                        <input type="text" value={settings.order_form_other_popup_title} onChange={(e) => updateSetting('order_form_other_popup_title', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Popup Alt Başlık</label>
+                                        <input type="text" value={settings.order_form_other_popup_subtitle} onChange={(e) => updateSetting('order_form_other_popup_subtitle', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Popup Etiket</label>
+                                        <input type="text" value={settings.order_form_other_popup_label} onChange={(e) => updateSetting('order_form_other_popup_label', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Popup Placeholder</label>
+                                        <input type="text" value={settings.order_form_other_popup_placeholder} onChange={(e) => updateSetting('order_form_other_popup_placeholder', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs text-gray-400 mb-1">"Diğer" Not Gerekli Hatası</label>
+                                        <input type="text" value={settings.order_form_other_note_required} onChange={(e) => updateSetting('order_form_other_note_required', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs text-gray-400 mb-1">"Diğer" Eklenmedi Hatası</label>
+                                        <input type="text" value={settings.order_form_other_not_added} onChange={(e) => updateSetting('order_form_other_not_added', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
