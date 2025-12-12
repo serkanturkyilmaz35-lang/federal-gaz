@@ -240,12 +240,21 @@ const emptyForm = {
     minAmount: '' as string,
 };
 
+const defaultTemplates: any[] = [
+    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', isActive: true },
+    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', isActive: true },
+    { id: 3, slug: 'promotion', nameTR: 'Kampanya', nameEN: 'Promotion', isActive: true },
+    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', isActive: true },
+    { id: 5, slug: 'win-back', nameTR: 'Geri Kazanım', nameEN: 'Win-back', isActive: true },
+    { id: 6, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', isActive: true },
+];
+
 export default function MailingPage() {
     const { language } = useLanguage();
     const t = translations[language];
 
     const [campaigns, setCampaigns] = useState<MailingCampaign[]>([]);
-    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+    const [templates, setTemplates] = useState<any[]>(defaultTemplates);
     const [recipients, setRecipients] = useState<Recipient[]>([]);
     const [subscriberCount, setSubscriberCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -284,20 +293,35 @@ export default function MailingPage() {
         try {
             // Priority 1: Load campaigns first for fast initial render
             const campaignsRes = await fetch('/api/dashboard/mailing');
-            const campaignsData = await campaignsRes.json();
-            setCampaigns(campaignsData.campaigns || []);
-            setSubscriberCount(campaignsData.subscriberCount || 0);
+            if (campaignsRes.ok) {
+                const campaignsData = await campaignsRes.json();
+                setCampaigns(campaignsData.campaigns || []);
+                setSubscriberCount(campaignsData.subscriberCount || 0);
+            }
             setLoading(false); // Show UI immediately
 
             // Priority 2: Load templates and recipients in background
-            const [templatesRes, recipientsRes] = await Promise.all([
-                fetch('/api/dashboard/templates'),
-                fetch('/api/dashboard/mailing/recipients?limit=100'),
-            ]);
-            const templatesData = await templatesRes.json();
-            const recipientsData = await recipientsRes.json();
-            setTemplates(templatesData.templates || []);
-            setRecipients(recipientsData.recipients || []);
+            try {
+                const [templatesRes, recipientsRes] = await Promise.all([
+                    fetch('/api/dashboard/templates'),
+                    fetch('/api/dashboard/mailing/recipients?limit=100'),
+                ]);
+
+                if (templatesRes.ok) {
+                    const templatesData = await templatesRes.json();
+                    if (templatesData.templates && templatesData.templates.length > 0) {
+                        setTemplates(templatesData.templates);
+                    }
+                }
+
+                if (recipientsRes.ok) {
+                    const recipientsData = await recipientsRes.json();
+                    setRecipients(recipientsData.recipients || []);
+                }
+            } catch (innerError) {
+                console.error('Background fetch error:', innerError);
+                // If templates fetch fails, defaultTemplates will remain
+            }
         } catch (error) {
             console.error('Failed to fetch data:', error);
             setLoading(false);
@@ -395,10 +419,16 @@ export default function MailingPage() {
 
                 if (sendRes.ok) {
                     setSuccessMessage(t.campaignSent);
+                } else {
+                    const sendData = await sendRes.json();
+                    alert(`Kampanya kaydedildi ancak gönderilemedi: ${sendData.error || 'Bilinmeyen hata'}`);
                 }
                 setSending(false);
             } else if (res.ok) {
                 setSuccessMessage(isNew ? t.campaignAdded : t.campaignUpdated);
+            } else {
+                const errorData = await res.json();
+                alert(`Kaydetme başarısız: ${errorData.error || 'Bilinmeyen hata'}`);
             }
 
             setIsModalOpen(false);
@@ -406,6 +436,7 @@ export default function MailingPage() {
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
             console.error('Failed to save campaign:', error);
+            alert('Bir hata oluştu. Lütfen konsolu kontrol edin.');
         } finally {
             setSaving(false);
         }
