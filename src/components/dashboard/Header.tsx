@@ -23,11 +23,13 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
 
     const isDashboardOverview = pathname === "/dashboard";
+    const isAnalyticsPage = pathname === "/dashboard/analytics";
+    const hideSearchBar = isDashboardOverview || isAnalyticsPage;
 
     // Update URL on search change (Debounced to avoid too many refreshes)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            if (!isDashboardOverview) {
+            if (!hideSearchBar) {
                 const params = new URLSearchParams(window.location.search);
                 if (searchQuery) {
                     params.set("q", searchQuery);
@@ -38,7 +40,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
             }
         }, 300);
         return () => clearTimeout(timeoutId);
-    }, [searchQuery, pathname, isDashboardOverview, router]);
+    }, [searchQuery, pathname, hideSearchBar, router]);
 
     // Get dynamic placeholder based on current page
     const getPlaceholder = () => {
@@ -58,8 +60,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
             {/* Mobile spacer for hamburger menu */}
             <div className="lg:hidden w-12" />
 
-            {/* Central Search Bar - Visible on all pages EXCEPT Overview */}
-            {!isDashboardOverview && (
+            {/* Central Search Bar - Hidden on Overview and Analytics */}
+            {!hideSearchBar && (
                 <div className="flex-1 max-w-xs lg:max-w-md mx-2 lg:mx-auto px-2 lg:px-4">
                     <div className="relative w-full group">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -75,7 +77,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                     </div>
                 </div>
             )}
-            {isDashboardOverview && <div className="flex-1" />}
+            {hideSearchBar && <div className="flex-1" />}
 
             <div className="flex items-center gap-2 lg:gap-4">
                 {/* Notification Bell */}
