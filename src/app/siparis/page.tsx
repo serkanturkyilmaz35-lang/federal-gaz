@@ -698,28 +698,7 @@ export default function SiparisPage() {
                             </div>
                         </div>
 
-                        {/* 3. Notes */}
-                        <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{settings.order_form_notes_label || t.notes}</h3>
-                            <textarea ref={notesRef} name="notes" value={contactData.notes} onChange={handleContactChange} placeholder={settings.order_form_notes_placeholder || t.notesPlaceholder} rows={3} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                        </div>
 
-                        {error && (
-                            <div className="rounded-lg bg-red-100 p-4 text-center text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                                {error}
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full transform rounded-xl bg-primary py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
-                        >
-                            {isLoading
-                                ? (settings.order_form_submitting || t.submitting)
-                                : (settings.order_form_submit_btn || t.submitBtn)}
-                        </button>
-                        {/* 3. Products Basket (Already existing logic above this) */}
 
                         {/* 4. Dynamic Fields */}
                         <div className="space-y-4">
