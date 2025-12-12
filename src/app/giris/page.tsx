@@ -160,7 +160,7 @@ export default function LoginPage() {
                     </div>
 
                     <p className="mt-8 text-center text-sm text-gray-500">
-                        &copy; 2014 Federal Gaz. Tüm hakları saklıdır.
+                        &copy; {new Date().getFullYear()} Federal Gaz. {language === 'TR' ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}
                     </p>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">

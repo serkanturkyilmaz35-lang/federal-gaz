@@ -120,7 +120,10 @@ export default function Footer() {
                 <div className="mt-8 border-t border-white/20 pt-8 text-center text-sm">
                     <div className="text-white/80">
                         {(() => {
-                            const text = settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`;
+                            // When EN, always use translation. When TR, use settings or fallback to translation.
+                            const text = language === 'EN'
+                                ? `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`
+                                : (settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`);
 
                             // Split by space to find URLs
                             const parts = text.split(/(\s+)/);

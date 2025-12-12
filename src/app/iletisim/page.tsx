@@ -104,10 +104,10 @@ export default function IletisimPage() {
             <section className="bg-secondary py-16 text-white">
                 <div className="mx-auto max-w-7xl px-4">
                     <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
-                        {settings.contact_form_title || t.title}
+                        {language === 'EN' ? t.title : (settings.contact_form_title || t.title)}
                     </h1>
                     <p className="mt-4 text-lg text-white/80">
-                        {settings.contact_form_subtitle || t.subtitle}
+                        {language === 'EN' ? t.subtitle : (settings.contact_form_subtitle || t.subtitle)}
                     </p>
                 </div>
             </section>
@@ -234,12 +234,12 @@ export default function IletisimPage() {
                                 {/* Standard Fields */}
                                 <div>
                                     <label className="text-sm font-medium text-secondary dark:text-white">
-                                        {settings.contact_form_name_label || t.formName}
+                                        {language === 'EN' ? t.formName : (settings.contact_form_name_label || t.formName)}
                                     </label>
                                     <input
                                         type="text"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        placeholder={settings.contact_form_name_placeholder || t.formNamePlaceholder}
+                                        placeholder={language === 'EN' ? t.formNamePlaceholder : (settings.contact_form_name_placeholder || t.formNamePlaceholder)}
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         required
@@ -247,12 +247,12 @@ export default function IletisimPage() {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-secondary dark:text-white">
-                                        {settings.contact_form_email_label || t.formEmail}
+                                        {language === 'EN' ? t.formEmail : (settings.contact_form_email_label || t.formEmail)}
                                     </label>
                                     <input
                                         type="email"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        placeholder={settings.contact_form_email_placeholder || t.formEmailPlaceholder}
+                                        placeholder={language === 'EN' ? t.formEmailPlaceholder : (settings.contact_form_email_placeholder || t.formEmailPlaceholder)}
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         required
@@ -260,12 +260,12 @@ export default function IletisimPage() {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-secondary dark:text-white">
-                                        {settings.contact_form_phone_label || t.formPhone} *
+                                        {language === 'EN' ? t.formPhone : (settings.contact_form_phone_label || t.formPhone)} *
                                     </label>
                                     <input
                                         type="tel"
                                         className="mt-1 w-full rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
-                                        placeholder={settings.contact_form_phone_placeholder || t.formPhonePlaceholder}
+                                        placeholder={language === 'EN' ? t.formPhonePlaceholder : (settings.contact_form_phone_placeholder || t.formPhonePlaceholder)}
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                         required
@@ -296,7 +296,7 @@ export default function IletisimPage() {
                                                             required={field.required}
                                                             onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
                                                         >
-                                                            <option value="">Seçiniz</option>
+                                                            <option value="">{language === 'EN' ? 'Select' : 'Seçiniz'}</option>
                                                             {field.options?.map((opt: string, i: number) => (
                                                                 <option key={i} value={opt}>{opt}</option>
                                                             ))}
@@ -319,12 +319,12 @@ export default function IletisimPage() {
                                 {/* Message Field */}
                                 <div className="flex flex-1 flex-col">
                                     <label className="text-sm font-medium text-secondary dark:text-white">
-                                        {settings.contact_form_message_label || t.formMessage}
+                                        {language === 'EN' ? t.formMessage : (settings.contact_form_message_label || t.formMessage)}
                                     </label>
                                     <textarea
                                         className="mt-1 flex-1 resize-none rounded-lg border border-secondary/20 bg-background-light px-4 py-2 text-secondary dark:bg-background-dark dark:text-white"
                                         style={{ minHeight: '200px' }}
-                                        placeholder={settings.contact_form_message_placeholder || t.formMessagePlaceholder}
+                                        placeholder={language === 'EN' ? t.formMessagePlaceholder : (settings.contact_form_message_placeholder || t.formMessagePlaceholder)}
                                         value={formData.message}
                                         onChange={e => setFormData({ ...formData, message: e.target.value })}
                                         required
@@ -336,8 +336,8 @@ export default function IletisimPage() {
                                     className="w-full rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 disabled:opacity-70 disabled:hover:scale-100"
                                 >
                                     {isLoading
-                                        ? (settings.contact_form_submitting || t.sending)
-                                        : (settings.contact_form_submit_btn || t.sendBtn)}
+                                        ? (language === 'EN' ? t.sending : (settings.contact_form_submitting || t.sending))
+                                        : (language === 'EN' ? t.sendBtn : (settings.contact_form_submit_btn || t.sendBtn))}
                                 </button>
                             </form>
                         </div>
@@ -348,8 +348,8 @@ export default function IletisimPage() {
             <SuccessModal
                 isOpen={showSuccess}
                 onClose={() => setShowSuccess(false)}
-                title={settings.contact_form_success_title || t.successTitle}
-                message={settings.contact_form_success_message || t.successMessage}
+                title={language === 'EN' ? t.successTitle : (settings.contact_form_success_title || t.successTitle)}
+                message={language === 'EN' ? t.successMessage : (settings.contact_form_success_message || t.successMessage)}
             />
         </>
     );
