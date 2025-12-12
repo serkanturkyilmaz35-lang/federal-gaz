@@ -70,7 +70,7 @@ export default function LoginPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                login(data.token, data.user);
+                login(data.user);
                 // Redirect based on role or default
                 if (data.user?.role === 'admin' || data.user?.role === 'editor') {
                     router.push('/dashboard');
