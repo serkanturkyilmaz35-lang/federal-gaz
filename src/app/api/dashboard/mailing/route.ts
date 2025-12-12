@@ -57,7 +57,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, campaign }, { status: 201 });
     } catch (error) {
         console.error('Mailing POST Error:', error);
-        return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 });
+        return NextResponse.json({
+            error: error instanceof Error ? error.message : 'Kampanya oluşturulamadı',
+            details: error
+        }, { status: 500 });
     }
 }
 

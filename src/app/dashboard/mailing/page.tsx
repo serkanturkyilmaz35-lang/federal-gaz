@@ -381,6 +381,21 @@ export default function MailingPage() {
         setIsModalOpen(true);
     };
 
+    const syncDatabase = async () => {
+        try {
+            const res = await fetch('/api/dashboard/sync', { method: 'POST' });
+            if (res.ok) {
+                alert('Veritabanı başarıyla güncellendi. Lütfen işleminizi tekrar deneyin.');
+            } else {
+                const data = await res.json();
+                alert(`Güncelleme başarısız: ${data.error || 'Bilinmeyen hata'}`);
+            }
+        } catch (e) {
+            console.error('Sync failed:', e);
+            alert('Veritabanı güncelleme hatası.');
+        }
+    };
+
     const handleSave = async (sendNow = false) => {
         if (!form.name || !form.subject || !form.content) {
             alert('Lütfen tüm zorunlu alanları (Kampanya Adı, Konu, İçerik) doldurun.');
@@ -430,16 +445,25 @@ export default function MailingPage() {
             } else if (res.ok) {
                 setSuccessMessage(isNew ? t.campaignAdded : t.campaignUpdated);
             } else {
-                const errorData = await res.json();
-                alert(`Kaydetme başarısız: ${errorData.error || 'Bilinmeyen hata'}`);
+                // Show detailed error and offer sync
+                const errorMessage = data.error || 'Bilinmeyen hata';
+                const details = data.details ? JSON.stringify(data.details) : '';
+
+                if (confirm(`Hatayla karşılaşıldı: ${errorMessage}\n\nDetay: ${details}\n\nVeritabanını güncellemek ve onarmak ister misiniz? (Yeni özellikler için gerekli)`)) {
+                    await syncDatabase();
+                }
             }
 
-            setIsModalOpen(false);
-            fetchData();
-            setTimeout(() => setSuccessMessage(""), 3000);
+            if (res.ok) {
+                setIsModalOpen(false);
+                fetchData();
+                setTimeout(() => setSuccessMessage(""), 3000);
+            }
         } catch (error) {
             console.error('Failed to save campaign:', error);
-            alert('Bir hata oluştu. Lütfen konsolu kontrol edin.');
+            if (confirm('Beklenmeyen bir hata oluştu. Veritabanını onarmayı denemek ister misiniz?')) {
+                await syncDatabase();
+            }
         } finally {
             setSaving(false);
         }
