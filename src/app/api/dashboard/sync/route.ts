@@ -21,8 +21,8 @@ export async function POST() {
     } catch (error) {
         console.error('Sync Error:', error);
         return NextResponse.json({
-            error: 'Senkronizasyon başarısız',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Senkronizasyon başarısız',
+            details: error
         }, { status: 500 });
     }
 }
