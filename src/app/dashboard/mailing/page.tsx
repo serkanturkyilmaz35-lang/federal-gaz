@@ -382,7 +382,10 @@ export default function MailingPage() {
     };
 
     const handleSave = async (sendNow = false) => {
-        if (!form.name || !form.subject || !form.content) return;
+        if (!form.name || !form.subject || !form.content) {
+            alert('Lütfen tüm zorunlu alanları (Kampanya Adı, Konu, İçerik) doldurun.');
+            return;
+        }
 
         setSaving(true);
 
