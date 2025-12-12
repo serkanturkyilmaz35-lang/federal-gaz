@@ -119,6 +119,15 @@ export default function ServicesPage() {
         fetchServices();
     }, []);
 
+    // ESC key to close modal
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsModalOpen(false);
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
+
     const fetchServices = async () => {
         try {
             const res = await fetch('/api/dashboard/services');

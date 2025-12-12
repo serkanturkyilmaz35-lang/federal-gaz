@@ -44,6 +44,15 @@ export default function ProductsPage() {
         fetchProducts();
     }, []);
 
+    // ESC key to close modal
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsModalOpen(false);
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
+
     const fetchProducts = async () => {
         try {
             const res = await fetch('/api/dashboard/products');
@@ -215,8 +224,8 @@ export default function ProductsPage() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${product.isActive
-                                                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                                                : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                            : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
                                             }`}>
                                             {product.isActive ? 'Aktif' : 'Pasif'}
                                         </span>

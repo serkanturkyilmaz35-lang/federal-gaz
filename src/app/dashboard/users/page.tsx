@@ -85,6 +85,18 @@ export default function UsersPage() {
         document.title = "Kullanıcılar - Federal Gaz";
     }, []);
 
+    // ESC key to close modal
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowModal(false);
+                setShowDeleteModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
+
     // Filter Logic
     const dateFilteredUsers = filterByDate(users, "joinDate", dateRange, customStartDate, customEndDate);
     const filteredUsers = dateFilteredUsers.filter((u) => {

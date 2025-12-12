@@ -93,6 +93,15 @@ export default function MembersPage() {
         fetchMembers();
     }, []);
 
+    // ESC key to close modal
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsModalOpen(false);
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
+
     // Filter Logic
     const dateFilteredMembers = filterByDate(members, "joinDate", dateRange, customStartDate, customEndDate);
     const filteredMembers = dateFilteredMembers.filter((m) => {
