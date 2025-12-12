@@ -118,6 +118,19 @@ const translations = {
         minAmount: "Min. Sipariş Tutarı (₺)",
         any: "Herhangi",
         segmentApplied: "kullanıcı segmente uyuyor",
+        // Advanced Marketing Segments
+        vip: "VIP Müşteriler",
+        aboutToChurn: "Kaybetmek Üzere",
+        winBack: "Geri Kazanım (90+ gün)",
+        regularBuyers: "Düzenli Alıcılar",
+        firstTimeBuyers: "İlk Kez Alışveriş",
+        newCustomers: "Yeni Üyeler (30 gün)",
+        topOrders10: "Top 10 (Sipariş)",
+        topOrders20: "Top 20 (Sipariş)",
+        topOrders50: "Top 50 (Sipariş)",
+        topAmount10: "Top 10 (Tutar)",
+        topAmount20: "Top 20 (Tutar)",
+        topAmount50: "Top 50 (Tutar)",
     },
     EN: {
         pageTitle: "Mailing Management",
@@ -196,6 +209,19 @@ const translations = {
         minAmount: "Min. Order Amount (₺)",
         any: "Any",
         segmentApplied: "users match segment",
+        // Advanced Marketing Segments
+        vip: "VIP Customers",
+        aboutToChurn: "About to Churn",
+        winBack: "Win-back (90+ days)",
+        regularBuyers: "Regular Buyers",
+        firstTimeBuyers: "First-time Buyers",
+        newCustomers: "New Customers (30 days)",
+        topOrders10: "Top 10 (by Orders)",
+        topOrders20: "Top 20 (by Orders)",
+        topOrders50: "Top 50 (by Orders)",
+        topAmount10: "Top 10 (by Amount)",
+        topAmount20: "Top 20 (by Amount)",
+        topAmount50: "Top 50 (by Amount)",
     }
 };
 
@@ -749,10 +775,32 @@ export default function MailingPage() {
                                                     onChange={(e) => setForm({ ...form, segment: e.target.value })}
                                                     className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                                 >
-                                                    <option value="none">{t.noSegment}</option>
-                                                    <option value="active30">{t.active30}</option>
-                                                    <option value="active90">{t.active90}</option>
-                                                    <option value="active180">{t.active180}</option>
+                                                    <optgroup label="Genel">
+                                                        <option value="none">{t.noSegment}</option>
+                                                    </optgroup>
+                                                    <optgroup label="Aktivite">
+                                                        <option value="active30">{t.active30}</option>
+                                                        <option value="active90">{t.active90}</option>
+                                                        <option value="active180">{t.active180}</option>
+                                                    </optgroup>
+                                                    <optgroup label="Marketing">
+                                                        <option value="vip">{t.vip}</option>
+                                                        <option value="aboutToChurn">{t.aboutToChurn}</option>
+                                                        <option value="winBack">{t.winBack}</option>
+                                                        <option value="regularBuyers">{t.regularBuyers}</option>
+                                                        <option value="firstTimeBuyers">{t.firstTimeBuyers}</option>
+                                                        <option value="newCustomers">{t.newCustomers}</option>
+                                                    </optgroup>
+                                                    <optgroup label="Top Sipariş">
+                                                        <option value="topOrders10">{t.topOrders10}</option>
+                                                        <option value="topOrders20">{t.topOrders20}</option>
+                                                        <option value="topOrders50">{t.topOrders50}</option>
+                                                    </optgroup>
+                                                    <optgroup label="Top Tutar">
+                                                        <option value="topAmount10">{t.topAmount10}</option>
+                                                        <option value="topAmount20">{t.topAmount20}</option>
+                                                        <option value="topAmount50">{t.topAmount50}</option>
+                                                    </optgroup>
                                                 </select>
                                             </div>
 

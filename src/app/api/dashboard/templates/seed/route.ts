@@ -174,6 +174,139 @@ const defaultTemplates = [
         </div>`,
         sortOrder: 20,
     },
+    // ==================== MARKETING TEMPLATES ====================
+    // Stock Reminder
+    {
+        slug: 'stock-reminder',
+        nameTR: 'Stok Hatırlatma',
+        nameEN: 'Stock Reminder',
+        category: 'promotion' as const,
+        headerBgColor: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#1a2744',
+        headerHtml: `<div style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 15px;">⏰🔄📦</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Stok Yenileme Zamanı!</h1>
+            <p style="color: #d4edda; margin: 10px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <p style="color: #2ecc71; margin: 0 0 10px; font-size: 16px;">📦 Tüpünüz bitmeden sipariş verin!</p>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 21,
+    },
+    // Win-back / Geri Kazanım
+    {
+        slug: 'win-back',
+        nameTR: 'Geri Kazanım',
+        nameEN: 'Win-back',
+        category: 'promotion' as const,
+        headerBgColor: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#e74c3c',
+        headerHtml: `<div style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 15px;">💜👋🎁</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Sizi Özledik!</h1>
+            <p style="color: #e8daef; margin: 10px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <p style="color: #9b59b6; margin: 0 0 10px; font-size: 16px;">💜 Size özel %10 indirim kodu: HOŞGELDIN</p>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 22,
+    },
+    // Review Request
+    {
+        slug: 'review-request',
+        nameTR: 'Değerlendirme İsteği',
+        nameEN: 'Review Request',
+        category: 'general' as const,
+        headerBgColor: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#f39c12',
+        headerHtml: `<div style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 15px;">⭐💬📝</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Fikrinizi Önemsiyoruz</h1>
+            <p style="color: #d6eaf8; margin: 10px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <p style="color: #f39c12; margin: 0 0 10px; font-size: 16px;">⭐ Bizi değerlendirin, hediye kazanın!</p>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 23,
+    },
+    // Anniversary / Yıldönümü
+    {
+        slug: 'anniversary',
+        nameTR: 'Müşteri Yıldönümü',
+        nameEN: 'Customer Anniversary',
+        category: 'general' as const,
+        headerBgColor: 'linear-gradient(135deg, #f1c40f 0%, #f39c12 100%)',
+        headerTextColor: '#1a2744',
+        buttonColor: '#1a2744',
+        headerHtml: `<div style="background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 15px;">🎂🎉🎁</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <h1 style="color: #1a2744; margin: 0; font-size: 28px; font-weight: 600;">Birlikteyiz!</h1>
+            <p style="color: #5d4e37; margin: 10px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <p style="color: #f1c40f; margin: 0 0 10px; font-size: 16px;">🎁 Yıldönümünüze özel hediye!</p>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 24,
+    },
+    // Season Opening / Sezon Açılış
+    {
+        slug: 'season-opening',
+        nameTR: 'Sezon Açılış',
+        nameEN: 'Season Opening',
+        category: 'promotion' as const,
+        headerBgColor: 'linear-gradient(135deg, #e67e22 0%, #d35400 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#1a2744',
+        headerHtml: `<div style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 15px;">❄️🔥📣</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Kış Sezonu Başladı!</h1>
+            <p style="color: #fdebd0; margin: 10px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <p style="color: #e67e22; margin: 0 0 10px; font-size: 16px;">❄️ Sezon kampanyalarını kaçırmayın!</p>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 25,
+    },
+    // VIP Customer
+    {
+        slug: 'vip-customer',
+        nameTR: 'VIP Müşteri',
+        nameEN: 'VIP Customer',
+        category: 'general' as const,
+        headerBgColor: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
+        headerTextColor: '#ffd700',
+        buttonColor: '#c41e3a',
+        headerHtml: `<div style="background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 15px;">👑💎⭐</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <h1 style="color: #ffd700; margin: 0; font-size: 28px; font-weight: 600;">VIP Müşterimiz</h1>
+            <p style="color: #ffffff; margin: 10px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <p style="color: #ffd700; margin: 0 0 10px; font-size: 16px;">👑 Size özel ayrıcalıklar!</p>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 26,
+    },
 ];
 
 export async function POST() {
