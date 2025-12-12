@@ -105,15 +105,29 @@ export default function TemplatesPage() {
         }
     };
 
-    const seedTemplates = async () => {
+    const syncAndSeedTemplates = async () => {
+        setSaving(true);
         try {
-            const res = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
-            const data = await res.json();
-            setSuccessMessage(data.message);
-            fetchTemplates();
-            setTimeout(() => setSuccessMessage(""), 3000);
+            // First sync database to create tables
+            const syncRes = await fetch('/api/dashboard/sync', { method: 'POST' });
+            const syncData = await syncRes.json();
+
+            if (syncRes.ok) {
+                // Then seed templates
+                const seedRes = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
+                const seedData = await seedRes.json();
+                setSuccessMessage(seedData.message || syncData.message);
+                fetchTemplates();
+            } else {
+                setSuccessMessage(syncData.error || 'Senkronizasyon hatası');
+            }
+            setTimeout(() => setSuccessMessage(""), 5000);
         } catch (error) {
-            console.error('Failed to seed templates:', error);
+            console.error('Failed to sync/seed templates:', error);
+            setSuccessMessage('Hata oluştu, lütfen tekrar deneyin');
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -172,7 +186,7 @@ export default function TemplatesPage() {
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">{t.pageDesc}</p>
                 </div>
                 {templates.length === 0 && (
-                    <button onClick={seedTemplates} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90">
+                    <button onClick={syncAndSeedTemplates} disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50">
                         <span className="material-symbols-outlined text-sm">download</span>
                         {t.seedTemplates}
                     </button>
@@ -193,7 +207,7 @@ export default function TemplatesPage() {
                     <span className="material-symbols-outlined text-6xl text-gray-600 mb-4">mail</span>
                     <p className="text-lg font-medium text-gray-300">{t.noTemplates}</p>
                     <p className="text-sm text-gray-500 mb-4">{t.noTemplatesDesc}</p>
-                    <button onClick={seedTemplates} className="px-6 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#137fec]/90">
+                    <button onClick={syncAndSeedTemplates} disabled={saving} className="px-6 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#137fec]/90 disabled:opacity-50">
                         {t.seedTemplates}
                     </button>
                 </div>

@@ -304,7 +304,12 @@ export default function MailingPage() {
     };
 
     const seedTemplates = async () => {
+        setSaving(true);
         try {
+            // First sync database to create tables
+            await fetch('/api/dashboard/sync', { method: 'POST' });
+
+            // Then seed templates
             const res = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
             const data = await res.json();
             if (data.success) {
@@ -320,6 +325,8 @@ export default function MailingPage() {
             console.error('Failed to seed templates:', error);
             setSuccessMessage('Hata oluştu, lütfen tekrar deneyin');
             setTimeout(() => setSuccessMessage(""), 3000);
+        } finally {
+            setSaving(false);
         }
     };
 
