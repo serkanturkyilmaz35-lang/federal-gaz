@@ -67,13 +67,22 @@ const translations = {
         preview: "Preview",
     }
 };
+// Default templates for instant render
+const defaultTemplates: EmailTemplate[] = [
+    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', category: 'general', headerBgColor: 'linear-gradient(135deg, #1a2744 0%, #0a1628 100%)', headerTextColor: '#ffffff', buttonColor: 'linear-gradient(135deg, #b13329 0%, #8b1a12 100%)', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 1 },
+    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', buttonColor: '#b13329', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 2 },
+    { id: 3, slug: 'promotion', nameTR: 'Kampanya', nameEN: 'Promotion', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', headerTextColor: '#ffffff', buttonColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 20 },
+    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)', headerTextColor: '#ffffff', buttonColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 21 },
+    { id: 5, slug: 'win-back', nameTR: 'Geri Kazanım', nameEN: 'Win-back', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)', headerTextColor: '#ffffff', buttonColor: '#e74c3c', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 22 },
+    { id: 6, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', category: 'general', headerBgColor: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)', headerTextColor: '#ffd700', buttonColor: '#c41e3a', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 26 },
+];
 
 export default function TemplatesPage() {
     const { language } = useLanguage();
     const t = translations[language];
 
-    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [templates, setTemplates] = useState<EmailTemplate[]>(defaultTemplates);
+    const [loading, setLoading] = useState(false); // Start with false - show default immediately
     const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -98,11 +107,13 @@ export default function TemplatesPage() {
         try {
             const res = await fetch('/api/dashboard/templates');
             const data = await res.json();
-            setTemplates(data.templates || []);
+            if (data.templates && data.templates.length > 0) {
+                setTemplates(data.templates);
+            }
+            // If no templates from DB, keep default ones
         } catch (error) {
             console.error('Failed to fetch templates:', error);
-        } finally {
-            setLoading(false);
+            // Keep default templates on error
         }
     };
 
@@ -178,14 +189,6 @@ export default function TemplatesPage() {
         if (category === 'promotion') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
         return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#137fec]"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="h-full flex flex-col">

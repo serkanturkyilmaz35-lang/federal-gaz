@@ -282,23 +282,24 @@ export default function MailingPage() {
 
     const fetchData = async () => {
         try {
-            const [campaignsRes, templatesRes, recipientsRes] = await Promise.all([
-                fetch('/api/dashboard/mailing'),
-                fetch('/api/dashboard/templates'),
-                fetch('/api/dashboard/mailing/recipients'),
-            ]);
-
+            // Priority 1: Load campaigns first for fast initial render
+            const campaignsRes = await fetch('/api/dashboard/mailing');
             const campaignsData = await campaignsRes.json();
-            const templatesData = await templatesRes.json();
-            const recipientsData = await recipientsRes.json();
-
             setCampaigns(campaignsData.campaigns || []);
             setSubscriberCount(campaignsData.subscriberCount || 0);
+            setLoading(false); // Show UI immediately
+
+            // Priority 2: Load templates and recipients in background
+            const [templatesRes, recipientsRes] = await Promise.all([
+                fetch('/api/dashboard/templates'),
+                fetch('/api/dashboard/mailing/recipients?limit=100'),
+            ]);
+            const templatesData = await templatesRes.json();
+            const recipientsData = await recipientsRes.json();
             setTemplates(templatesData.templates || []);
             setRecipients(recipientsData.recipients || []);
         } catch (error) {
             console.error('Failed to fetch data:', error);
-        } finally {
             setLoading(false);
         }
     };
