@@ -699,38 +699,33 @@ export default function MailingPage() {
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
+                        <div className="p-6 space-y-4">
+                            {/* Row 1: Name, Subject, Template */}
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.campaignName}</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">{t.campaignName}</label>
                                     <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.emailSubject}</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">{t.emailSubject}</label>
                                     <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
                                 </div>
-                            </div>
-
-                            {/* Template Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.template}</label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    {templates.map((template) => (
-                                        <button
-                                            key={template.slug}
-                                            onClick={() => setForm({ ...form, templateId: template.slug })}
-                                            className={`p-3 rounded-lg border text-left transition-all ${form.templateId === template.slug
-                                                ? 'bg-[#137fec]/10 border-[#137fec] text-white'
-                                                : 'bg-[#111418] border-[#3b4754] text-gray-400 hover:border-gray-500'
-                                                }`}
-                                        >
-                                            <div className="w-full h-8 rounded mb-2" style={{ background: template.headerBgColor }}></div>
-                                            <p className="text-sm font-medium">{language === 'TR' ? template.nameTR : template.nameEN}</p>
-                                            <p className="text-xs text-gray-500">{t[template.category as keyof typeof t] || template.category}</p>
-                                        </button>
-                                    ))}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">{t.template}</label>
+                                    <select
+                                        value={form.templateId}
+                                        onChange={(e) => setForm({ ...form, templateId: e.target.value })}
+                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    >
+                                        {templates.length === 0 && <option value="modern">Modern (Varsayılan)</option>}
+                                        {templates.map((template) => (
+                                            <option key={template.slug} value={template.slug}>
+                                                {language === 'TR' ? template.nameTR : template.nameEN}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
@@ -895,40 +890,43 @@ export default function MailingPage() {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Error Modal */}
-            {errorModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-lg max-h-[70vh] overflow-y-auto m-4 border border-[#3b4754]">
-                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white">{t.errorDetails}</h2>
-                            <button onClick={() => setErrorModalOpen(false)} className="text-gray-400 hover:text-white">
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            {errorLog.length === 0 ? (
-                                <p className="text-gray-400">{t.noErrors}</p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {errorLog.map((err, i) => (
-                                        <div key={i} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                                            <p className="text-red-400 font-medium">{err.email}</p>
-                                            <p className="text-gray-400 text-sm">{err.error}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-6 border-t border-[#3b4754] flex justify-end">
-                            <button onClick={() => setErrorModalOpen(false)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600">
-                                {t.close}
-                            </button>
+            {
+                errorModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                        <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-lg max-h-[70vh] overflow-y-auto m-4 border border-[#3b4754]">
+                            <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
+                                <h2 className="text-xl font-bold text-white">{t.errorDetails}</h2>
+                                <button onClick={() => setErrorModalOpen(false)} className="text-gray-400 hover:text-white">
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                {errorLog.length === 0 ? (
+                                    <p className="text-gray-400">{t.noErrors}</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {errorLog.map((err, i) => (
+                                            <div key={i} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                                                <p className="text-red-400 font-medium">{err.email}</p>
+                                                <p className="text-gray-400 text-sm">{err.error}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-6 border-t border-[#3b4754] flex justify-end">
+                                <button onClick={() => setErrorModalOpen(false)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600">
+                                    {t.close}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

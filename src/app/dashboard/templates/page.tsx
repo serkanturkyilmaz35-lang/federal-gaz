@@ -76,6 +76,7 @@ export default function TemplatesPage() {
     const [loading, setLoading] = useState(true);
     const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
     const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -107,25 +108,34 @@ export default function TemplatesPage() {
 
     const syncAndSeedTemplates = async () => {
         setSaving(true);
+        setErrorMessage("");
+        setSuccessMessage("");
         try {
             // First sync database to create tables
             const syncRes = await fetch('/api/dashboard/sync', { method: 'POST' });
             const syncData = await syncRes.json();
 
-            if (syncRes.ok) {
-                // Then seed templates
-                const seedRes = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
-                const seedData = await seedRes.json();
-                setSuccessMessage(seedData.message || syncData.message);
+            if (!syncRes.ok) {
+                setErrorMessage(syncData.error || syncData.details || 'Veritabanı senkronizasyonu başarısız');
+                setTimeout(() => setErrorMessage(""), 5000);
+                return;
+            }
+
+            // Then seed templates
+            const seedRes = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
+            const seedData = await seedRes.json();
+
+            if (seedRes.ok) {
+                setSuccessMessage(seedData.message || 'Şablonlar yüklendi!');
                 fetchTemplates();
             } else {
-                setSuccessMessage(syncData.error || 'Senkronizasyon hatası');
+                setErrorMessage(seedData.error || 'Şablon yükleme başarısız');
             }
-            setTimeout(() => setSuccessMessage(""), 5000);
+            setTimeout(() => { setSuccessMessage(""); setErrorMessage(""); }, 5000);
         } catch (error) {
             console.error('Failed to sync/seed templates:', error);
-            setSuccessMessage('Hata oluştu, lütfen tekrar deneyin');
-            setTimeout(() => setSuccessMessage(""), 3000);
+            setErrorMessage('Bağlantı hatası, lütfen tekrar deneyin');
+            setTimeout(() => setErrorMessage(""), 5000);
         } finally {
             setSaving(false);
         }
@@ -198,6 +208,14 @@ export default function TemplatesPage() {
                 <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg flex items-center gap-2">
                     <span className="material-symbols-outlined">check_circle</span>
                     {successMessage}
+                </div>
+            )}
+
+            {/* Error Message */}
+            {errorMessage && (
+                <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined">error</span>
+                    {errorMessage}
                 </div>
             )}
 
