@@ -466,27 +466,39 @@ interface MailingCampaignAttributes {
     name: string;
     subject: string;
     content: string;
-    status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled';
+    templateId: 'modern' | 'classic';
+    recipientType: 'all' | 'members' | 'guests' | 'custom';
+    recipientIds?: string; // JSON array of user IDs for custom selection
+    status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
     scheduledAt?: Date;
     sentAt?: Date;
     recipientCount: number;
+    sentCount: number;
+    failedCount: number;
     openCount: number;
     clickCount: number;
+    errorLog?: string; // JSON array of failed emails with error messages
 }
 
-interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'openCount' | 'clickCount'> { }
+interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'templateId' | 'recipientType' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'sentCount' | 'failedCount' | 'openCount' | 'clickCount' | 'recipientIds' | 'errorLog'> { }
 
 export class MailingCampaign extends Model<MailingCampaignAttributes, MailingCampaignCreationAttributes> implements MailingCampaignAttributes {
     declare id: number;
     declare name: string;
     declare subject: string;
     declare content: string;
-    declare status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled';
+    declare templateId: 'modern' | 'classic';
+    declare recipientType: 'all' | 'members' | 'guests' | 'custom';
+    declare recipientIds: string | undefined;
+    declare status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
     declare scheduledAt: Date | undefined;
     declare sentAt: Date | undefined;
     declare recipientCount: number;
+    declare sentCount: number;
+    declare failedCount: number;
     declare openCount: number;
     declare clickCount: number;
+    declare errorLog: string | undefined;
 
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
@@ -511,8 +523,20 @@ MailingCampaign.init(
             type: DataTypes.TEXT('long'),
             allowNull: false,
         },
+        templateId: {
+            type: DataTypes.ENUM('modern', 'classic'),
+            defaultValue: 'modern',
+        },
+        recipientType: {
+            type: DataTypes.ENUM('all', 'members', 'guests', 'custom'),
+            defaultValue: 'all',
+        },
+        recipientIds: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
         status: {
-            type: DataTypes.ENUM('draft', 'scheduled', 'sending', 'sent', 'cancelled'),
+            type: DataTypes.ENUM('draft', 'scheduled', 'sending', 'sent', 'failed', 'cancelled'),
             defaultValue: 'draft',
         },
         scheduledAt: {
@@ -527,6 +551,14 @@ MailingCampaign.init(
             type: DataTypes.INTEGER,
             defaultValue: 0,
         },
+        sentCount: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+        failedCount: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
         openCount: {
             type: DataTypes.INTEGER,
             defaultValue: 0,
@@ -535,10 +567,118 @@ MailingCampaign.init(
             type: DataTypes.INTEGER,
             defaultValue: 0,
         },
+        errorLog: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
     },
     {
         sequelize,
         tableName: 'mailing_campaigns',
+    }
+);
+
+// --- EmailTemplate Model (E-posta Şablonları) ---
+interface EmailTemplateAttributes {
+    id: number;
+    slug: string; // unique identifier: 'modern', 'classic', 'new-year', etc.
+    nameTR: string;
+    nameEN: string;
+    category: 'general' | 'holiday' | 'promotion';
+    headerBgColor: string;
+    headerTextColor: string;
+    buttonColor: string;
+    bannerImage?: string;
+    headerHtml: string; // Custom header HTML
+    footerHtml: string; // Custom footer HTML
+    isActive: boolean;
+    sortOrder: number;
+}
+
+interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage'> { }
+
+export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateCreationAttributes> implements EmailTemplateAttributes {
+    declare id: number;
+    declare slug: string;
+    declare nameTR: string;
+    declare nameEN: string;
+    declare category: 'general' | 'holiday' | 'promotion';
+    declare headerBgColor: string;
+    declare headerTextColor: string;
+    declare buttonColor: string;
+    declare bannerImage: string | undefined;
+    declare headerHtml: string;
+    declare footerHtml: string;
+    declare isActive: boolean;
+    declare sortOrder: number;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+EmailTemplate.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        slug: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        nameTR: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        nameEN: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        category: {
+            type: DataTypes.ENUM('general', 'holiday', 'promotion'),
+            defaultValue: 'general',
+        },
+        headerBgColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#1a2744',
+        },
+        headerTextColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#ffffff',
+        },
+        buttonColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#b13329',
+        },
+        bannerImage: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        headerHtml: {
+            type: DataTypes.TEXT('long'),
+            allowNull: false,
+        },
+        footerHtml: {
+            type: DataTypes.TEXT('long'),
+            allowNull: false,
+        },
+        isActive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+        },
+        sortOrder: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'email_templates',
     }
 );
 

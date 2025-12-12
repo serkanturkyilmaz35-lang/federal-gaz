@@ -8,103 +8,210 @@ interface MailingCampaign {
     name: string;
     subject: string;
     content: string;
-    status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled';
+    templateId: string;
+    recipientType: string;
+    recipientIds?: string;
+    status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
     scheduledAt?: string;
     sentAt?: string;
     recipientCount: number;
+    sentCount: number;
+    failedCount: number;
     openCount: number;
     clickCount: number;
+    errorLog?: string;
     createdAt: string;
+}
+
+interface EmailTemplate {
+    id: number;
+    slug: string;
+    nameTR: string;
+    nameEN: string;
+    category: string;
+    headerBgColor: string;
+    headerTextColor: string;
+    buttonColor: string;
+}
+
+interface Recipient {
+    id: number;
+    name: string;
+    email: string;
 }
 
 const translations = {
     TR: {
         pageTitle: "Mailing Yönetimi",
-        pageDesc: "E-posta kampanyalarını yönetin.",
+        pageDesc: "E-posta kampanyalarını yönetin ve gönderin.",
         newCampaign: "Yeni Kampanya",
-        totalCampaigns: "Toplam Kampanya",
-        sentCampaigns: "Gönderilen",
+        loadTemplates: "Şablonları Yükle",
+        totalCampaigns: "Toplam",
+        sentCampaigns: "Gönderildi",
         scheduledCampaigns: "Zamanlanmış",
-        subscribers: "Aboneler",
-        campaigns: "Kampanyalar",
-        noCampaigns: "Henüz kampanya yok",
-        noCampaignsDesc: "İlk e-posta kampanyanızı oluşturmak için \"Yeni Kampanya\" butonuna tıklayın.",
+        subscribers: "Abone",
+        tabAll: "Tümü",
+        tabDrafts: "Taslaklar",
+        tabSent: "Gönderildi",
+        tabFailed: "Başarısız",
+        tabScheduled: "Zamanlanmış",
         campaign: "Kampanya",
         subject: "Konu",
         status: "Durum",
         recipients: "Alıcı",
-        opened: "Açılma",
+        sent: "Gönderildi",
+        failed: "Başarısız",
         date: "Tarih",
         actions: "İşlemler",
         edit: "Düzenle",
         delete: "Sil",
-        addNew: "Yeni Kampanya Oluştur",
+        send: "Gönder",
+        viewErrors: "Hataları Gör",
+        noCampaigns: "Kampanya bulunamadı",
+        noCampaignsDesc: "Bu kategoride henüz kampanya yok.",
+        createNew: "Yeni Kampanya Oluştur",
         editCampaign: "Kampanyayı Düzenle",
         campaignName: "Kampanya Adı",
         emailSubject: "E-posta Konusu",
         content: "İçerik",
+        template: "Şablon",
+        recipientType: "Alıcı Tipi",
+        allMembers: "Tüm Üyeler",
+        selectMembers: "Belirli Üyeler",
+        selectedCount: "seçili",
         scheduleAt: "Zamanlama (Opsiyonel)",
         cancel: "İptal",
-        save: "Kaydet",
+        saveAsDraft: "Taslak Olarak Kaydet",
+        saveAndSend: "Kaydet ve Gönder",
         saving: "Kaydediliyor...",
+        sending: "Gönderiliyor...",
         campaignAdded: "Kampanya oluşturuldu!",
         campaignUpdated: "Kampanya güncellendi!",
+        campaignSent: "Kampanya gönderildi!",
         campaignDeleted: "Kampanya silindi!",
         confirmDelete: "Bu kampanyayı silmek istediğinizden emin misiniz?",
+        confirmSend: "Bu kampanyayı göndermek istediğinizden emin misiniz?",
         draft: "Taslak",
         scheduled: "Zamanlanmış",
-        sending: "Gönderiliyor",
-        sent: "Gönderildi",
+        sendingStatus: "Gönderiliyor",
+        sentStatus: "Gönderildi",
+        failedStatus: "Başarısız",
         cancelled: "İptal Edildi",
+        errorDetails: "Hata Detayları",
+        close: "Kapat",
+        noErrors: "Hata kaydı yok",
+        general: "Genel",
+        holiday: "Özel Gün",
+        promotion: "Kampanya",
+        segmentation: "Segmentasyon",
+        noSegment: "Filtre Yok (Tümü)",
+        active30: "Son 30 günde aktif",
+        active90: "Son 3 ayda aktif",
+        active180: "Son 6 ayda aktif",
+        recipientLimit: "Alıcı Limiti",
+        noLimit: "Limit Yok",
+        first50: "İlk 50",
+        first100: "İlk 100",
+        first300: "İlk 300",
+        first500: "İlk 500",
+        minOrders: "Min. Sipariş Sayısı",
+        minAmount: "Min. Sipariş Tutarı (₺)",
+        any: "Herhangi",
+        segmentApplied: "kullanıcı segmente uyuyor",
     },
     EN: {
         pageTitle: "Mailing Management",
-        pageDesc: "Manage email campaigns.",
+        pageDesc: "Manage and send email campaigns.",
         newCampaign: "New Campaign",
-        totalCampaigns: "Total Campaigns",
+        loadTemplates: "Load Templates",
+        totalCampaigns: "Total",
         sentCampaigns: "Sent",
         scheduledCampaigns: "Scheduled",
         subscribers: "Subscribers",
-        campaigns: "Campaigns",
-        noCampaigns: "No campaigns yet",
-        noCampaignsDesc: "Click \"New Campaign\" button to create your first email campaign.",
+        tabAll: "All",
+        tabDrafts: "Drafts",
+        tabSent: "Sent",
+        tabFailed: "Failed",
+        tabScheduled: "Scheduled",
         campaign: "Campaign",
         subject: "Subject",
         status: "Status",
         recipients: "Recipients",
-        opened: "Opened",
+        sent: "Sent",
+        failed: "Failed",
         date: "Date",
         actions: "Actions",
         edit: "Edit",
         delete: "Delete",
-        addNew: "Create New Campaign",
+        send: "Send",
+        viewErrors: "View Errors",
+        noCampaigns: "No campaigns found",
+        noCampaignsDesc: "No campaigns in this category yet.",
+        createNew: "Create New Campaign",
         editCampaign: "Edit Campaign",
         campaignName: "Campaign Name",
         emailSubject: "Email Subject",
         content: "Content",
+        template: "Template",
+        recipientType: "Recipient Type",
+        allMembers: "All Members",
+        selectMembers: "Select Members",
+        selectedCount: "selected",
         scheduleAt: "Schedule (Optional)",
         cancel: "Cancel",
-        save: "Save",
+        saveAsDraft: "Save as Draft",
+        saveAndSend: "Save and Send",
         saving: "Saving...",
+        sending: "Sending...",
         campaignAdded: "Campaign created!",
         campaignUpdated: "Campaign updated!",
+        campaignSent: "Campaign sent!",
         campaignDeleted: "Campaign deleted!",
         confirmDelete: "Are you sure you want to delete this campaign?",
+        confirmSend: "Are you sure you want to send this campaign?",
         draft: "Draft",
         scheduled: "Scheduled",
-        sending: "Sending",
-        sent: "Sent",
+        sendingStatus: "Sending",
+        sentStatus: "Sent",
+        failedStatus: "Failed",
         cancelled: "Cancelled",
+        errorDetails: "Error Details",
+        close: "Close",
+        noErrors: "No error log",
+        general: "General",
+        holiday: "Holiday",
+        promotion: "Promotion",
+        segmentation: "Segmentation",
+        noSegment: "No Filter (All)",
+        active30: "Active last 30 days",
+        active90: "Active last 3 months",
+        active180: "Active last 6 months",
+        recipientLimit: "Recipient Limit",
+        noLimit: "No Limit",
+        first50: "First 50",
+        first100: "First 100",
+        first300: "First 300",
+        first500: "First 500",
+        minOrders: "Min. Order Count",
+        minAmount: "Min. Order Amount (₺)",
+        any: "Any",
+        segmentApplied: "users match segment",
     }
 };
 
-const emptyCampaign: Omit<MailingCampaign, 'id' | 'createdAt' | 'recipientCount' | 'openCount' | 'clickCount'> = {
+const emptyForm = {
     name: '',
     subject: '',
     content: '',
-    status: 'draft',
-    scheduledAt: undefined,
-    sentAt: undefined,
+    templateId: 'modern',
+    recipientType: 'all',
+    recipientIds: [] as number[],
+    scheduledAt: '',
+    // Segmentation
+    segment: 'none' as string,
+    recipientLimit: '' as string,
+    minOrders: '' as string,
+    minAmount: '' as string,
 };
 
 export default function MailingPage() {
@@ -112,63 +219,163 @@ export default function MailingPage() {
     const t = translations[language];
 
     const [campaigns, setCampaigns] = useState<MailingCampaign[]>([]);
+    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+    const [recipients, setRecipients] = useState<Recipient[]>([]);
+    const [subscriberCount, setSubscriberCount] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [editingCampaign, setEditingCampaign] = useState<Partial<MailingCampaign> | null>(null);
+    const [activeTab, setActiveTab] = useState<'all' | 'draft' | 'sent' | 'failed' | 'scheduled'>('all');
+
+    // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNew, setIsNew] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [form, setForm] = useState(emptyForm);
     const [saving, setSaving] = useState(false);
+    const [sending, setSending] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
 
+    // Error modal
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
+    const [errorLog, setErrorLog] = useState<{ email: string; error: string }[]>([]);
+
     useEffect(() => {
-        fetchCampaigns();
+        fetchData();
     }, []);
 
-    const fetchCampaigns = async () => {
+    const fetchData = async () => {
         try {
-            const res = await fetch('/api/dashboard/mailing');
-            const data = await res.json();
-            setCampaigns(data.campaigns || []);
+            const [campaignsRes, templatesRes, recipientsRes] = await Promise.all([
+                fetch('/api/dashboard/mailing'),
+                fetch('/api/dashboard/templates'),
+                fetch('/api/dashboard/mailing/recipients'),
+            ]);
+
+            const campaignsData = await campaignsRes.json();
+            const templatesData = await templatesRes.json();
+            const recipientsData = await recipientsRes.json();
+
+            setCampaigns(campaignsData.campaigns || []);
+            setSubscriberCount(campaignsData.subscriberCount || 0);
+            setTemplates(templatesData.templates || []);
+            setRecipients(recipientsData.recipients || []);
         } catch (error) {
-            console.error('Failed to fetch campaigns:', error);
+            console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleEdit = (campaign: MailingCampaign) => {
-        setEditingCampaign({ ...campaign });
-        setIsNew(false);
-        setIsModalOpen(true);
+    const seedTemplates = async () => {
+        try {
+            const res = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                setSuccessMessage(data.message);
+                fetchData();
+                setTimeout(() => setSuccessMessage(""), 3000);
+            }
+        } catch (error) {
+            console.error('Failed to seed templates:', error);
+        }
     };
 
     const handleNew = () => {
-        setEditingCampaign({ id: 0, ...emptyCampaign });
+        setForm(emptyForm);
+        setEditingId(null);
         setIsNew(true);
         setIsModalOpen(true);
     };
 
-    const handleSave = async () => {
-        if (!editingCampaign) return;
+    const handleEdit = (campaign: MailingCampaign) => {
+        setForm({
+            name: campaign.name,
+            subject: campaign.subject,
+            content: campaign.content,
+            templateId: campaign.templateId || 'modern',
+            recipientType: campaign.recipientType || 'all',
+            recipientIds: campaign.recipientIds ? JSON.parse(campaign.recipientIds) : [],
+            scheduledAt: campaign.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : '',
+            segment: 'none',
+            recipientLimit: '',
+            minOrders: '',
+            minAmount: '',
+        });
+        setEditingId(campaign.id);
+        setIsNew(false);
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async (sendNow = false) => {
+        if (!form.name || !form.subject || !form.content) return;
+
         setSaving(true);
 
         try {
             const method = isNew ? 'POST' : 'PUT';
+            const body = {
+                ...(!isNew && { id: editingId }),
+                name: form.name,
+                subject: form.subject,
+                content: form.content,
+                templateId: form.templateId,
+                recipientType: form.recipientType,
+                recipientIds: form.recipientType === 'custom' ? JSON.stringify(form.recipientIds) : undefined,
+                scheduledAt: form.scheduledAt || undefined,
+                status: form.scheduledAt ? 'scheduled' : 'draft',
+            };
+
             const res = await fetch('/api/dashboard/mailing', {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editingCampaign),
+                body: JSON.stringify(body),
             });
 
-            if (res.ok) {
+            const data = await res.json();
+
+            if (res.ok && sendNow && data.campaign) {
+                // Send immediately
+                setSending(true);
+                const sendRes = await fetch('/api/dashboard/mailing/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ campaignId: data.campaign.id }),
+                });
+
+                if (sendRes.ok) {
+                    setSuccessMessage(t.campaignSent);
+                }
+                setSending(false);
+            } else if (res.ok) {
                 setSuccessMessage(isNew ? t.campaignAdded : t.campaignUpdated);
-                setIsModalOpen(false);
-                fetchCampaigns();
-                setTimeout(() => setSuccessMessage(""), 3000);
             }
+
+            setIsModalOpen(false);
+            fetchData();
+            setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
             console.error('Failed to save campaign:', error);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSend = async (campaignId: number) => {
+        if (!confirm(t.confirmSend)) return;
+
+        try {
+            const res = await fetch('/api/dashboard/mailing/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ campaignId }),
+            });
+
+            if (res.ok) {
+                setSuccessMessage(t.campaignSent);
+                fetchData();
+                setTimeout(() => setSuccessMessage(""), 3000);
+            }
+        } catch (error) {
+            console.error('Failed to send campaign:', error);
         }
     };
 
@@ -179,7 +386,7 @@ export default function MailingPage() {
             const res = await fetch(`/api/dashboard/mailing?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setSuccessMessage(t.campaignDeleted);
-                fetchCampaigns();
+                fetchData();
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
@@ -187,36 +394,70 @@ export default function MailingPage() {
         }
     };
 
-    const updateField = (field: keyof MailingCampaign, value: string) => {
-        if (!editingCampaign) return;
-        setEditingCampaign({ ...editingCampaign, [field]: value });
+    const showErrors = (campaign: MailingCampaign) => {
+        if (campaign.errorLog) {
+            try {
+                setErrorLog(JSON.parse(campaign.errorLog));
+            } catch {
+                setErrorLog([]);
+            }
+        } else {
+            setErrorLog([]);
+        }
+        setErrorModalOpen(true);
+    };
+
+    const toggleRecipient = (id: number) => {
+        setForm(prev => ({
+            ...prev,
+            recipientIds: prev.recipientIds.includes(id)
+                ? prev.recipientIds.filter(rid => rid !== id)
+                : [...prev.recipientIds, id]
+        }));
     };
 
     const getStatusBadge = (status: MailingCampaign['status']) => {
-        const styles = {
+        const styles: Record<string, string> = {
             draft: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
             scheduled: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
             sending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
             sent: 'bg-green-500/10 text-green-400 border-green-500/20',
-            cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
+            failed: 'bg-red-500/10 text-red-400 border-red-500/20',
+            cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
         };
-        const labels = {
+        const labels: Record<string, string> = {
             draft: t.draft,
             scheduled: t.scheduled,
-            sending: t.sending,
-            sent: t.sent,
+            sending: t.sendingStatus,
+            sent: t.sentStatus,
+            failed: t.failedStatus,
             cancelled: t.cancelled,
         };
         return (
-            <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
-                {labels[status]}
+            <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status] || styles.draft}`}>
+                {labels[status] || status}
             </span>
         );
     };
 
+    // Filter campaigns by tab
+    const filteredCampaigns = campaigns.filter(c => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'draft') return c.status === 'draft';
+        if (activeTab === 'sent') return c.status === 'sent';
+        if (activeTab === 'failed') return c.status === 'failed';
+        if (activeTab === 'scheduled') return c.status === 'scheduled';
+        return true;
+    });
+
     // Stats
-    const totalSent = campaigns.filter(c => c.status === 'sent').length;
-    const totalScheduled = campaigns.filter(c => c.status === 'scheduled').length;
+    const stats = {
+        total: campaigns.length,
+        sent: campaigns.filter(c => c.status === 'sent').length,
+        scheduled: campaigns.filter(c => c.status === 'scheduled').length,
+        drafts: campaigns.filter(c => c.status === 'draft').length,
+        failed: campaigns.filter(c => c.status === 'failed').length,
+    };
 
     if (loading) {
         return (
@@ -228,23 +469,24 @@ export default function MailingPage() {
 
     return (
         <div className="h-full flex flex-col">
-            {/* Page Header */}
+            {/* Header */}
             <div className="mb-4 lg:mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">
-                        {t.pageTitle}
-                    </h1>
-                    <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
-                        {t.pageDesc}
-                    </p>
+                    <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">{t.pageTitle}</h1>
+                    <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">{t.pageDesc}</p>
                 </div>
-                <button
-                    onClick={handleNew}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 transition-colors"
-                >
-                    <span className="material-symbols-outlined text-sm">add</span>
-                    {t.newCampaign}
-                </button>
+                <div className="flex gap-2">
+                    {templates.length === 0 && (
+                        <button onClick={seedTemplates} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600">
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            {t.loadTemplates}
+                        </button>
+                    )}
+                    <button onClick={handleNew} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90">
+                        <span className="material-symbols-outlined text-sm">add</span>
+                        {t.newCampaign}
+                    </button>
+                </div>
             </div>
 
             {/* Success Message */}
@@ -255,15 +497,15 @@ export default function MailingPage() {
                 </div>
             )}
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#111418] rounded-xl p-4 border border-[#3b4754]">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-[#137fec]/10 rounded-lg">
                             <span className="material-symbols-outlined text-[#137fec]">mail</span>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{campaigns.length}</p>
+                            <p className="text-2xl font-bold text-white">{stats.total}</p>
                             <p className="text-sm text-gray-400">{t.totalCampaigns}</p>
                         </div>
                     </div>
@@ -274,7 +516,7 @@ export default function MailingPage() {
                             <span className="material-symbols-outlined text-green-400">check_circle</span>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{totalSent}</p>
+                            <p className="text-2xl font-bold text-white">{stats.sent}</p>
                             <p className="text-sm text-gray-400">{t.sentCampaigns}</p>
                         </div>
                     </div>
@@ -285,7 +527,7 @@ export default function MailingPage() {
                             <span className="material-symbols-outlined text-yellow-400">schedule</span>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{totalScheduled}</p>
+                            <p className="text-2xl font-bold text-white">{stats.scheduled}</p>
                             <p className="text-sm text-gray-400">{t.scheduledCampaigns}</p>
                         </div>
                     </div>
@@ -296,83 +538,97 @@ export default function MailingPage() {
                             <span className="material-symbols-outlined text-purple-400">group</span>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">0</p>
+                            <p className="text-2xl font-bold text-white">{subscriberCount}</p>
                             <p className="text-sm text-gray-400">{t.subscribers}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Campaigns Table */}
-            <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center px-4 lg:px-5 py-3 border-b border-[#3b4754]">
-                    <h2 className="text-xl font-bold text-white">{t.campaigns}</h2>
-                </div>
+            {/* Tabs */}
+            <div className="flex gap-1 mb-4 bg-[#111418] p-1 rounded-lg border border-[#3b4754] overflow-x-auto">
+                {[
+                    { key: 'all', label: t.tabAll, count: stats.total },
+                    { key: 'draft', label: t.tabDrafts, count: stats.drafts },
+                    { key: 'sent', label: t.tabSent, count: stats.sent },
+                    { key: 'failed', label: t.tabFailed, count: stats.failed },
+                    { key: 'scheduled', label: t.tabScheduled, count: stats.scheduled },
+                ].map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key as typeof activeTab)}
+                        className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === tab.key
+                            ? 'bg-[#137fec] text-white'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        {tab.label} <span className="ml-1 opacity-70">({tab.count})</span>
+                    </button>
+                ))}
+            </div>
 
+            {/* Campaign List */}
+            <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden border border-[#3b4754]">
                 <div className="flex-1 overflow-auto">
                     <table className="w-full">
                         <thead className="bg-[#1c2127] border-b border-[#3b4754] sticky top-0">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.campaign}</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.subject}</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.status}</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.recipients}</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.opened}</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.sent}/{t.failed}</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.date}</th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">{t.actions}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#3b4754]">
-                            {campaigns.length === 0 && (
+                            {filteredCampaigns.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                                    <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
                                         <div className="flex flex-col items-center gap-4">
                                             <span className="material-symbols-outlined text-6xl text-gray-600">mail</span>
-                                            <div>
-                                                <p className="text-lg font-medium text-gray-300">{t.noCampaigns}</p>
-                                                <p className="text-sm">{t.noCampaignsDesc}</p>
-                                            </div>
+                                            <p className="text-lg font-medium text-gray-300">{t.noCampaigns}</p>
+                                            <p className="text-sm">{t.noCampaignsDesc}</p>
                                         </div>
                                     </td>
                                 </tr>
                             )}
-                            {campaigns.map((campaign) => (
+                            {filteredCampaigns.map((campaign) => (
                                 <tr key={campaign.id} className="hover:bg-white/5 transition-colors">
                                     <td className="px-4 py-3">
                                         <p className="font-medium text-white">{campaign.name}</p>
+                                        <p className="text-sm text-gray-400">{campaign.subject}</p>
+                                    </td>
+                                    <td className="px-4 py-3">{getStatusBadge(campaign.status)}</td>
+                                    <td className="px-4 py-3 text-gray-300">{campaign.recipientCount}</td>
+                                    <td className="px-4 py-3">
+                                        <span className="text-green-400">{campaign.sentCount}</span>
+                                        {campaign.failedCount > 0 && (
+                                            <span className="text-red-400 ml-2">/ {campaign.failedCount}</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-400">
+                                        {new Date(campaign.createdAt).toLocaleDateString(language === 'TR' ? 'tr-TR' : 'en-US')}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <p className="text-gray-300">{campaign.subject}</p>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {getStatusBadge(campaign.status)}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="text-gray-300">{campaign.recipientCount}</span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="text-gray-300">{campaign.openCount}</span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="text-gray-400 text-sm">
-                                            {new Date(campaign.createdAt).toLocaleDateString(language === 'TR' ? 'tr-TR' : 'en-US')}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <button
-                                            onClick={() => handleEdit(campaign)}
-                                            className="text-[#137fec] hover:text-[#137fec]/80 p-2"
-                                            title={t.edit}
-                                        >
-                                            <span className="material-symbols-outlined">edit</span>
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(campaign.id)}
-                                            className="text-red-400 hover:text-red-300 p-2"
-                                            title={t.delete}
-                                        >
-                                            <span className="material-symbols-outlined">delete</span>
-                                        </button>
+                                        <div className="flex gap-1 justify-end">
+                                            {campaign.status === 'draft' && (
+                                                <button onClick={() => handleSend(campaign.id)} className="p-2 text-green-400 hover:text-green-300" title={t.send}>
+                                                    <span className="material-symbols-outlined">send</span>
+                                                </button>
+                                            )}
+                                            {campaign.failedCount > 0 && (
+                                                <button onClick={() => showErrors(campaign)} className="p-2 text-yellow-400 hover:text-yellow-300" title={t.viewErrors}>
+                                                    <span className="material-symbols-outlined">warning</span>
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleEdit(campaign)} className="p-2 text-[#137fec] hover:text-[#137fec]/80" title={t.edit}>
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button onClick={() => handleDelete(campaign.id)} className="p-2 text-red-400 hover:text-red-300" title={t.delete}>
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -381,90 +637,220 @@ export default function MailingPage() {
                 </div>
             </div>
 
-            {/* Edit Modal */}
-            {isModalOpen && editingCampaign && (
+            {/* Campaign Modal */}
+            {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 border border-[#3b4754]">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4 border border-[#3b4754]">
                         <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white">
-                                {isNew ? t.addNew : t.editCampaign}
-                            </h2>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="text-gray-400 hover:text-white"
-                            >
+                            <h2 className="text-xl font-bold text-white">{isNew ? t.createNew : t.editCampaign}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
 
                         <div className="p-6 space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.campaignName}</label>
-                                <input
-                                    type="text"
-                                    value={editingCampaign.name || ''}
-                                    onChange={(e) => updateField('name', e.target.value)}
-                                    placeholder={language === 'TR' ? 'Örn: Yaz Kampanyası' : 'E.g: Summer Campaign'}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.campaignName}</label>
+                                    <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.emailSubject}</label>
+                                    <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                </div>
                             </div>
 
+                            {/* Template Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.emailSubject}</label>
-                                <input
-                                    type="text"
-                                    value={editingCampaign.subject || ''}
-                                    onChange={(e) => updateField('subject', e.target.value)}
-                                    placeholder={language === 'TR' ? 'E-posta konusu' : 'Email subject line'}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                />
+                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.template}</label>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {templates.map((template) => (
+                                        <button
+                                            key={template.slug}
+                                            onClick={() => setForm({ ...form, templateId: template.slug })}
+                                            className={`p-3 rounded-lg border text-left transition-all ${form.templateId === template.slug
+                                                ? 'bg-[#137fec]/10 border-[#137fec] text-white'
+                                                : 'bg-[#111418] border-[#3b4754] text-gray-400 hover:border-gray-500'
+                                                }`}
+                                        >
+                                            <div className="w-full h-8 rounded mb-2" style={{ background: template.headerBgColor }}></div>
+                                            <p className="text-sm font-medium">{language === 'TR' ? template.nameTR : template.nameEN}</p>
+                                            <p className="text-xs text-gray-500">{t[template.category as keyof typeof t] || template.category}</p>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
+                            {/* Recipient Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.recipientType}</label>
+                                <div className="flex gap-4 mb-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all' })}
+                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
+                                        <span className="text-white">{t.allMembers} ({subscriberCount})</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" checked={form.recipientType === 'custom'} onChange={() => setForm({ ...form, recipientType: 'custom' })}
+                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
+                                        <span className="text-white">{t.selectMembers}</span>
+                                    </label>
+                                </div>
+
+                                {form.recipientType === 'custom' && (
+                                    <div className="max-h-40 overflow-y-auto bg-[#111418] border border-[#3b4754] rounded-lg p-3">
+                                        {recipients.map((r) => (
+                                            <label key={r.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-white/5 px-2 rounded">
+                                                <input type="checkbox" checked={form.recipientIds.includes(r.id)} onChange={() => toggleRecipient(r.id)}
+                                                    className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded" />
+                                                <span className="text-white text-sm">{r.name}</span>
+                                                <span className="text-gray-500 text-xs">({r.email})</span>
+                                            </label>
+                                        ))}
+                                        {recipients.length === 0 && <p className="text-gray-500 text-sm">Üye bulunamadı</p>}
+                                    </div>
+                                )}
+                                {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
+                                    <p className="text-sm text-[#137fec] mt-2">{form.recipientIds.length} {t.selectedCount}</p>
+                                )}
+
+                                {/* Segmentation Options - Show when "All Members" is selected */}
+                                {form.recipientType === 'all' && (
+                                    <div className="mt-4 p-4 bg-[#111418] border border-[#3b4754] rounded-lg space-y-4">
+                                        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-[#137fec]">tune</span>
+                                            {t.segmentation}
+                                        </h4>
+
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {/* Limit */}
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">{t.recipientLimit}</label>
+                                                <select
+                                                    value={form.recipientLimit}
+                                                    onChange={(e) => setForm({ ...form, recipientLimit: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                                >
+                                                    <option value="">{t.noLimit}</option>
+                                                    <option value="50">{t.first50}</option>
+                                                    <option value="100">{t.first100}</option>
+                                                    <option value="300">{t.first300}</option>
+                                                    <option value="500">{t.first500}</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Activity Period */}
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">{t.segmentation}</label>
+                                                <select
+                                                    value={form.segment}
+                                                    onChange={(e) => setForm({ ...form, segment: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                                >
+                                                    <option value="none">{t.noSegment}</option>
+                                                    <option value="active30">{t.active30}</option>
+                                                    <option value="active90">{t.active90}</option>
+                                                    <option value="active180">{t.active180}</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Min Orders */}
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">{t.minOrders}</label>
+                                                <select
+                                                    value={form.minOrders}
+                                                    onChange={(e) => setForm({ ...form, minOrders: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                                >
+                                                    <option value="">{t.any}</option>
+                                                    <option value="1">1+</option>
+                                                    <option value="3">3+</option>
+                                                    <option value="5">5+</option>
+                                                    <option value="10">10+</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Min Amount */}
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">{t.minAmount}</label>
+                                                <select
+                                                    value={form.minAmount}
+                                                    onChange={(e) => setForm({ ...form, minAmount: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                                >
+                                                    <option value="">{t.any}</option>
+                                                    <option value="500">500₺+</option>
+                                                    <option value="1000">1.000₺+</option>
+                                                    <option value="5000">5.000₺+</option>
+                                                    <option value="10000">10.000₺+</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Content */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.content}</label>
-                                <textarea
-                                    value={editingCampaign.content || ''}
-                                    onChange={(e) => updateField('content', e.target.value)}
-                                    rows={6}
-                                    placeholder={language === 'TR' ? 'E-posta içeriğini yazın...' : 'Write email content...'}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                />
+                                <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={6}
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
                             </div>
 
+                            {/* Schedule */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.scheduleAt}</label>
-                                <input
-                                    type="datetime-local"
-                                    value={editingCampaign.scheduledAt ? new Date(editingCampaign.scheduledAt).toISOString().slice(0, 16) : ''}
-                                    onChange={(e) => updateField('scheduledAt', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                />
+                                <input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
                             </div>
                         </div>
 
                         <div className="p-6 border-t border-[#3b4754] flex justify-end gap-3">
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
-                            >
+                            <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600">
                                 {t.cancel}
                             </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex items-center gap-2 px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors"
-                            >
-                                {saving ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                        {t.saving}
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="material-symbols-outlined text-sm">save</span>
-                                        {t.save}
-                                    </>
-                                )}
+                            <button onClick={() => handleSave(false)} disabled={saving} className="px-6 py-2.5 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-500 disabled:opacity-50">
+                                {saving ? t.saving : t.saveAsDraft}
+                            </button>
+                            <button onClick={() => handleSave(true)} disabled={saving || sending}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-500 disabled:opacity-50">
+                                <span className="material-symbols-outlined text-sm">send</span>
+                                {sending ? t.sending : t.saveAndSend}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Modal */}
+            {errorModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-lg max-h-[70vh] overflow-y-auto m-4 border border-[#3b4754]">
+                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-white">{t.errorDetails}</h2>
+                            <button onClick={() => setErrorModalOpen(false)} className="text-gray-400 hover:text-white">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            {errorLog.length === 0 ? (
+                                <p className="text-gray-400">{t.noErrors}</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {errorLog.map((err, i) => (
+                                        <div key={i} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                                            <p className="text-red-400 font-medium">{err.email}</p>
+                                            <p className="text-gray-400 text-sm">{err.error}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-6 border-t border-[#3b4754] flex justify-end">
+                            <button onClick={() => setErrorModalOpen(false)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600">
+                                {t.close}
                             </button>
                         </div>
                     </div>

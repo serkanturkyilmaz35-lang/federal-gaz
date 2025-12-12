@@ -1,7 +1,7 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { MailingCampaign, connectToDatabase } from '@/lib/models';
+import { MailingCampaign, User, connectToDatabase } from '@/lib/models';
 
 // GET - List all campaigns
 export async function GET() {
@@ -12,7 +12,10 @@ export async function GET() {
             order: [['createdAt', 'DESC']],
         });
 
-        return NextResponse.json({ campaigns }, { status: 200 });
+        // Get subscriber count
+        const subscriberCount = await User.count();
+
+        return NextResponse.json({ campaigns, subscriberCount }, { status: 200 });
     } catch (error) {
         console.error('Mailing GET Error:', error);
         return NextResponse.json({ error: 'Failed to fetch campaigns' }, { status: 500 });
@@ -23,7 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, subject, content, status, scheduledAt } = body;
+        const { name, subject, content, templateId, recipientType, recipientIds, status, scheduledAt } = body;
 
         if (!name || !subject || !content) {
             return NextResponse.json({ error: 'Required fields: name, subject, content' }, { status: 400 });
@@ -31,12 +34,24 @@ export async function POST(req: Request) {
 
         await connectToDatabase();
 
+        // Calculate recipient count based on type
+        let recipientCount = 0;
+        if (recipientType === 'custom' && recipientIds) {
+            recipientCount = JSON.parse(recipientIds).length;
+        } else {
+            recipientCount = await User.count();
+        }
+
         const campaign = await MailingCampaign.create({
             name,
             subject,
             content,
+            templateId: templateId || 'modern',
+            recipientType: recipientType || 'all',
+            recipientIds: recipientIds || undefined,
             status: status || 'draft',
-            scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+            scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+            recipientCount,
         });
 
         return NextResponse.json({ success: true, campaign }, { status: 201 });
