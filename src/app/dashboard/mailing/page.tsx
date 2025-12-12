@@ -49,7 +49,7 @@ const translations = {
         totalCampaigns: "Toplam",
         sentCampaigns: "Gönderildi",
         scheduledCampaigns: "Zamanlanmış",
-        subscribers: "Abone",
+        subscribers: "Üyeler",
         tabAll: "Tümü",
         tabDrafts: "Taslaklar",
         tabSent: "Gönderildi",
@@ -140,7 +140,7 @@ const translations = {
         totalCampaigns: "Total",
         sentCampaigns: "Sent",
         scheduledCampaigns: "Scheduled",
-        subscribers: "Subscribers",
+        subscribers: "Members",
         tabAll: "All",
         tabDrafts: "Drafts",
         tabSent: "Sent",
@@ -268,6 +268,18 @@ export default function MailingPage() {
         fetchData();
     }, []);
 
+    // ESC key to close modals
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsModalOpen(false);
+                setErrorModalOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
+
     const fetchData = async () => {
         try {
             const [campaignsRes, templatesRes, recipientsRes] = await Promise.all([
@@ -299,9 +311,15 @@ export default function MailingPage() {
                 setSuccessMessage(data.message);
                 fetchData();
                 setTimeout(() => setSuccessMessage(""), 3000);
+            } else {
+                // Show message even if templates already exist
+                setSuccessMessage(data.message || 'Şablonlar zaten yüklü');
+                setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
             console.error('Failed to seed templates:', error);
+            setSuccessMessage('Hata oluştu, lütfen tekrar deneyin');
+            setTimeout(() => setSuccessMessage(""), 3000);
         }
     };
 

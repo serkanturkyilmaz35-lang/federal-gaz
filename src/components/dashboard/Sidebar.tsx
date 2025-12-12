@@ -22,6 +22,7 @@ const menuItems: MenuItem[] = [
     { icon: "article", label: "İçerik Yönetimi", href: "/dashboard/content" },
     { icon: "image", label: "Medya", href: "/dashboard/media" },
     { icon: "mail", label: "Mailing", href: "/dashboard/mailing" },
+    { icon: "palette", label: "E-posta Şablonları", href: "/dashboard/templates" },
     { icon: "pie_chart", label: "Analitik", href: "/dashboard/analytics" },
     { icon: "settings", label: "Ayarlar", href: "/dashboard/settings" },
 ];
