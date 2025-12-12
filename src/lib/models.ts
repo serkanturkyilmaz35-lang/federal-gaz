@@ -653,10 +653,11 @@ MailingLog.init(
     {
         sequelize,
         tableName: 'mailing_logs',
-        indexes: [
-            { fields: ['campaignId'] },
-            { fields: ['userEmail'] },
-        ]
+        // Indexes removed to prevent "Too many keys specified" error during sync
+        // indexes: [
+        //     { fields: ['campaignId'] },
+        //     { fields: ['userEmail'] },
+        // ]
     }
 );
 
