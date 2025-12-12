@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, subject, content, templateId, recipientType, recipientIds, status, scheduledAt } = body;
+        const { name, subject, content, templateSlug, recipientType, recipientIds, status, scheduledAt } = body;
 
         if (!name || !subject || !content) {
             return NextResponse.json({ error: 'Required fields: name, subject, content' }, { status: 400 });
@@ -46,9 +46,9 @@ export async function POST(req: Request) {
             name,
             subject,
             content,
-            templateId: templateId || 'modern',
+            templateSlug: templateSlug || 'modern',
             recipientType: recipientType || 'all',
-            recipientIds: recipientIds || undefined,
+            recipientIds: Array.isArray(recipientIds) ? JSON.stringify(recipientIds) : undefined,
             status: status || 'draft',
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
             recipientCount,

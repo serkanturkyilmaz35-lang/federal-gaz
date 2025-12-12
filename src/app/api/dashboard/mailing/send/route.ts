@@ -1,7 +1,7 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { MailingCampaign, User, connectToDatabase } from '@/lib/models';
+import { MailingCampaign, User, connectToDatabase, MailingLog } from '@/lib/models';
 import { sendEmail, getCampaignEmailTemplate } from '@/lib/email';
 
 interface SendResult {
@@ -69,7 +69,9 @@ export async function POST(req: Request) {
 
         for (const recipient of recipients) {
             try {
-                const html = getCampaignEmailTemplate(campaign.templateId || 'modern', {
+                // Using templateSlug instead of templateId
+                // Cast templateSlug to any or string to avoid type conflict if getCampaignEmailTemplate expects explicit union
+                const html = getCampaignEmailTemplate(campaign.templateSlug as any || 'modern', {
                     subject: campaign.subject,
                     content: campaign.content,
                     recipientName: recipient.name,
@@ -80,6 +82,20 @@ export async function POST(req: Request) {
                     subject: campaign.subject,
                     html,
                 });
+
+                // Create Log Entry
+                try {
+                    await MailingLog.create({
+                        campaignId: campaign.id,
+                        userEmail: recipient.email,
+                        userId: recipient.id,
+                        status: result.success ? 'sent' : 'failed',
+                        errorMessage: result.success ? undefined : (typeof result.error === 'string' ? result.error : 'Unknown error'),
+                        sentAt: new Date()
+                    });
+                } catch (logError) {
+                    console.error('Failed to create mailing log:', logError);
+                }
 
                 if (result.success) {
                     sentCount++;
@@ -93,6 +109,21 @@ export async function POST(req: Request) {
             } catch (error) {
                 failedCount++;
                 const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+
+                // Create Failed Log Entry
+                try {
+                    await MailingLog.create({
+                        campaignId: campaign.id,
+                        userEmail: recipient.email,
+                        userId: recipient.id,
+                        status: 'failed',
+                        errorMessage: errorMsg,
+                        sentAt: new Date()
+                    });
+                } catch (logError) {
+                    console.error('Failed to create failing mailing log:', logError);
+                }
+
                 errors.push({ email: recipient.email, error: errorMsg });
                 results.push({ email: recipient.email, success: false, error: errorMsg });
             }

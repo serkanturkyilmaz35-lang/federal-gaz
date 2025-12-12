@@ -466,7 +466,7 @@ interface MailingCampaignAttributes {
     name: string;
     subject: string;
     content: string;
-    templateId: 'modern' | 'classic';
+    templateSlug: string; // Changed from templateId to templateSlug to reference EmailTemplate
     recipientType: 'all' | 'members' | 'guests' | 'custom';
     recipientIds?: string; // JSON array of user IDs for custom selection
     status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
@@ -480,14 +480,14 @@ interface MailingCampaignAttributes {
     errorLog?: string; // JSON array of failed emails with error messages
 }
 
-interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'templateId' | 'recipientType' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'sentCount' | 'failedCount' | 'openCount' | 'clickCount' | 'recipientIds' | 'errorLog'> { }
+interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'templateSlug' | 'recipientType' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'sentCount' | 'failedCount' | 'openCount' | 'clickCount' | 'recipientIds' | 'errorLog'> { }
 
 export class MailingCampaign extends Model<MailingCampaignAttributes, MailingCampaignCreationAttributes> implements MailingCampaignAttributes {
     declare id: number;
     declare name: string;
     declare subject: string;
     declare content: string;
-    declare templateId: 'modern' | 'classic';
+    declare templateSlug: string;
     declare recipientType: 'all' | 'members' | 'guests' | 'custom';
     declare recipientIds: string | undefined;
     declare status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
@@ -523,8 +523,9 @@ MailingCampaign.init(
             type: DataTypes.TEXT('long'),
             allowNull: false,
         },
-        templateId: {
-            type: DataTypes.ENUM('modern', 'classic'),
+        templateSlug: {
+            type: DataTypes.STRING,
+            allowNull: false,
             defaultValue: 'modern',
         },
         recipientType: {
@@ -575,6 +576,87 @@ MailingCampaign.init(
     {
         sequelize,
         tableName: 'mailing_campaigns',
+    }
+);
+
+// --- MailingLog Model (E-posta Gönderim Kayıtları) ---
+interface MailingLogAttributes {
+    id: number;
+    campaignId: number;
+    userEmail: string;
+    userId?: number;
+    status: 'sent' | 'failed' | 'opened' | 'clicked';
+    errorMessage?: string;
+    sentAt: Date;
+    openedAt?: Date;
+    clickedAt?: Date;
+}
+
+interface MailingLogCreationAttributes extends Optional<MailingLogAttributes, 'id' | 'userId' | 'errorMessage' | 'openedAt' | 'clickedAt'> { }
+
+export class MailingLog extends Model<MailingLogAttributes, MailingLogCreationAttributes> implements MailingLogAttributes {
+    declare id: number;
+    declare campaignId: number;
+    declare userEmail: string;
+    declare userId: number | undefined;
+    declare status: 'sent' | 'failed' | 'opened' | 'clicked';
+    declare errorMessage: string | undefined;
+    declare sentAt: Date;
+    declare openedAt: Date | undefined;
+    declare clickedAt: Date | undefined;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+MailingLog.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        campaignId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        userEmail: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        userId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        status: {
+            type: DataTypes.ENUM('sent', 'failed', 'opened', 'clicked'),
+            defaultValue: 'sent',
+        },
+        errorMessage: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        sentAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+        },
+        openedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        clickedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'mailing_logs',
+        indexes: [
+            { fields: ['campaignId'] },
+            { fields: ['userEmail'] },
+        ]
     }
 );
 
@@ -1134,6 +1216,16 @@ const initAssociations = () => {
         if (AdminUser && ContentPage) {
             AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
             ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
+        }
+
+        if (MailingCampaign && MailingLog) {
+            MailingCampaign.hasMany(MailingLog, { foreignKey: 'campaignId', as: 'logs' });
+            MailingLog.belongsTo(MailingCampaign, { foreignKey: 'campaignId' });
+        }
+
+        if (EmailTemplate && MailingCampaign) {
+            EmailTemplate.hasMany(MailingCampaign, { sourceKey: 'slug', foreignKey: 'templateSlug', as: 'campaigns' });
+            MailingCampaign.belongsTo(EmailTemplate, { targetKey: 'slug', foreignKey: 'templateSlug', as: 'template' });
         }
 
         console.log('✅ Model associations initialized.');

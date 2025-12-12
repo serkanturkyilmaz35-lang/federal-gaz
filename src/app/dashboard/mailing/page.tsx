@@ -8,7 +8,7 @@ interface MailingCampaign {
     name: string;
     subject: string;
     content: string;
-    templateId: string;
+    templateSlug: string;
     recipientType: string;
     recipientIds?: string;
     status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
@@ -229,7 +229,7 @@ const emptyForm = {
     name: '',
     subject: '',
     content: '',
-    templateId: 'modern',
+    templateSlug: 'modern',
     recipientType: 'all',
     recipientIds: [] as number[],
     scheduledAt: '',
@@ -343,7 +343,7 @@ export default function MailingPage() {
             name: campaign.name,
             subject: campaign.subject,
             content: campaign.content,
-            templateId: campaign.templateId || 'modern',
+            templateSlug: campaign.templateSlug || 'modern',
             recipientType: campaign.recipientType || 'all',
             recipientIds: campaign.recipientIds ? JSON.parse(campaign.recipientIds) : [],
             scheduledAt: campaign.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : '',
@@ -369,7 +369,7 @@ export default function MailingPage() {
                 name: form.name,
                 subject: form.subject,
                 content: form.content,
-                templateId: form.templateId,
+                templateSlug: form.templateSlug,
                 recipientType: form.recipientType,
                 recipientIds: form.recipientType === 'custom' ? JSON.stringify(form.recipientIds) : undefined,
                 scheduledAt: form.scheduledAt || undefined,
@@ -716,8 +716,8 @@ export default function MailingPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-1">{t.template}</label>
                                     <select
-                                        value={form.templateId}
-                                        onChange={(e) => setForm({ ...form, templateId: e.target.value })}
+                                        value={form.templateSlug}
+                                        onChange={(e) => setForm({ ...form, templateSlug: e.target.value })}
                                         className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     >
                                         {templates.length === 0 && <option value="modern">Modern (Varsayılan)</option>}
