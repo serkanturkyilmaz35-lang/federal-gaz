@@ -882,6 +882,96 @@ Product.init(
     }
 );
 
+// --- Service Model (Hizmetler) ---
+interface ServiceAttributes {
+    id: number;
+    slug: string;
+    icon: string;
+    titleTR: string;
+    titleEN: string;
+    descTR: string;
+    descEN: string;
+    contentTR: string;
+    contentEN: string;
+    sortOrder: number;
+    isActive: boolean;
+}
+
+interface ServiceCreationAttributes extends Optional<ServiceAttributes, 'id' | 'sortOrder' | 'isActive' | 'contentTR' | 'contentEN'> { }
+
+export class Service extends Model<ServiceAttributes, ServiceCreationAttributes> implements ServiceAttributes {
+    declare id: number;
+    declare slug: string;
+    declare icon: string;
+    declare titleTR: string;
+    declare titleEN: string;
+    declare descTR: string;
+    declare descEN: string;
+    declare contentTR: string;
+    declare contentEN: string;
+    declare sortOrder: number;
+    declare isActive: boolean;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+Service.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        slug: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        icon: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: 'build',
+        },
+        titleTR: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        titleEN: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        descTR: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+        },
+        descEN: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+        },
+        contentTR: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        contentEN: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        sortOrder: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+        isActive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'services',
+    }
+);
+
 // Relationships - Initialize safely
 const initAssociations = () => {
     try {
