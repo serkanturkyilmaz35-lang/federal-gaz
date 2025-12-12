@@ -134,6 +134,8 @@ export default function SiparisPage() {
 
     // Parse products and units from settings (JSON strings)
     const products: string[] = (() => {
+        // When EN, always use translations. When TR, use settings or fallback.
+        if (language === 'EN') return t.products;
         try {
             const parsed = JSON.parse(settings.order_form_products || '[]');
             return parsed.length > 0 ? parsed : t.products;
@@ -143,6 +145,8 @@ export default function SiparisPage() {
     })();
 
     const units: string[] = (() => {
+        // When EN, always use translations. When TR, use settings or fallback.
+        if (language === 'EN') return t.units;
         try {
             const parsed = JSON.parse(settings.order_form_units || '[]');
             return parsed.length > 0 ? parsed : t.units;
@@ -560,12 +564,12 @@ export default function SiparisPage() {
                         <div className="space-y-4">
                             <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{t.contactInfo}</h3>
                             <div className="grid gap-4 md:grid-cols-2">
-                                <input type="text" name="name" value={contactData.name} onChange={handleContactChange} placeholder={settings.order_form_name_label || t.name} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                                <input type="text" name="company" value={contactData.company} onChange={handleContactChange} placeholder={settings.order_form_company_label || t.company} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                                <input type="email" name="email" value={contactData.email} onChange={handleContactChange} placeholder={settings.order_form_email_label || t.email} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
-                                <input type="tel" name="phone" value={contactData.phone} onChange={handleContactChange} placeholder={settings.order_form_phone_label || t.phone} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="text" name="name" value={contactData.name} onChange={handleContactChange} placeholder={language === 'EN' ? t.name : (settings.order_form_name_label || t.name)} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="text" name="company" value={contactData.company} onChange={handleContactChange} placeholder={language === 'EN' ? t.company : (settings.order_form_company_label || t.company)} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="email" name="email" value={contactData.email} onChange={handleContactChange} placeholder={language === 'EN' ? t.email : (settings.order_form_email_label || t.email)} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
+                                <input type="tel" name="phone" value={contactData.phone} onChange={handleContactChange} placeholder={language === 'EN' ? t.phone : (settings.order_form_phone_label || t.phone)} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
                                 <div className="md:col-span-2">
-                                    <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">{settings.order_form_address_label || t.address}</label>
+                                    <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">{language === 'EN' ? t.address : (settings.order_form_address_label || t.address)}</label>
                                     <textarea name="address" value={contactData.address} onChange={e => { handleContactChange(e); setSelectedAddressId("custom"); }} required rows={2} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" placeholder={t.addressPlaceholder} />
                                 </div>
                             </div>

@@ -120,10 +120,15 @@ export default function Footer() {
                 <div className="mt-8 border-t border-white/20 pt-8 text-center text-sm">
                     <div className="text-white/80">
                         {(() => {
-                            // When EN, always use translation. When TR, use settings or fallback to translation.
-                            const text = language === 'EN'
-                                ? `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`
-                                : (settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`);
+                            // Use settings.footer_copyright if set, otherwise generate default with correct rights translation
+                            const defaultText = `© ${new Date().getFullYear()} ${settings.site_name || "Federal Gaz"}. ${t.rights}`;
+                            let text = settings.footer_copyright || defaultText;
+
+                            // If EN language and footer_copyright contains Turkish "Tüm hakları saklıdır", replace it
+                            if (language === 'EN' && text.includes('Tüm hakları saklıdır')) {
+                                text = text.replace('Tüm hakları saklıdır', 'All rights reserved')
+                                    .replace('Tüm hakları saklıdır.', 'All rights reserved.');
+                            }
 
                             // Split by space to find URLs
                             const parts = text.split(/(\s+)/);

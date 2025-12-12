@@ -6,6 +6,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEncryption } from "@/context/EncryptionContext";
+import { useSettings } from "@/context/SettingsContext";
 
 const translations = {
     TR: {
@@ -49,6 +50,7 @@ export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
     const { secureFetch } = useEncryption();
+    const { settings } = useSettings();
     const t = translations[language];
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -160,7 +162,19 @@ export default function LoginPage() {
                     </div>
 
                     <p className="mt-8 text-center text-sm text-gray-500">
-                        &copy; {new Date().getFullYear()} Federal Gaz. {language === 'TR' ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}
+                        {(() => {
+                            if (settings?.footer_copyright) {
+                                // Use settings value but translate rights text for EN
+                                let text = settings.footer_copyright;
+                                if (language === 'EN' && text.includes('Tüm hakları saklıdır')) {
+                                    text = text.replace('Tüm hakları saklıdır', 'All rights reserved')
+                                        .replace('Tüm hakları saklıdır.', 'All rights reserved.');
+                                }
+                                return text;
+                            }
+                            // Default
+                            return `© ${new Date().getFullYear()} Federal Gaz. ${language === 'TR' ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}`;
+                        })()}
                     </p>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
