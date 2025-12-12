@@ -7,21 +7,25 @@ import { getDb } from '@/lib/db';
 export async function POST() {
     try {
         const db = getDb();
-        const queryInterface = db.getQueryInterface();
 
         // 1. MailingCampaigns tablosuna templateSlug ekle
         try {
-            await db.query(`
-                ALTER TABLE mailing_campaigns 
-                ADD COLUMN IF NOT EXISTS templateSlug VARCHAR(255) NOT NULL DEFAULT 'modern';
-            `);
+            // IF NOT EXISTS kullanmadan dene, varsa hata verir, yakalarız (1060)
+            await db.query("ALTER TABLE mailing_campaigns ADD COLUMN templateSlug VARCHAR(255) NOT NULL DEFAULT 'modern'");
         } catch (e: any) {
-            // IF NOT EXISTS desteklenmiyorsa veya başka hata varsa logla ama devam et (kolon zaten olabilir)
-            console.log('Column add warning:', e.message);
+            // 1060: Duplicate column name (MySQL/MariaDB)
+            // 42S22: Column already exists (bazı sürümlerde)
+            if ((e.original && e.original.errno === 1060) || (e.message && e.message.includes("Duplicate column"))) {
+                console.log('TemplateSlug column already exists, skipping.');
+            } else {
+                console.error('Alter Table Error:', e);
+                // Hatayı fırlat ki kullanıcı görsün
+                throw new Error(`Tablo güncellenemedi (MailingCampaigns): ${e.message}`);
+            }
         }
 
         // 2. MailingLogs tablosunu oluştur
-        // Basit haliyle, indexsiz (PK hariç)
+        // Indexsiz oluştur (Primary Key hariç) - Too many keys hatasını önlemek için
         await db.query(`
             CREATE TABLE IF NOT EXISTS mailing_logs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,7 +42,7 @@ export async function POST() {
             );
         `);
 
-        // 3. EmailTemplates tablosunu oluştur (Eğer yoksa)
+        // 3. EmailTemplates tablosunu oluştur
         await db.query(`
             CREATE TABLE IF NOT EXISTS email_templates (
                 id INT AUTO_INCREMENT PRIMARY KEY,
