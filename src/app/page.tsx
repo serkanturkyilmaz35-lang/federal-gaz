@@ -98,7 +98,8 @@ export default function HomePage() {
     const currentServices = services[language];
 
     // Use dynamic marquee text from settings, fallback to translation
-    const marqueeText = settings.homepage_marquee_text || t.announcement;
+    // When EN, always use translation. When TR, use settings or fallback.
+    const marqueeText = language === 'EN' ? t.announcement : (settings.homepage_marquee_text || t.announcement);
 
     // Hero görselleri - Endüstriyel gaz ve tüp görselleri (5 adet)
     const heroImages = [

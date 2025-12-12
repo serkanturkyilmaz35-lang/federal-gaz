@@ -187,43 +187,69 @@ export async function sendEmail(options: EmailOptions) {
     return sendEmailViaSMTP(options);
 }
 
-export function getPasswordResetEmail(resetLink: string) {
+export function getPasswordResetEmail(resetLink: string, language: 'TR' | 'EN' = 'TR') {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://www.federalgaz.com' : 'http://localhost:3000');
+
+    const texts = {
+        TR: {
+            title: 'Şifre Sıfırlama - Federal Gaz',
+            subtitle: 'Şifre Sıfırlama Talebi',
+            greeting: 'Merhaba,',
+            message: 'Hesabınız için şifre sıfırlama talebinde bulundunuz. Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:',
+            button: 'Şifremi Sıfırla',
+            expiry: 'Bu bağlantı 1 saat geçerlidir. Eğer bu talebi siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz.',
+            footer: 'Federal Gaz - Teknik ve Tıbbi Gaz Tedarikçiniz',
+            rights: '© 2014 Tüm hakları saklıdır.'
+        },
+        EN: {
+            title: 'Password Reset - Federal Gaz',
+            subtitle: 'Password Reset Request',
+            greeting: 'Hello,',
+            message: 'You have requested a password reset for your account. Click the button below to reset your password:',
+            button: 'Reset Password',
+            expiry: 'This link is valid for 1 hour. If you did not request this, you can ignore this email.',
+            footer: 'Federal Gaz - Your Technical and Medical Gas Supplier',
+            rights: '© 2014 All rights reserved.'
+        }
+    };
+
+    const t = texts[language];
+
     return `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Şifre Sıfırlama - Federal Gaz</title>
+    <title>${t.title}</title>
 </head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
     <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <div style="text-align: center; margin-bottom: 30px;">
             <img src="cid:logo" alt="Federal Gaz" style="max-width: 40px; height: auto; margin-bottom: 15px;" />
-            <p style="color: #666; margin-top: 5px; font-size: 14px;">Şifre Sıfırlama Talebi</p>
+            <p style="color: #666; margin-top: 5px; font-size: 14px;">${t.subtitle}</p>
         </div>
         
-        <p style="color: #333; font-size: 16px; line-height: 1.6;">Merhaba,</p>
+        <p style="color: #333; font-size: 16px; line-height: 1.6;">${t.greeting}</p>
         
         <p style="color: #333; font-size: 16px; line-height: 1.6;">
-            Hesabınız için şifre sıfırlama talebinde bulundunuz. Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:
+            ${t.message}
         </p>
         
         <div style="text-align: center; margin: 30px 0;">
             <a href="${resetLink}" style="background-color: #8B0000; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                Şifremi Sıfırla
+                ${t.button}
             </a>
         </div>
         
         <p style="color: #666; font-size: 14px; line-height: 1.6;">
-            Bu bağlantı 1 saat geçerlidir. Eğer bu talebi siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz.
+            ${t.expiry}
         </p>
         
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
         
         <p style="color: #999; font-size: 12px; text-align: center;">
-            Federal Gaz - Teknik ve Tıbbi Gaz Tedarikçiniz<br>
-            © 2014 Tüm hakları saklıdır.
+            ${t.footer}<br>
+            ${t.rights}
         </p>
     </div>
 </body>
@@ -288,43 +314,83 @@ export function getCustomerOrderConfirmationEmail(orderDetails: {
     products: string;
     address: string;
     notes?: string;
+    language?: 'TR' | 'EN';
 }) {
+    const language = orderDetails.language || 'TR';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://www.federalgaz.com' : 'http://localhost:3000');
+
+    const texts = {
+        TR: {
+            title: 'Siparişiniz Alındı - Federal Gaz',
+            heading: '✅ Siparişiniz Alındı!',
+            orderNo: 'Sipariş No',
+            dear: 'Sayın',
+            message: 'Siparişiniz başarıyla alınmıştır. En kısa sürede sizinle iletişime geçeceğiz.',
+            summary: '📦 Sipariş Özeti',
+            product: 'Ürün',
+            deliveryAddress: 'Teslimat Adresi',
+            notesLabel: 'Notlar',
+            statusLabel: 'Durumu',
+            statusMessage: 'Siparişiniz değerlendiriliyor. Size en kısa sürede dönüş yapacağız.',
+            contactUs: 'Bizimle iletişime geçmek için:',
+            thanks: 'Bizi tercih ettiğiniz için teşekkür ederiz!',
+            footer: 'Federal Gaz - Güvenilir Gaz Çözümleri'
+        },
+        EN: {
+            title: 'Order Received - Federal Gaz',
+            heading: '✅ Order Received!',
+            orderNo: 'Order No',
+            dear: 'Dear',
+            message: 'Your order has been successfully received. We will contact you shortly.',
+            summary: '📦 Order Summary',
+            product: 'Product',
+            deliveryAddress: 'Delivery Address',
+            notesLabel: 'Notes',
+            statusLabel: 'Status',
+            statusMessage: 'Your order is being reviewed. We will get back to you shortly.',
+            contactUs: 'To contact us:',
+            thanks: 'Thank you for choosing us!',
+            footer: 'Federal Gaz - Reliable Gas Solutions'
+        }
+    };
+
+    const t = texts[language];
+
     return `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Siparişiniz Alındı - Federal Gaz</title>
+    <title>${t.title}</title>
 </head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
     <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <div style="text-align: center; margin-bottom: 30px;">
             <img src="cid:logo" alt="Federal Gaz" style="max-width: 40px; height: auto; margin-bottom: 15px;" />
-            <h2 style="color: #28a745; margin: 10px 0 5px 0;">✅ Siparişiniz Alındı!</h2>
-            <p style="color: #666; margin-top: 5px; font-size: 14px;">Sipariş No: #${orderDetails.orderId}</p>
+            <h2 style="color: #28a745; margin: 10px 0 5px 0;">${t.heading}</h2>
+            <p style="color: #666; margin-top: 5px; font-size: 14px;">${t.orderNo}: #${orderDetails.orderId}</p>
         </div>
         
         <p style="font-size: 16px; color: #333; text-align: center;">
-            Sayın <strong>${orderDetails.customerName}</strong>,<br>
-            Siparişiniz başarıyla alınmıştır. En kısa sürede sizinle iletişime geçeceğiz.
+            ${t.dear} <strong>${orderDetails.customerName}</strong>,<br>
+            ${t.message}
         </p>
         
         <div style="background-color: #f0f7f0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
-            <h3 style="color: #333; margin-top: 0;">📦 Sipariş Özeti</h3>
-            <p style="margin: 5px 0;"><strong>Ürün:</strong> ${orderDetails.products}</p>
-            <p style="margin: 5px 0;"><strong>Teslimat Adresi:</strong> ${orderDetails.address}</p>
-            ${orderDetails.notes ? `<p style="margin: 5px 0;"><strong>Notlar:</strong> ${orderDetails.notes}</p>` : ''}
+            <h3 style="color: #333; margin-top: 0;">${t.summary}</h3>
+            <p style="margin: 5px 0;"><strong>${t.product}:</strong> ${orderDetails.products}</p>
+            <p style="margin: 5px 0;"><strong>${t.deliveryAddress}:</strong> ${orderDetails.address}</p>
+            ${orderDetails.notes ? `<p style="margin: 5px 0;"><strong>${t.notesLabel}:</strong> ${orderDetails.notes}</p>` : ''}
         </div>
         
         <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
             <p style="margin: 0; color: #856404; font-size: 14px;">
-                ⏳ <strong>Durumu:</strong> Siparişiniz değerlendiriliyor. Size en kısa sürede dönüş yapacağız.
+                ⏳ <strong>${t.statusLabel}:</strong> ${t.statusMessage}
             </p>
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">Bizimle iletişime geçmek için:</p>
+            <p style="color: #666; font-size: 14px;">${t.contactUs}</p>
             <p style="margin: 5px 0;">📞 (0312) 395 35 95</p>
             <p style="margin: 5px 0;">📧 federal.gaz@hotmail.com</p>
         </div>
@@ -332,8 +398,8 @@ export function getCustomerOrderConfirmationEmail(orderDetails: {
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
         
         <p style="color: #999; font-size: 12px; text-align: center;">
-            Bizi tercih ettiğiniz için teşekkür ederiz!<br>
-            <strong>Federal Gaz</strong> - Güvenilir Gaz Çözümleri
+            ${t.thanks}<br>
+            <strong>${t.footer}</strong>
         </p>
     </div>
 </body>

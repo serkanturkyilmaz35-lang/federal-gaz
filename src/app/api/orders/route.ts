@@ -65,7 +65,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, company, email, phone, address, items, products: legacyProduct, amount: legacyAmount, unit: legacyUnit, notes } = body;
+        const { name, company, email, phone, address, items, products: legacyProduct, amount: legacyAmount, unit: legacyUnit, notes, language = 'TR' } = body;
 
         // Validation
         // Support both new 'items' array OR legacy single product fields (for backward compat if needed, but UI will send items)
@@ -148,17 +148,18 @@ export async function POST(req: Request) {
             console.error('Failed to send admin order email:', emailError);
         }
 
-        // Send Customer Email
+        // Send Customer Email with language
         try {
             await sendEmail({
                 to: email,
-                subject: `✅ Siparişiniz Alındı - Federal Gaz #${order.id}`,
+                subject: language === 'EN' ? `✅ Order Received - Federal Gaz #${order.id}` : `✅ Siparişiniz Alındı - Federal Gaz #${order.id}`,
                 html: getCustomerOrderConfirmationEmail({
                     orderId: order.id,
                     customerName: name,
                     products: hasItems ? `<ul>${itemsListHtml}</ul>` : itemsString,
                     address: address,
-                    notes: notes
+                    notes: notes,
+                    language: language as 'TR' | 'EN'
                 })
             });
             console.log(`✅ Order confirmation email sent to customer for #${order.id}`);
@@ -169,7 +170,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             success: true,
             orderId: order.id,
-            message: 'Siparişiniz başarıyla alındı!'
+            message: language === 'EN' ? 'Your order has been received!' : 'Siparişiniz başarıyla alındı!'
         }, { status: 201 });
 
     } catch (error) {

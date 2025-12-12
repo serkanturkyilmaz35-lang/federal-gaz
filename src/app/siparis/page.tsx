@@ -406,9 +406,14 @@ export default function SiparisPage() {
             }
 
             const orderData = {
-                ...contactData,
+                name: contactData.name,
+                company: contactData.company,
+                email: contactData.email,
+                phone: contactData.phone,
+                address: contactData.address,
                 notes: finalNotes,
-                items: orderItems
+                items: orderItems,
+                language
             };
 
             const res = await fetch('/api/orders', {

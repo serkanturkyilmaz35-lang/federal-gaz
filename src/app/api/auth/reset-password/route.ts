@@ -4,7 +4,7 @@ import { sendEmail, getPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
     try {
-        const { email } = await request.json();
+        const { email, language = 'TR' } = await request.json();
 
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -34,11 +34,11 @@ export async function POST(request: Request) {
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
                 const resetLink = `${baseUrl}/sifre-yenile?token=${token}`;
 
-                // Send email
+                // Send email with language
                 const emailResult = await sendEmail({
                     to: email,
-                    subject: 'Şifre Sıfırlama - Federal Gaz',
-                    html: getPasswordResetEmail(resetLink),
+                    subject: language === 'EN' ? 'Password Reset - Federal Gaz' : 'Şifre Sıfırlama - Federal Gaz',
+                    html: getPasswordResetEmail(resetLink, language as 'TR' | 'EN'),
                 });
 
                 if (!emailResult.success) {
