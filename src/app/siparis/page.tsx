@@ -24,6 +24,7 @@ const translations = {
         unit: "Birim",
         units: ["Adet", "m³", "kg", "Litre"],
         address: "Teslimat Adresi *",
+        addressPlaceholder: "Adres giriniz...",
         notes: "Ek Notlar",
         notesPlaceholder: "Varsa ek taleplerinizi belirtin...",
         submitBtn: "Sipariş Ver",
@@ -37,7 +38,18 @@ const translations = {
         maxItemsError: "Tek siparişte en fazla 5 ürün ekleyebilirsiniz.",
         fillProductError: "Lütfen ürün, miktar ve birim seçiniz.",
         otherProductNoteRequired: "'Diğer' seçeneği için lütfen Ek Notlar alanına hangi ürünü istediğinizi detaylı olarak yazın.",
-        otherProductNotAdded: "'Diğer' ürünü henüz sepete eklenmedi! Lütfen önce 'Ürün Ekle' butonuna tıklayın."
+        otherProductNotAdded: "'Diğer' ürünü henüz sepete eklenmedi! Lütfen önce 'Ürün Ekle' butonuna tıklayın.",
+        savedAddresses: "Kayıtlı Adreslerim",
+        newAddress: "Yeni Adres Gir",
+        contactInfo: "İletişim Bilgileri",
+        clearSelection: "Seçimi Temizle",
+        productLabel: "Ürün",
+        quantityLabel: "Miktar",
+        actionLabel: "İşlem",
+        industrialGas: "Endüstriyel Gaz",
+        delete: "Sil",
+        additionalInfo: "Ek Bilgiler",
+        selectOption: "Seçiniz"
     },
     EN: {
         title: "Order Now",
@@ -53,6 +65,7 @@ const translations = {
         unit: "Unit",
         units: ["Piece", "m³", "kg", "Liter"],
         address: "Delivery Address *",
+        addressPlaceholder: "Enter address...",
         notes: "Additional Notes",
         notesPlaceholder: "Specify additional requests if any...",
         submitBtn: "Order Now",
@@ -66,7 +79,18 @@ const translations = {
         maxItemsError: "You can add maximum 5 items per order.",
         fillProductError: "Please select product, amount and unit.",
         otherProductNoteRequired: "For 'Other' option, please describe in detail which product you need in the Additional Notes section.",
-        otherProductNotAdded: "'Other' product has not been added to the basket yet! Please click 'Add Product' button first."
+        otherProductNotAdded: "'Other' product has not been added to the basket yet! Please click 'Add Product' button first.",
+        savedAddresses: "Saved Addresses",
+        newAddress: "Enter New Address",
+        contactInfo: "Contact Information",
+        clearSelection: "Clear Selection",
+        productLabel: "Product",
+        quantityLabel: "Quantity",
+        actionLabel: "Action",
+        industrialGas: "Industrial Gas",
+        delete: "Delete",
+        additionalInfo: "Additional Information",
+        selectOption: "Select"
     }
 };
 
@@ -517,13 +541,13 @@ export default function SiparisPage() {
                     {/* Saved Addresses Logic */}
                     {savedAddresses.length > 0 && user && (
                         <div className="mb-6">
-                            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">Kayıtlı Adreslerim</label>
+                            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">{t.savedAddresses}</label>
                             <select
                                 value={selectedAddressId}
                                 onChange={handleAddressChange}
                                 className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base"
                             >
-                                <option value="custom">Yeni Adres Gir</option>
+                                <option value="custom">{t.newAddress}</option>
                                 {savedAddresses.map(addr => (
                                     <option key={addr.id} value={addr.id}>{addr.title} - {addr.address.substring(0, 30)}...</option>
                                 ))}
@@ -534,7 +558,7 @@ export default function SiparisPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* 1. Contact Info */}
                         <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">İletişim Bilgileri</h3>
+                            <h3 className="text-xl font-bold text-secondary dark:text-white border-b pb-2">{t.contactInfo}</h3>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <input type="text" name="name" value={contactData.name} onChange={handleContactChange} placeholder={settings.order_form_name_label || t.name} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
                                 <input type="text" name="company" value={contactData.company} onChange={handleContactChange} placeholder={settings.order_form_company_label || t.company} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
@@ -542,7 +566,7 @@ export default function SiparisPage() {
                                 <input type="tel" name="phone" value={contactData.phone} onChange={handleContactChange} placeholder={settings.order_form_phone_label || t.phone} required className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" />
                                 <div className="md:col-span-2">
                                     <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">{settings.order_form_address_label || t.address}</label>
-                                    <textarea name="address" value={contactData.address} onChange={e => { handleContactChange(e); setSelectedAddressId("custom"); }} required rows={2} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" placeholder="Adres giriniz..." />
+                                    <textarea name="address" value={contactData.address} onChange={e => { handleContactChange(e); setSelectedAddressId("custom"); }} required rows={2} className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-base" placeholder={t.addressPlaceholder} />
                                 </div>
                             </div>
                         </div>
@@ -616,7 +640,7 @@ export default function SiparisPage() {
                                         onClick={() => setBasket([])}
                                         className="text-sm text-red-500 hover:text-red-700 font-bold hover:underline transition-colors"
                                     >
-                                        Seçimi Temizle
+                                        {t.clearSelection}
                                     </button>
                                 </div>
                             )}
@@ -627,9 +651,9 @@ export default function SiparisPage() {
                                     {basket.length > 0 && (
                                         <div className="hidden sm:grid grid-cols-12 gap-4 p-3 bg-gray-100 dark:bg-white/10 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
                                             <div className="col-span-1 text-center">#</div>
-                                            <div className="col-span-5">Ürün</div>
-                                            <div className="col-span-4 text-center">Miktar</div>
-                                            <div className="col-span-2 text-right">İşlem</div>
+                                            <div className="col-span-5">{t.productLabel}</div>
+                                            <div className="col-span-4 text-center">{t.quantityLabel}</div>
+                                            <div className="col-span-2 text-right">{t.actionLabel}</div>
                                         </div>
                                     )}
 
@@ -647,7 +671,7 @@ export default function SiparisPage() {
                                                         </div>
                                                         <div className="flex-1">
                                                             <h4 className="font-bold text-lg sm:text-base text-secondary dark:text-white">{item.product}</h4>
-                                                            <span className="text-xs text-gray-500 hidden sm:inline-block">Endüstriyel Gaz</span>
+                                                            <span className="text-xs text-gray-500 hidden sm:inline-block">{t.industrialGas}</span>
                                                         </div>
                                                     </div>
 
@@ -685,7 +709,7 @@ export default function SiparisPage() {
                                                             type="button"
                                                             onClick={() => removeFromBasket(item.id)}
                                                             className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-full transition-colors"
-                                                            title="Sil"
+                                                            title={t.delete}
                                                         >
                                                             <span className="material-symbols-outlined text-xl">delete</span>
                                                         </button>
@@ -731,7 +755,7 @@ export default function SiparisPage() {
                                                                     required={field.required}
                                                                     onChange={(e) => setCustomValues(prev => ({ ...prev, [field.label]: e.target.value }))}
                                                                 >
-                                                                    <option value="">Seçiniz</option>
+                                                                    <option value="">{t.selectOption}</option>
                                                                     {field.options?.map((opt: string, i: number) => (
                                                                         <option key={i} value={opt}>{opt}</option>
                                                                     ))}
@@ -748,7 +772,7 @@ export default function SiparisPage() {
                                                         </div>
                                                     );
                                                 })}
-                                            </div>
+                                            </div >
                                         </>
                                     );
                                 } catch { return null; }
@@ -778,7 +802,7 @@ export default function SiparisPage() {
                         </button>
                     </form>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
