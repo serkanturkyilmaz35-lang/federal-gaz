@@ -4,6 +4,22 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { QueryTypes } from 'sequelize';
 
+// Eksik kolon ekleme yardımcı fonksiyonu
+async function addColumnIfMissing(db: any, existingColumns: string[], columnName: string, columnDef: string): Promise<string> {
+    if (!existingColumns.includes(columnName)) {
+        try {
+            await db.query(`ALTER TABLE mailing_campaigns ADD COLUMN ${columnName} ${columnDef}`);
+            return `${columnName}(eklendi)`;
+        } catch (e: any) {
+            if (e.original?.errno === 1060) {
+                return `${columnName}(zaten var)`;
+            }
+            return `${columnName}(HATA: ${e.message})`;
+        }
+    }
+    return `${columnName}(var)`;
+}
+
 export async function POST() {
     try {
         const db = getDb();
@@ -12,24 +28,23 @@ export async function POST() {
         const columns: any[] = await db.query("SHOW COLUMNS FROM mailing_campaigns", { type: QueryTypes.SELECT });
         const existingColumns = columns.map((c: any) => c.Field);
 
-        let message = `Tablo kolonları: ${existingColumns.join(', ')}. `;
-        let actionTaken = '';
+        const results: string[] = [];
 
-        // 2. templateSlug kontrolü ve ekleme
-        const hasTemplateSlug = existingColumns.includes('templateSlug');
+        // 2. Tüm eksik kolonları ekle
+        results.push(await addColumnIfMissing(db, existingColumns, 'templateSlug', "VARCHAR(255) NOT NULL DEFAULT 'modern'"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'recipientType', "ENUM('all', 'members', 'guests', 'custom') DEFAULT 'all'"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'recipientIds', "TEXT"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'status', "ENUM('draft', 'scheduled', 'sending', 'sent', 'failed', 'cancelled') DEFAULT 'draft'"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'scheduledAt', "DATETIME"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'sentAt', "DATETIME"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'recipientCount', "INT DEFAULT 0"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'sentCount', "INT DEFAULT 0"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'failedCount', "INT DEFAULT 0"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'openCount', "INT DEFAULT 0"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'clickCount', "INT DEFAULT 0"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'errorLog', "LONGTEXT"));
 
-        if (!hasTemplateSlug) {
-            try {
-                await db.query("ALTER TABLE mailing_campaigns ADD COLUMN templateSlug VARCHAR(255) NOT NULL DEFAULT 'modern'");
-                actionTaken = "Kolon eklendi (templateSlug).";
-            } catch (e: any) {
-                actionTaken = `Kolon ekleme hatası: ${e.message}`;
-            }
-        } else {
-            actionTaken = "Kolon zaten var.";
-        }
-
-        // 3. MailingLogs
+        // 3. MailingLogs tablosunu oluştur
         try {
             await db.query(`
                 CREATE TABLE IF NOT EXISTS mailing_logs (
@@ -46,13 +61,14 @@ export async function POST() {
                     updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
             `);
+            results.push('mailing_logs(tablo hazır)');
         } catch (e: any) {
-            console.error('MailingLogs Create Error:', e);
+            results.push(`mailing_logs(HATA: ${e.message})`);
         }
 
         return NextResponse.json({
             success: true,
-            message: `${message} ${actionTaken}`
+            message: `Veritabanı güncellendi. Sonuçlar: ${results.join(', ')}`
         }, { status: 200 });
 
     } catch (error) {
