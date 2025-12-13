@@ -486,7 +486,7 @@ export default function MailingPage() {
 
                 const sendData = await sendRes.json();
                 if (sendRes.ok) {
-                    const sentCount = sendData.sentCount || 0;
+                    const sentCount = sendData.stats?.sent || sendData.sentCount || 0;
                     setSuccessMessage(`✅ Kampanya başarıyla gönderildi! (${sentCount} alıcıya)`);
                 } else {
                     setErrorMessage(`Kampanya kaydedildi ancak gönderilemedi: ${sendData.error || 'Bilinmeyen hata'}`);
@@ -535,7 +535,7 @@ export default function MailingPage() {
 
             const data = await res.json();
             if (res.ok) {
-                const sentCount = data.sentCount || 0;
+                const sentCount = data.stats?.sent || data.sentCount || 0;
                 setSuccessMessage(`✅ Kampanya başarıyla gönderildi! (${sentCount} alıcıya)`);
                 fetchData();
                 setTimeout(() => setSuccessMessage(""), 4000);
