@@ -911,14 +911,16 @@ export default function MailingPage() {
                     <table className="w-full">
                         <thead className="bg-[#1c2127] border-b border-[#3b4754] sticky top-0">
                             <tr>
-                                <th className="px-3 py-2 w-10">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedCampaigns.length === filteredCampaigns.length && filteredCampaigns.length > 0}
-                                        onChange={toggleAllCampaigns}
-                                        className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded"
-                                    />
-                                </th>
+                                {activeTab !== 'all' && (
+                                    <th className="px-3 py-2 w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCampaigns.length === filteredCampaigns.length && filteredCampaigns.length > 0}
+                                            onChange={toggleAllCampaigns}
+                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded"
+                                        />
+                                    </th>
+                                )}
                                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.campaignName}</th>
                                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.status}</th>
                                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.recipients}</th>
@@ -940,14 +942,16 @@ export default function MailingPage() {
                             )}
                             {filteredCampaigns.map((campaign) => (
                                 <tr key={campaign.id} className={`hover:bg-white/5 transition-colors ${selectedCampaigns.includes(campaign.id) ? 'bg-[#137fec]/5' : ''}`}>
-                                    <td className="px-3 py-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedCampaigns.includes(campaign.id)}
-                                            onChange={() => toggleCampaignSelection(campaign.id)}
-                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded"
-                                        />
-                                    </td>
+                                    {activeTab !== 'all' && (
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCampaigns.includes(campaign.id)}
+                                                onChange={() => toggleCampaignSelection(campaign.id)}
+                                                className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded"
+                                            />
+                                        </td>
+                                    )}
                                     <td className="px-3 py-2">
                                         <p className="font-medium text-white text-sm">{campaign.name}</p>
                                         <p className="text-xs text-gray-500 truncate max-w-[200px]">{campaign.subject}</p>
@@ -963,27 +967,29 @@ export default function MailingPage() {
                                     <td className="px-3 py-2 text-xs text-gray-400">
                                         {new Date(campaign.createdAt).toLocaleDateString(language === 'TR' ? 'tr-TR' : 'en-US')}
                                     </td>
-                                    <td className="px-3 py-2">
-                                        <div className="flex gap-0.5 justify-end">
-                                            {campaign.status === 'draft' && (
-                                                <button onClick={() => handleSend(campaign.id)} className="p-1.5 text-green-400 hover:text-green-300" title={t.send}>
-                                                    <span className="material-symbols-outlined text-lg">send</span>
-                                                </button>
-                                            )}
-                                            {campaign.failedCount > 0 && (
-                                                <button onClick={() => showErrors(campaign)} className="p-1.5 text-yellow-400 hover:text-yellow-300" title={t.viewErrors}>
-                                                    <span className="material-symbols-outlined text-lg">warning</span>
-                                                </button>
-                                            )}
-                                            {activeTab !== 'all' && (
+                                    <td className="px-3 py-2 text-right">
+                                        {activeTab !== 'all' ? (
+                                            <div className="flex items-center justify-end gap-1">
+                                                {campaign.status === 'draft' && (
+                                                    <button onClick={() => handleSend(campaign.id)} className="p-1.5 text-green-400 hover:text-green-300" title={t.send}>
+                                                        <span className="material-symbols-outlined text-lg">send</span>
+                                                    </button>
+                                                )}
+                                                {campaign.failedCount > 0 && (
+                                                    <button onClick={() => showErrors(campaign)} className="p-1.5 text-yellow-400 hover:text-yellow-300" title={t.viewErrors}>
+                                                        <span className="material-symbols-outlined text-lg">warning</span>
+                                                    </button>
+                                                )}
                                                 <button onClick={() => handleEdit(campaign)} className="p-1.5 text-[#137fec] hover:text-[#137fec]/80" title={t.edit}>
                                                     <span className="material-symbols-outlined text-lg">edit</span>
                                                 </button>
-                                            )}
-                                            <button onClick={() => handleDelete(campaign.id)} className="p-1.5 text-red-400 hover:text-red-300" title={t.delete}>
-                                                <span className="material-symbols-outlined text-lg">delete</span>
-                                            </button>
-                                        </div>
+                                                <button onClick={() => handleDelete(campaign.id)} className="p-1.5 text-red-400 hover:text-red-300" title={t.delete}>
+                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-gray-500">Salt okunur</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -1038,7 +1044,7 @@ export default function MailingPage() {
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.recipientType}</label>
                                 <div className="flex flex-wrap gap-4 mb-3">
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all', recipientIds: [], externalRecipients: [] })}
+                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all' })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.allMembers} ({subscriberCount})</span>
                                         {form.recipientType === 'all' && (form.segment !== 'none' || form.recipientLimit || form.minOrders || form.minAmount) && (
@@ -1094,7 +1100,7 @@ export default function MailingPage() {
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" checked={form.recipientType === 'external'}
                                             onChange={() => {
-                                                setForm({ ...form, recipientType: 'external', recipientIds: [] });
+                                                setForm({ ...form, recipientType: 'external' });
                                             }}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.externalRecipients}</span>
