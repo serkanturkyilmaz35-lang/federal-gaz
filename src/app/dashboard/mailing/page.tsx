@@ -1142,7 +1142,7 @@ export default function MailingPage() {
                                             </div>
                                         </div>
                                         {/* Recipient List */}
-                                        <div className="max-h-[500px] overflow-y-auto p-2">
+                                        <div className="max-h-[600px] overflow-y-auto p-2">
                                             {recipients
                                                 .filter(r => {
                                                     const search = (form.recipientSearch || '').toLowerCase();
@@ -1208,7 +1208,7 @@ export default function MailingPage() {
                                                         Tümünü Sil
                                                     </button>
                                                 </div>
-                                                <div className="max-h-[400px] overflow-y-auto space-y-1">
+                                                <div className="max-h-[600px] overflow-y-auto space-y-1">
                                                     {form.externalRecipients.map((recipient, index) => (
                                                         <div key={index} className="flex items-center justify-between bg-[#1c2127] rounded px-3 py-2">
                                                             <div className="flex-1 min-w-0">
