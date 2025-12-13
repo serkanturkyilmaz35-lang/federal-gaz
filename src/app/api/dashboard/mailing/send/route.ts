@@ -62,6 +62,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'No recipients found' }, { status: 400 });
         }
 
+        // Debug log - track what's being sent
+        console.log('[Mailing Send] Campaign:', campaignId, 'Type:', campaign.recipientType, 'Recipients:', recipients.length);
+
         // Update campaign status to sending
         await campaign.update({
             status: 'sending',
