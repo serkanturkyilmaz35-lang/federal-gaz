@@ -232,6 +232,7 @@ const emptyForm = {
     templateSlug: 'modern',
     recipientType: 'all',
     recipientIds: [] as number[],
+    recipientSearch: '',
     scheduledAt: '',
     // Segmentation
     segment: 'none' as string,
@@ -283,6 +284,7 @@ export default function MailingPage() {
     const [saving, setSaving] = useState(false);
     const [sending, setSending] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
     // Error modal
     const [errorModalOpen, setErrorModalOpen] = useState(false);
@@ -385,6 +387,7 @@ export default function MailingPage() {
             templateSlug: campaign.templateSlug || 'modern',
             recipientType: campaign.recipientType || 'all',
             recipientIds: campaign.recipientIds ? JSON.parse(campaign.recipientIds) : [],
+            recipientSearch: '',
             scheduledAt: campaign.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : '',
             segment: 'none',
             recipientLimit: '',
@@ -450,21 +453,26 @@ export default function MailingPage() {
                     body: JSON.stringify({ campaignId: data.campaign.id }),
                 });
 
+                const sendData = await sendRes.json();
                 if (sendRes.ok) {
-                    setSuccessMessage(t.campaignSent);
+                    const sentCount = sendData.sentCount || 0;
+                    setSuccessMessage(`✅ Kampanya başarıyla gönderildi! (${sentCount} alıcıya)`);
                 } else {
-                    const sendData = await sendRes.json();
-                    alert(`Kampanya kaydedildi ancak gönderilemedi: ${sendData.error || 'Bilinmeyen hata'}`);
+                    setErrorMessage(`Kampanya kaydedildi ancak gönderilemedi: ${sendData.error || 'Bilinmeyen hata'}`);
+                    setTimeout(() => setErrorMessage(""), 5000);
                 }
                 setSending(false);
             } else if (res.ok) {
-                setSuccessMessage(isNew ? t.campaignAdded : t.campaignUpdated);
+                setSuccessMessage(isNew ? '✅ Kampanya taslak olarak kaydedildi!' : '✅ Kampanya güncellendi!');
             } else {
                 // Show detailed error and offer sync
-                const errorMessage = data.error || 'Bilinmeyen hata';
+                const errMsg = data.error || 'Bilinmeyen hata';
                 const details = data.details ? JSON.stringify(data.details) : '';
 
-                if (confirm(`Hatayla karşılaşıldı: ${errorMessage}\n\nDetay: ${details}\n\nVeritabanını güncellemek ve onarmak ister misiniz? (Yeni özellikler için gerekli)`)) {
+                setErrorMessage(`Hata: ${errMsg}`);
+                setTimeout(() => setErrorMessage(""), 5000);
+
+                if (confirm(`Veritabanı hatası oluştu.\n\nVeritabanını güncellemek ve onarmak ister misiniz?`)) {
                     await syncDatabase();
                 }
             }
@@ -472,13 +480,12 @@ export default function MailingPage() {
             if (res.ok) {
                 setIsModalOpen(false);
                 fetchData();
-                setTimeout(() => setSuccessMessage(""), 3000);
+                setTimeout(() => setSuccessMessage(""), 4000);
             }
         } catch (error) {
             console.error('Failed to save campaign:', error);
-            if (confirm('Beklenmeyen bir hata oluştu. Veritabanını onarmayı denemek ister misiniz?')) {
-                await syncDatabase();
-            }
+            setErrorMessage('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
+            setTimeout(() => setErrorMessage(""), 5000);
         } finally {
             setSaving(false);
         }
@@ -488,19 +495,29 @@ export default function MailingPage() {
         if (!confirm(t.confirmSend)) return;
 
         try {
+            setSending(true);
             const res = await fetch('/api/dashboard/mailing/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ campaignId }),
             });
 
+            const data = await res.json();
             if (res.ok) {
-                setSuccessMessage(t.campaignSent);
+                const sentCount = data.sentCount || 0;
+                setSuccessMessage(`✅ Kampanya başarıyla gönderildi! (${sentCount} alıcıya)`);
                 fetchData();
-                setTimeout(() => setSuccessMessage(""), 3000);
+                setTimeout(() => setSuccessMessage(""), 4000);
+            } else {
+                setErrorMessage(`Gönderim başarısız: ${data.error || 'Bilinmeyen hata'}`);
+                setTimeout(() => setErrorMessage(""), 5000);
             }
         } catch (error) {
             console.error('Failed to send campaign:', error);
+            setErrorMessage('Kampanya gönderilirken bir hata oluştu.');
+            setTimeout(() => setErrorMessage(""), 5000);
+        } finally {
+            setSending(false);
         }
     };
 
@@ -619,6 +636,14 @@ export default function MailingPage() {
                 <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg flex items-center gap-2">
                     <span className="material-symbols-outlined">check_circle</span>
                     {successMessage}
+                </div>
+            )}
+
+            {/* Error Message */}
+            {errorMessage && (
+                <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined">error</span>
+                    {errorMessage}
                 </div>
             )}
 
@@ -808,7 +833,7 @@ export default function MailingPage() {
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.recipientType}</label>
                                 <div className="flex gap-4 mb-3">
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all' })}
+                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all', recipientIds: [] })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.allMembers} ({subscriberCount})</span>
                                     </label>
@@ -816,24 +841,94 @@ export default function MailingPage() {
                                         <input type="radio" checked={form.recipientType === 'custom'} onChange={() => setForm({ ...form, recipientType: 'custom' })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.selectMembers}</span>
+                                        {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
+                                            <span className="bg-[#137fec] text-white text-xs px-2 py-0.5 rounded-full">{form.recipientIds.length} seçili</span>
+                                        )}
                                     </label>
                                 </div>
 
                                 {form.recipientType === 'custom' && (
-                                    <div className="max-h-40 overflow-y-auto bg-[#111418] border border-[#3b4754] rounded-lg p-3">
-                                        {recipients.map((r) => (
-                                            <label key={r.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-white/5 px-2 rounded">
-                                                <input type="checkbox" checked={form.recipientIds.includes(r.id)} onChange={() => toggleRecipient(r.id)}
-                                                    className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded" />
-                                                <span className="text-white text-sm">{r.name}</span>
-                                                <span className="text-gray-500 text-xs">({r.email})</span>
-                                            </label>
-                                        ))}
-                                        {recipients.length === 0 && <p className="text-gray-500 text-sm">Üye bulunamadı</p>}
+                                    <div className="bg-[#111418] border border-[#3b4754] rounded-lg overflow-hidden">
+                                        {/* Search and Bulk Actions */}
+                                        <div className="p-3 border-b border-[#3b4754] space-y-2">
+                                            {/* Search Input */}
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Üye ara (isim veya e-posta)..."
+                                                    value={form.recipientSearch || ''}
+                                                    onChange={(e) => setForm({ ...form, recipientSearch: e.target.value })}
+                                                    className="w-full pl-10 pr-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                                />
+                                            </div>
+                                            {/* Bulk Actions */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const filteredIds = recipients
+                                                                .filter(r => {
+                                                                    const search = (form.recipientSearch || '').toLowerCase();
+                                                                    return !search || r.name.toLowerCase().includes(search) || r.email.toLowerCase().includes(search);
+                                                                })
+                                                                .map(r => r.id);
+                                                            setForm({ ...form, recipientIds: [...new Set([...form.recipientIds, ...filteredIds])] });
+                                                        }}
+                                                        className="text-xs px-3 py-1.5 bg-[#137fec]/20 text-[#137fec] rounded-lg hover:bg-[#137fec]/30 flex items-center gap-1"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">check_box</span>
+                                                        Tümünü Seç
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setForm({ ...form, recipientIds: [] })}
+                                                        className="text-xs px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 flex items-center gap-1"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">check_box_outline_blank</span>
+                                                        Seçimi Temizle
+                                                    </button>
+                                                </div>
+                                                <span className="text-sm text-gray-400">
+                                                    {form.recipientIds.length > 0 ? (
+                                                        <span className="text-[#137fec] font-medium">{form.recipientIds.length} / {recipients.length} seçili</span>
+                                                    ) : (
+                                                        <span>{recipients.length} üye</span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {/* Recipient List */}
+                                        <div className="max-h-48 overflow-y-auto p-2">
+                                            {recipients
+                                                .filter(r => {
+                                                    const search = (form.recipientSearch || '').toLowerCase();
+                                                    return !search || r.name.toLowerCase().includes(search) || r.email.toLowerCase().includes(search);
+                                                })
+                                                .map((r) => (
+                                                    <label key={r.id} className={`flex items-center gap-2 py-2 cursor-pointer hover:bg-white/5 px-3 rounded-lg transition-colors ${form.recipientIds.includes(r.id) ? 'bg-[#137fec]/10' : ''}`}>
+                                                        <input type="checkbox" checked={form.recipientIds.includes(r.id)} onChange={() => toggleRecipient(r.id)}
+                                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-white text-sm font-medium">{r.name}</span>
+                                                            <span className="text-gray-500 text-xs ml-2 truncate">({r.email})</span>
+                                                        </div>
+                                                        {form.recipientIds.includes(r.id) && (
+                                                            <span className="material-symbols-outlined text-[#137fec] text-sm">check_circle</span>
+                                                        )}
+                                                    </label>
+                                                ))}
+                                            {recipients.filter(r => {
+                                                const search = (form.recipientSearch || '').toLowerCase();
+                                                return !search || r.name.toLowerCase().includes(search) || r.email.toLowerCase().includes(search);
+                                            }).length === 0 && (
+                                                    <p className="text-gray-500 text-sm text-center py-4">
+                                                        {form.recipientSearch ? 'Aramayla eşleşen üye bulunamadı' : 'Üye bulunamadı'}
+                                                    </p>
+                                                )}
+                                        </div>
                                     </div>
-                                )}
-                                {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
-                                    <p className="text-sm text-[#137fec] mt-2">{form.recipientIds.length} {t.selectedCount}</p>
                                 )}
 
                                 {/* Segmentation Options - Show when "All Members" is selected */}
