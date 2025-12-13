@@ -35,7 +35,27 @@ export async function POST(req: Request) {
         // Get recipients based on recipientType
         let recipients: { id: number | undefined; name: string; email: string }[] = [];
 
-        if ((campaign.recipientType as string) === 'external' && externalRecipients && externalRecipients.length > 0) {
+        if ((campaign.recipientType as string) === 'mixed') {
+            // Mixed - combine both custom members and external recipients
+            // Get custom members if any
+            if (campaign.recipientIds) {
+                const ids = JSON.parse(campaign.recipientIds) as number[];
+                const users = await User.findAll({
+                    where: { id: ids },
+                    attributes: ['id', 'name', 'email'],
+                });
+                recipients = users.map(u => ({ id: u.id, name: u.name, email: u.email }));
+            }
+            // Add external recipients if any
+            if (externalRecipients && externalRecipients.length > 0) {
+                const externals = externalRecipients.map((r: { name: string; email: string }) => ({
+                    id: undefined,
+                    name: r.name,
+                    email: r.email
+                }));
+                recipients = [...recipients, ...externals];
+            }
+        } else if ((campaign.recipientType as string) === 'external' && externalRecipients && externalRecipients.length > 0) {
             // External recipients from Excel/CSV - no database ID
             recipients = externalRecipients.map((r: { name: string; email: string }) => ({
                 id: undefined,

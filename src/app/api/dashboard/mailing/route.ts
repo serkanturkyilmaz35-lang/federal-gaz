@@ -67,7 +67,10 @@ export async function POST(req: Request) {
 
         // Calculate recipient count based on type
         let recipientCount = 0;
-        if (recipientType === 'external' && externalCount > 0) {
+        if (recipientType === 'mixed') {
+            // Combined: custom members + external recipients
+            recipientCount = parsedRecipientIds.length + externalCount;
+        } else if (recipientType === 'external' && externalCount > 0) {
             recipientCount = externalCount;
         } else if (recipientType === 'custom' && parsedRecipientIds.length > 0) {
             recipientCount = parsedRecipientIds.length;
