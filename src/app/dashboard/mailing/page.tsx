@@ -78,6 +78,14 @@ const translations = {
         recipientType: "Alıcı Tipi",
         allMembers: "Tüm Üyeler",
         selectMembers: "Belirli Üyeler",
+        externalRecipients: "Harici Kişiler",
+        importExcel: "Excel/CSV Yükle",
+        externalRecipientsDesc: "Üye olmayan kişilere toplu mail gönderin",
+        dragDropFile: "Dosyayı buraya sürükleyin veya tıklayın",
+        supportedFormats: "Desteklenen formatlar: .xlsx, .xls, .csv",
+        importedContacts: "İçe Aktarılan Kişiler",
+        removeFile: "Dosyayı Kaldır",
+        invalidEmail: "Geçersiz email",
         selectedCount: "seçili",
         scheduleAt: "Zamanlama (Opsiyonel)",
         cancel: "İptal",
@@ -169,6 +177,14 @@ const translations = {
         recipientType: "Recipient Type",
         allMembers: "All Members",
         selectMembers: "Select Members",
+        externalRecipients: "External Contacts",
+        importExcel: "Import Excel/CSV",
+        externalRecipientsDesc: "Send bulk email to non-members",
+        dragDropFile: "Drag & drop file here or click to browse",
+        supportedFormats: "Supported formats: .xlsx, .xls, .csv",
+        importedContacts: "Imported Contacts",
+        removeFile: "Remove File",
+        invalidEmail: "Invalid email",
         selectedCount: "selected",
         scheduleAt: "Schedule (Optional)",
         cancel: "Cancel",
@@ -239,6 +255,8 @@ const emptyForm = {
     recipientLimit: '' as string,
     minOrders: '' as string,
     minAmount: '' as string,
+    // External recipients from Excel/CSV
+    externalRecipients: [] as { name: string; email: string }[],
 };
 
 const defaultTemplates: any[] = [
@@ -397,6 +415,7 @@ export default function MailingPage() {
             recipientLimit: '',
             minOrders: '',
             minAmount: '',
+            externalRecipients: [],
         });
         setEditingId(campaign.id);
         setIsNew(false);
@@ -451,10 +470,17 @@ export default function MailingPage() {
             if (res.ok && sendNow && data.campaign) {
                 // Send immediately
                 setSending(true);
+                const sendBody: { campaignId: number; externalRecipients?: { name: string; email: string }[] } = {
+                    campaignId: data.campaign.id
+                };
+                // Include external recipients if that's the recipient type
+                if (form.recipientType === 'external' && form.externalRecipients.length > 0) {
+                    sendBody.externalRecipients = form.externalRecipients;
+                }
                 const sendRes = await fetch('/api/dashboard/mailing/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ campaignId: data.campaign.id }),
+                    body: JSON.stringify(sendBody),
                 });
 
                 const sendData = await sendRes.json();
@@ -573,6 +599,83 @@ export default function MailingPage() {
         } else {
             setSelectedCampaigns(filteredCampaigns.map(c => c.id));
         }
+    };
+
+    // Handle Excel/CSV file upload for external recipients
+    const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const XLSX = await import('xlsx');
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                try {
+                    const data = event.target?.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+                    // Extract name and email from each row
+                    const importedRecipients: { name: string; email: string }[] = [];
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                    jsonData.forEach((row: any) => {
+                        // Try different column names for name
+                        const name = row['name'] || row['Name'] || row['İsim'] || row['isim'] ||
+                            row['Ad'] || row['ad'] || row['Ad Soyad'] || row['ad soyad'] ||
+                            row['Adı'] || row['Adı Soyadı'] || 'İsimsiz';
+
+                        // Try different column names for email
+                        const email = row['email'] || row['Email'] || row['E-mail'] || row['e-mail'] ||
+                            row['E-posta'] || row['e-posta'] || row['Mail'] || row['mail'];
+
+                        if (email && emailRegex.test(email.toString().trim())) {
+                            importedRecipients.push({
+                                name: name.toString().trim(),
+                                email: email.toString().trim().toLowerCase()
+                            });
+                        }
+                    });
+
+                    // Remove duplicates by email
+                    const uniqueRecipients = importedRecipients.filter(
+                        (recipient, index, self) =>
+                            index === self.findIndex(r => r.email === recipient.email)
+                    );
+
+                    if (uniqueRecipients.length === 0) {
+                        setErrorMessage('Dosyada geçerli email adresi bulunamadı. Lütfen "email" veya "e-posta" sütunu olduğundan emin olun.');
+                        setTimeout(() => setErrorMessage(""), 5000);
+                        return;
+                    }
+
+                    setForm(prev => ({ ...prev, externalRecipients: uniqueRecipients }));
+                    setSuccessMessage(`✅ ${uniqueRecipients.length} kişi başarıyla içe aktarıldı!`);
+                    setTimeout(() => setSuccessMessage(""), 4000);
+                } catch (parseError) {
+                    console.error('Error parsing Excel:', parseError);
+                    setErrorMessage('Dosya okunamadı. Lütfen geçerli bir Excel/CSV dosyası yükleyin.');
+                    setTimeout(() => setErrorMessage(""), 5000);
+                }
+            };
+
+            reader.onerror = () => {
+                setErrorMessage('Dosya yüklenirken hata oluştu.');
+                setTimeout(() => setErrorMessage(""), 5000);
+            };
+
+            reader.readAsBinaryString(file);
+        } catch (importError) {
+            console.error('Error importing xlsx:', importError);
+            setErrorMessage('Excel kütüphanesi yüklenemedi.');
+            setTimeout(() => setErrorMessage(""), 5000);
+        }
+
+        // Reset input
+        e.target.value = '';
     };
 
     const showErrors = (campaign: MailingCampaign) => {
@@ -918,9 +1021,9 @@ export default function MailingPage() {
                             {/* Recipient Selection */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.recipientType}</label>
-                                <div className="flex gap-4 mb-3">
+                                <div className="flex flex-wrap gap-4 mb-3">
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all', recipientIds: [] })}
+                                        <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all', recipientIds: [], externalRecipients: [] })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.allMembers} ({subscriberCount})</span>
                                         {form.recipientType === 'all' && (form.segment !== 'none' || form.recipientLimit || form.minOrders || form.minAmount) && (
@@ -930,13 +1033,26 @@ export default function MailingPage() {
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" checked={form.recipientType === 'custom'}
                                             onChange={() => {
-                                                // Just switch to custom mode - don't auto-select
-                                                setForm({ ...form, recipientType: 'custom' });
+                                                // If segmentation filters were active, pre-select all members
+                                                const hasActiveFilters = form.segment !== 'none' || form.recipientLimit || form.minOrders || form.minAmount;
+                                                const preSelectedIds = hasActiveFilters ? recipients.map(r => r.id) : [];
+                                                setForm({ ...form, recipientType: 'custom', externalRecipients: [], recipientIds: preSelectedIds });
                                             }}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.selectMembers}</span>
                                         {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
                                             <span className="bg-[#137fec] text-white text-xs px-2 py-0.5 rounded-full">{form.recipientIds.length} seçili</span>
+                                        )}
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" checked={form.recipientType === 'external'}
+                                            onChange={() => {
+                                                setForm({ ...form, recipientType: 'external', recipientIds: [] });
+                                            }}
+                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
+                                        <span className="text-white">{t.externalRecipients}</span>
+                                        {form.recipientType === 'external' && form.externalRecipients.length > 0 && (
+                                            <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">{form.externalRecipients.length} kişi</span>
                                         )}
                                     </label>
                                 </div>
@@ -1022,6 +1138,74 @@ export default function MailingPage() {
                                                     </p>
                                                 )}
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* External Recipients - File Upload */}
+                                {form.recipientType === 'external' && (
+                                    <div className="bg-[#111418] border border-[#3b4754] rounded-lg overflow-hidden">
+                                        {/* File Upload Area */}
+                                        <div className="p-4 border-b border-[#3b4754]">
+                                            <p className="text-xs text-gray-400 mb-3">{t.externalRecipientsDesc}</p>
+                                            <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#3b4754] rounded-lg p-6 cursor-pointer hover:border-[#137fec] transition-colors bg-[#1c2127]">
+                                                <span className="material-symbols-outlined text-4xl text-gray-500 mb-2">upload_file</span>
+                                                <span className="text-gray-400 text-sm">{t.dragDropFile}</span>
+                                                <span className="text-gray-500 text-xs mt-1">{t.supportedFormats}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".xlsx,.xls,.csv"
+                                                    onChange={handleExcelUpload}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </div>
+
+                                        {/* Imported Contacts List */}
+                                        {form.externalRecipients.length > 0 && (
+                                            <div className="p-3">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-sm text-gray-300 font-medium">
+                                                        {t.importedContacts} ({form.externalRecipients.length})
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setForm(prev => ({ ...prev, externalRecipients: [] }))}
+                                                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                                        Tümünü Sil
+                                                    </button>
+                                                </div>
+                                                <div className="max-h-[250px] overflow-y-auto space-y-1">
+                                                    {form.externalRecipients.map((recipient, index) => (
+                                                        <div key={index} className="flex items-center justify-between bg-[#1c2127] rounded px-3 py-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <span className="text-white text-sm">{recipient.name}</span>
+                                                                <span className="text-gray-500 text-xs ml-2">({recipient.email})</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setForm(prev => ({
+                                                                        ...prev,
+                                                                        externalRecipients: prev.externalRecipients.filter((_, i) => i !== index)
+                                                                    }));
+                                                                }}
+                                                                className="text-gray-500 hover:text-red-400 ml-2"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm">close</span>
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {form.externalRecipients.length === 0 && (
+                                            <div className="p-4 text-center">
+                                                <p className="text-gray-500 text-sm">Henüz kişi eklenmedi. Excel/CSV dosyası yükleyin.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

@@ -13,7 +13,7 @@ interface SendResult {
 // POST - Send campaign to recipients
 export async function POST(req: Request) {
     try {
-        const { campaignId } = await req.json();
+        const { campaignId, externalRecipients } = await req.json();
 
         if (!campaignId) {
             return NextResponse.json({ error: 'Campaign ID is required' }, { status: 400 });
@@ -33,9 +33,16 @@ export async function POST(req: Request) {
         }
 
         // Get recipients based on recipientType
-        let recipients: { id: number; name: string; email: string }[] = [];
+        let recipients: { id: number | undefined; name: string; email: string }[] = [];
 
-        if (campaign.recipientType === 'custom' && campaign.recipientIds) {
+        if ((campaign.recipientType as string) === 'external' && externalRecipients && externalRecipients.length > 0) {
+            // External recipients from Excel/CSV - no database ID
+            recipients = externalRecipients.map((r: { name: string; email: string }) => ({
+                id: undefined,
+                name: r.name,
+                email: r.email
+            }));
+        } else if (campaign.recipientType === 'custom' && campaign.recipientIds) {
             // Custom selection - get specific users
             const ids = JSON.parse(campaign.recipientIds) as number[];
             const users = await User.findAll({
