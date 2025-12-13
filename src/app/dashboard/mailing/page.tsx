@@ -1032,11 +1032,43 @@ export default function MailingPage() {
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" checked={form.recipientType === 'custom'}
-                                            onChange={() => {
-                                                // If segmentation filters were active, pre-select all members
+                                            onChange={async () => {
+                                                // If segmentation filters were active, fetch filtered members from API
                                                 const hasActiveFilters = form.segment !== 'none' || form.recipientLimit || form.minOrders || form.minAmount;
-                                                const preSelectedIds = hasActiveFilters ? recipients.map(r => r.id) : [];
-                                                setForm({ ...form, recipientType: 'custom', externalRecipients: [], recipientIds: preSelectedIds });
+
+                                                if (hasActiveFilters) {
+                                                    try {
+                                                        // Build query params from current filters
+                                                        const params = new URLSearchParams();
+                                                        if (form.segment && form.segment !== 'none') params.append('segment', form.segment);
+                                                        if (form.recipientLimit) params.append('limit', form.recipientLimit);
+                                                        if (form.minOrders) params.append('minOrders', form.minOrders);
+                                                        if (form.minAmount) params.append('minAmount', form.minAmount);
+
+                                                        const res = await fetch(`/api/dashboard/mailing/recipients?${params.toString()}`);
+                                                        if (res.ok) {
+                                                            const data = await res.json();
+                                                            const filteredIds = data.recipients?.map((r: { id: number }) => r.id) || [];
+                                                            setForm({ ...form, recipientType: 'custom', externalRecipients: [], recipientIds: filteredIds });
+                                                            if (filteredIds.length > 0) {
+                                                                setSuccessMessage(`✅ Filtreye uyan ${filteredIds.length} üye seçildi`);
+                                                                setTimeout(() => setSuccessMessage(""), 3000);
+                                                            } else {
+                                                                setErrorMessage('Filtreye uyan üye bulunamadı');
+                                                                setTimeout(() => setErrorMessage(""), 3000);
+                                                            }
+                                                        } else {
+                                                            // Fallback to empty selection
+                                                            setForm({ ...form, recipientType: 'custom', externalRecipients: [], recipientIds: [] });
+                                                        }
+                                                    } catch {
+                                                        // On error, just switch without pre-selection
+                                                        setForm({ ...form, recipientType: 'custom', externalRecipients: [], recipientIds: [] });
+                                                    }
+                                                } else {
+                                                    // No filters, just switch without selecting anyone
+                                                    setForm({ ...form, recipientType: 'custom', externalRecipients: [], recipientIds: [] });
+                                                }
                                             }}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.selectMembers}</span>
