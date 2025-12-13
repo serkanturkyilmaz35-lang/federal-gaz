@@ -723,7 +723,7 @@ export default function MailingPage() {
                     <table className="w-full">
                         <thead className="bg-[#1c2127] border-b border-[#3b4754] sticky top-0">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.campaign}</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.campaignName}</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.status}</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.recipients}</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.sent}/{t.failed}</th>
@@ -900,7 +900,7 @@ export default function MailingPage() {
                                             </div>
                                         </div>
                                         {/* Recipient List */}
-                                        <div className="max-h-48 overflow-y-auto p-2">
+                                        <div className="max-h-72 overflow-y-auto p-2">
                                             {recipients
                                                 .filter(r => {
                                                     const search = (form.recipientSearch || '').toLowerCase();
@@ -1040,7 +1040,13 @@ export default function MailingPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.scheduleAt}</label>
                                 <input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] [color-scheme:dark]" />
+                                {form.scheduledAt && (
+                                    <p className="text-xs text-amber-400 mt-1 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-sm">info</span>
+                                        Zamanlanmış kampanyalar belirtilen zamanda otomatik olarak gönderilecektir.
+                                    </p>
+                                )}
                             </div>
                         </div>
 
