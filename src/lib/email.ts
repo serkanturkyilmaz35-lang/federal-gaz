@@ -669,87 +669,381 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     const { subject, content, recipientName = 'Değerli Müşterimiz' } = options;
     const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
+    const productImageUrl = 'https://www.federalgaz.com/tup1.png';
     const year = new Date().getFullYear();
 
-    // Template style configurations
-    const templateStyles: {
-        [key: string]: {
-            headerBg: string;
-            headerText: string;
-            buttonBg: string;
-            greeting: string;
-            signature: string;
-        }
-    } = {
-        'modern': {
-            headerBg: 'linear-gradient(135deg, #1a2744 0%, #0a1628 100%)',
-            headerText: '#ffffff',
-            buttonBg: 'linear-gradient(135deg, #b13329 0%, #8b1a12 100%)',
-            greeting: 'Merhaba',
-            signature: 'Federal Gaz Ekibi'
-        },
-        'classic': {
-            headerBg: '#1a2744',
-            headerText: '#ffffff',
-            buttonBg: '#b13329',
-            greeting: 'Sayın',
-            signature: 'Federal Gaz'
-        },
-        'black-friday': {
-            headerBg: 'linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%)',
-            headerText: '#ffffff',
-            buttonBg: '#ff2d2d',
-            greeting: 'Merhaba',
-            signature: 'Federal Gaz'
-        },
-        'weekend-sale': {
-            headerBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            headerText: '#ffffff',
-            buttonBg: '#f093fb',
-            greeting: 'Merhaba',
-            signature: 'Federal Gaz'
-        },
-        'ramazan-bayrami': {
-            headerBg: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-            headerText: '#ffd700',
-            buttonBg: '#4ecdc4',
-            greeting: 'Değerli Müşterimiz',
-            signature: 'Federal Gaz Ailesi'
-        },
-        'kurban-bayrami': {
-            headerBg: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)',
-            headerText: '#ffffff',
-            buttonBg: '#b13329',
-            greeting: 'Değerli Müşterimiz',
-            signature: 'Federal Gaz Ailesi'
-        },
-        'winter-campaign': {
-            headerBg: 'linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)',
-            headerText: '#1a2744',
-            buttonBg: '#1a2744',
-            greeting: 'Merhaba',
-            signature: 'Federal Gaz'
-        },
-        'welcome': {
-            headerBg: 'linear-gradient(135deg, #1a2744 0%, #2d4a7c 100%)',
-            headerText: '#ffffff',
-            buttonBg: '#b13329',
-            greeting: 'Hoş Geldiniz',
-            signature: 'Federal Gaz Ailesi'
-        },
-        'new-year': {
-            headerBg: 'linear-gradient(135deg, #1e3a5f 0%, #0d1f33 100%)',
-            headerText: '#ffd700',
-            buttonBg: '#c41e3a',
-            greeting: 'Merhaba',
-            signature: 'Federal Gaz'
-        }
+    // Federal Gaz Brand Colors
+    const brandColors = {
+        navyDark: '#1a2744',
+        navyLight: '#2d4a7c',
+        red: '#b13329',
+        redDark: '#8b1a12',
+        gold: '#ffd700',
+        white: '#ffffff',
+        gray: '#f5f5f5'
     };
 
-    // Get style or default to modern
-    const style = templateStyles[templateSlug] || templateStyles['modern'];
+    // Template-specific HTML generators
+    const templates: { [key: string]: () => string } = {
 
-    return `
+        // ==================== MODERN TEMPLATE ====================
+        'modern': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${brandColors.gray};">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${brandColors.white};">
+        <!-- Header with Gradient -->
+        <div style="background: linear-gradient(135deg, ${brandColors.navyDark} 0%, #0a1628 100%); padding: 40px 30px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
+            <h1 style="color: ${brandColors.white}; margin: 0; font-size: 28px; font-weight: 600;">${subject}</h1>
+        </div>
+        
+        <!-- Product Image Banner -->
+        <div style="background: linear-gradient(135deg, ${brandColors.red} 0%, ${brandColors.redDark} 100%); padding: 20px; text-align: center;">
+            <img src="${productImageUrl}" alt="Ürün" style="height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                Merhaba <strong>${recipientName}</strong>,
+            </p>
+            <div style="color: #444; font-size: 15px; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.red};">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, ${brandColors.red} 0%, ${brandColors.redDark} 100%); color: ${brandColors.white}; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(177, 51, 41, 0.3);">
+                    🛒 Sipariş Ver
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                Saygılarımızla,<br><strong>Federal Gaz Ekibi</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: ${brandColors.navyDark}; padding: 30px; text-align: center;">
+            <p style="color: ${brandColors.white}; margin: 0 0 10px; font-size: 14px;">
+                📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com
+            </p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara | Tüm Hakları Saklıdır
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== BLACK FRIDAY ====================
+        'black-friday': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #000000;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0a;">
+        <!-- Black Friday Header -->
+        <div style="background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%); padding: 40px 30px; text-align: center; position: relative;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <div style="background: #ff2d2d; color: #ffffff; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
+                🔥 EFSANE CUMA 🔥
+            </div>
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 0 20px rgba(255,45,45,0.5);">${subject}</h1>
+            <p style="color: #ff2d2d; font-size: 48px; font-weight: 900; margin: 15px 0 0;">%50'YE VARAN</p>
+            <p style="color: #ffd700; font-size: 24px; margin: 5px 0;">İNDİRİM!</p>
+        </div>
+        
+        <!-- Products Section -->
+        <div style="background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); padding: 30px; text-align: center;">
+            <img src="${productImageUrl}" alt="Ürün" style="height: 150px; filter: drop-shadow(0 0 30px rgba(255,45,45,0.5));">
+            <div style="background: rgba(255,45,45,0.2); border: 2px solid #ff2d2d; border-radius: 8px; padding: 20px; margin-top: 20px;">
+                <p style="color: #ffffff; font-size: 18px; margin: 0 0 10px;">Tüm Ürünlerde Geçerli!</p>
+                <p style="color: #ffd700; font-size: 14px; margin: 0;">Stoklarla sınırlı • Kaçırmayın!</p>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px; background: #111111;">
+            <p style="color: #cccccc; font-size: 16px; line-height: 1.6;">
+                Merhaba <strong style="color: #ffffff;">${recipientName}</strong>,
+            </p>
+            <div style="color: #aaaaaa; font-size: 15px; line-height: 1.8;">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: #ff2d2d; color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 30px rgba(255,45,45,0.5);">
+                    FIRSATI YAKALA
+                </a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #000000; padding: 25px; text-align: center; border-top: 1px solid #333;">
+            <p style="color: #888; margin: 0; font-size: 12px;">
+                📞 (0312) 395 35 95 | © ${year} Federal Gaz
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== NEW YEAR ====================
+        'new-year': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #0d1f33;">
+    <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #1e3a5f 0%, #0d1f33 100%);">
+        <!-- New Year Header -->
+        <div style="padding: 40px 30px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${year + 1} ✨</p>
+            <h1 style="color: #ffffff; margin: 15px 0; font-size: 36px; font-weight: 300;">YENİ YIL</h1>
+            <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">MUTLU YILLAR!</p>
+        </div>
+        
+        <!-- Decorative Banner -->
+        <div style="background: linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%); height: 4px;"></div>
+        
+        <!-- Celebration Image -->
+        <div style="padding: 30px; text-align: center;">
+            <div style="background: rgba(255,215,0,0.1); border-radius: 50%; width: 200px; height: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                <img src="${productImageUrl}" alt="Ürün" style="height: 120px;">
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+            <p style="color: #e0e0e0; font-size: 16px; line-height: 1.6; text-align: center;">
+                Sevgili <strong style="color: #ffd700;">${recipientName}</strong>,
+            </p>
+            <div style="color: #cccccc; font-size: 15px; line-height: 1.8; text-align: center; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; margin: 20px 0;">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            
+            <p style="color: #ffd700; font-size: 18px; text-align: center; margin: 25px 0;">
+                🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%); color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
+                    🎁 Yeni Yıl Fırsatları
+                </a>
+            </div>
+            
+            <p style="color: #888; font-size: 14px; text-align: center;">
+                Sevgilerimizle,<br><strong style="color: #ffd700;">Federal Gaz Ailesi</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: rgba(0,0,0,0.3); padding: 25px; text-align: center;">
+            <p style="color: #888; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara | federalgaz.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== RAMAZAN BAYRAMI ====================
+        'ramazan-bayrami': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #1e3c72;">
+    <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #2a5298 0%, #1e3c72 100%);">
+        <!-- Bayram Header -->
+        <div style="padding: 40px 30px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <p style="color: #ffd700; font-size: 40px; margin: 0;">☪</p>
+            <h1 style="color: #ffd700; margin: 15px 0; font-size: 32px; font-weight: 600;">RAMAZAN BAYRAMINIZ</h1>
+            <p style="color: #ffffff; font-size: 24px; margin: 0;">MÜBAREK OLSUN</p>
+        </div>
+        
+        <!-- Decorative Pattern -->
+        <div style="background: linear-gradient(90deg, transparent, #ffd700, transparent); height: 2px; margin: 0 30px;"></div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+            <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 25px; backdrop-filter: blur(10px);">
+                <p style="color: #ffffff; font-size: 16px; line-height: 1.6;">
+                    Değerli <strong style="color: #ffd700;">${recipientName}</strong>,
+                </p>
+                <div style="color: #e0e0e0; font-size: 15px; line-height: 1.8;">
+                    ${content.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <p style="color: #ffd700; font-size: 18px;">
+                    🌙 Bu mübarek bayramda ailenizle birlikte sağlık ve huzur dolu günler geçirmenizi dileriz.
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: #4ecdc4; color: #1a2744; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Sipariş Ver
+                </a>
+            </div>
+            
+            <p style="color: #cccccc; font-size: 14px; text-align: center;">
+                En içten bayram dileklerimizle,<br><strong style="color: #ffd700;">Federal Gaz Ailesi</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: rgba(0,0,0,0.2); padding: 25px; text-align: center;">
+            <p style="color: #aaa; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== KURBAN BAYRAMI ====================
+        'kurban-bayrami': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #1a2744;">
+    <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #2d3436 0%, #000000 100%);">
+        <!-- Bayram Header -->
+        <div style="padding: 40px 30px; text-align: center; border-bottom: 3px solid ${brandColors.red};">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <p style="color: #ffd700; font-size: 36px; margin: 0;">🕌</p>
+            <h1 style="color: #ffffff; margin: 15px 0; font-size: 32px; font-weight: 600;">KURBAN BAYRAMINIZ</h1>
+            <p style="color: ${brandColors.red}; font-size: 24px; margin: 0; font-weight: 300;">KUTLU OLSUN</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+            <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);">
+                <p style="color: #ffffff; font-size: 16px; line-height: 1.6;">
+                    Değerli <strong style="color: ${brandColors.red};">${recipientName}</strong>,
+                </p>
+                <div style="color: #cccccc; font-size: 15px; line-height: 1.8;">
+                    ${content.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <p style="color: #aaaaaa; font-size: 16px; font-style: italic;">
+                    "Kurban, paylaşmanın ve dayanışmanın sembolüdür."
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${brandColors.red}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Sipariş Ver
+                </a>
+            </div>
+            
+            <p style="color: #888; font-size: 14px; text-align: center;">
+                Bayramınız mübarek olsun,<br><strong style="color: #ffffff;">Federal Gaz Ailesi</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
+            <p style="color: #888; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== WINTER CAMPAIGN ====================
+        'winter-campaign': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #e8f4f8;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Winter Header -->
+        <div style="background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%); padding: 40px 30px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <p style="font-size: 40px; margin: 0;">❄️</p>
+            <h1 style="color: ${brandColors.navyDark}; margin: 15px 0; font-size: 28px; font-weight: 600;">${subject}</h1>
+            <p style="color: #2d4a7c; font-size: 16px; margin: 0;">Kışa hazır mısınız?</p>
+        </div>
+        
+        <!-- Product Banner -->
+        <div style="background: ${brandColors.navyDark}; padding: 25px; text-align: center;">
+            <img src="${productImageUrl}" alt="Tüp" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+            <p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">Kış boyunca kesintisiz ısınma!</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                Merhaba <strong>${recipientName}</strong>,
+            </p>
+            <div style="color: #444; font-size: 15px; line-height: 1.8; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 8px;">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+                <p style="color: #856404; font-size: 14px; margin: 0;">
+                    🔥 <strong>Kış Kampanyası:</strong> Toplu siparişlerde özel indirimler!
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${brandColors.navyDark}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Şimdi Sipariş Ver
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">
+                Saygılarımızla,<br><strong>Federal Gaz</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
+            <p style="color: #ffffff; margin: 0 0 8px; font-size: 13px;">
+                📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com
+            </p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== WEEKEND SALE ====================
+        'weekend-sale': () => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -759,49 +1053,192 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-        <!-- Header -->
-        <div style="background: ${style.headerBg}; padding: 40px 30px; text-align: center;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
-            <h1 style="color: ${style.headerText}; margin: 0; font-size: 28px; font-weight: 600;">${subject}</h1>
+        <!-- Weekend Header -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+            <div style="background: rgba(255,255,255,0.2); display: inline-block; padding: 8px 20px; border-radius: 20px; margin-bottom: 15px;">
+                <span style="color: #ffffff; font-size: 14px; font-weight: 600;">🎉 HAFTA SONU ÖZEL 🎉</span>
+            </div>
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">${subject}</h1>
         </div>
         
-        <!-- Content Area -->
-        <div style="padding: 40px 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                ${style.greeting} <strong>${recipientName}</strong>,
+        <!-- Discount Banner -->
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; text-align: center;">
+            <p style="color: #ffffff; font-size: 48px; font-weight: 900; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">%30</p>
+            <p style="color: #ffffff; font-size: 18px; margin: 5px 0 0;">TÜM ÜRÜNLERDE</p>
+        </div>
+        
+        <!-- Product -->
+        <div style="padding: 30px; text-align: center; background: #fafafa;">
+            <img src="${productImageUrl}" alt="Tüp" style="height: 120px;">
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                Merhaba <strong>${recipientName}</strong>,
             </p>
-            
             <div style="color: #444; font-size: 15px; line-height: 1.8;">
                 ${content.replace(/\n/g, '<br>')}
             </div>
             
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 35px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${style.buttonBg}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                    Sitemizi Ziyaret Edin
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 16px;">
+                    Hemen Al
                 </a>
             </div>
             
-            <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                Saygılarımızla,<br>
-                <strong>${style.signature}</strong>
+            <p style="color: #999; font-size: 12px; text-align: center;">
+                * Kampanya sadece bu hafta sonu geçerlidir.
             </p>
         </div>
         
         <!-- Footer -->
-        <div style="background-color: #1a2744; padding: 30px; text-align: center;">
-            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">
-                📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com
-            </p>
-            <p style="color: #8899aa; margin: 0; font-size: 12px;">
-                © ${year} Federal Gaz - Ankara | Tüm Hakları Saklıdır
-            </p>
-            <p style="color: #667788; margin: 15px 0 0; font-size: 11px;">
-                Bu e-postayı almak istemiyorsanız lütfen bize bildirin.
+        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
+            <p style="color: #888; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara
             </p>
         </div>
     </div>
 </body>
-</html>
-    `;
+</html>`,
+
+        // ==================== WELCOME ====================
+        'welcome': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Welcome Header -->
+        <div style="background: linear-gradient(135deg, ${brandColors.navyDark} 0%, ${brandColors.navyLight} 100%); padding: 50px 30px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 300;">Hoş Geldiniz!</h1>
+            <p style="color: #aabbcc; font-size: 16px; margin: 15px 0 0;">Federal Gaz ailesine katıldınız</p>
+        </div>
+        
+        <!-- Icon -->
+        <div style="text-align: center; margin-top: -30px;">
+            <div style="background: ${brandColors.red}; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(177, 51, 41, 0.3);">
+                <span style="color: #ffffff; font-size: 28px;">✓</span>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.6; text-align: center;">
+                Merhaba <strong>${recipientName}</strong>,
+            </p>
+            <div style="color: #444; font-size: 15px; line-height: 1.8; text-align: center;">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            
+            <!-- Features -->
+            <div style="background: #f8f9fa; border-radius: 12px; padding: 25px; margin: 25px 0;">
+                <p style="color: ${brandColors.navyDark}; font-size: 16px; font-weight: 600; margin: 0 0 15px; text-align: center;">
+                    Üyelik Avantajlarınız
+                </p>
+                <table style="width: 100%;">
+                    <tr>
+                        <td style="padding: 10px; text-align: center;">
+                            <div style="background: ${brandColors.red}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">🚚</div>
+                            <p style="color: #666; font-size: 13px; margin: 0;">Hızlı Teslimat</p>
+                        </td>
+                        <td style="padding: 10px; text-align: center;">
+                            <div style="background: ${brandColors.red}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">💰</div>
+                            <p style="color: #666; font-size: 13px; margin: 0;">Özel Fiyatlar</p>
+                        </td>
+                        <td style="padding: 10px; text-align: center;">
+                            <div style="background: ${brandColors.red}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">🎁</div>
+                            <p style="color: #666; font-size: 13px; margin: 0;">Kampanyalar</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${brandColors.red}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    İlk Siparişinizi Verin
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; text-align: center;">
+                Aramıza hoş geldiniz!<br><strong>Federal Gaz Ailesi</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
+            <p style="color: #ffffff; margin: 0 0 8px; font-size: 13px;">
+                📞 (0312) 395 35 95
+            </p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">
+                © ${year} Federal Gaz - Ankara
+            </p>
+        </div>
+    </div>
+</body>
+</html>`,
+
+        // ==================== CLASSIC ====================
+        'classic': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Georgia, 'Times New Roman', serif; background-color: #f8f8f8;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0;">
+        <!-- Classic Header -->
+        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center; border-bottom: 4px solid ${brandColors.red};">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px;">
+        </div>
+        
+        <!-- Subject Banner -->
+        <div style="background-color: #f0f4f8; padding: 20px 30px; border-bottom: 1px solid #e0e0e0;">
+            <h1 style="color: ${brandColors.navyDark}; margin: 0; font-size: 24px; font-weight: normal;">${subject}</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 35px 30px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
+                Sayın <strong>${recipientName}</strong>,
+            </p>
+            
+            <div style="color: #444; font-size: 15px; line-height: 1.7; border-left: 3px solid ${brandColors.red}; padding-left: 20px; margin: 25px 0;">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background-color: ${brandColors.red}; color: #ffffff; padding: 12px 35px; text-decoration: none; font-size: 15px; border-radius: 4px;">
+                    Web Sitemizi Ziyaret Edin →
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                Saygılarımızla,<br><strong>Federal Gaz</strong>
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f5f5f5; padding: 25px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <p style="color: #666; margin: 0 0 8px; font-size: 13px;">Federal Gaz - Ankara</p>
+            <p style="color: #888; margin: 0; font-size: 12px;">
+                Tel: (0312) 395 35 95 | © ${year}
+            </p>
+        </div>
+    </div>
+</body>
+</html>`
+    };
+
+    // Return the template or default to modern
+    const templateFn = templates[templateSlug] || templates['modern'];
+    return templateFn();
 }
