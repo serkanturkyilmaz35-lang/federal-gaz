@@ -605,25 +605,38 @@ export default function MailingPage() {
     // Handle Excel/CSV file upload for external recipients
     const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        console.log('[Excel Upload] Starting upload, file:', file?.name, file?.size);
+        if (!file) {
+            console.log('[Excel Upload] No file selected');
+            return;
+        }
 
         try {
+            console.log('[Excel Upload] Loading xlsx library...');
             const XLSX = await import('xlsx');
+            console.log('[Excel Upload] xlsx library loaded successfully');
+
             const reader = new FileReader();
 
             reader.onload = (event) => {
+                console.log('[Excel Upload] FileReader onload triggered');
                 try {
                     const data = event.target?.result;
+                    console.log('[Excel Upload] Data type:', typeof data, 'Length:', String(data || '').length);
+
                     const workbook = XLSX.read(data, { type: 'binary' });
+                    console.log('[Excel Upload] Workbook parsed, sheets:', workbook.SheetNames);
+
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(sheet);
+                    console.log('[Excel Upload] JSON data rows:', jsonData.length, 'First row:', jsonData[0]);
 
                     // Extract name and email from each row
                     const importedRecipients: { name: string; email: string }[] = [];
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-                    jsonData.forEach((row: any) => {
+                    jsonData.forEach((row: any, i: number) => {
                         // Try different column names for name
                         const name = row['name'] || row['Name'] || row['İsim'] || row['isim'] ||
                             row['Ad'] || row['ad'] || row['Ad Soyad'] || row['ad soyad'] ||
@@ -633,6 +646,8 @@ export default function MailingPage() {
                         const email = row['email'] || row['Email'] || row['E-mail'] || row['e-mail'] ||
                             row['E-posta'] || row['e-posta'] || row['Mail'] || row['mail'];
 
+                        console.log(`[Excel Upload] Row ${i}:`, { name, email, valid: email && emailRegex.test(String(email).trim()) });
+
                         if (email && emailRegex.test(email.toString().trim())) {
                             importedRecipients.push({
                                 name: name.toString().trim(),
@@ -641,11 +656,15 @@ export default function MailingPage() {
                         }
                     });
 
+                    console.log('[Excel Upload] Total imported:', importedRecipients.length);
+
                     // Remove duplicates by email
                     const uniqueRecipients = importedRecipients.filter(
                         (recipient, index, self) =>
                             index === self.findIndex(r => r.email === recipient.email)
                     );
+
+                    console.log('[Excel Upload] Unique recipients:', uniqueRecipients.length, uniqueRecipients);
 
                     if (uniqueRecipients.length === 0) {
                         setErrorMessage('Dosyada geçerli email adresi bulunamadı. Lütfen "email" veya "e-posta" sütunu olduğundan emin olun.');
@@ -653,24 +672,29 @@ export default function MailingPage() {
                         return;
                     }
 
-                    setForm(prev => ({ ...prev, externalRecipients: uniqueRecipients }));
+                    setForm(prev => {
+                        console.log('[Excel Upload] Setting form with recipients:', uniqueRecipients);
+                        return { ...prev, externalRecipients: uniqueRecipients };
+                    });
                     setSuccessMessage(`✅ ${uniqueRecipients.length} kişi başarıyla içe aktarıldı!`);
                     setTimeout(() => setSuccessMessage(""), 4000);
                 } catch (parseError) {
-                    console.error('Error parsing Excel:', parseError);
+                    console.error('[Excel Upload] Error parsing Excel:', parseError);
                     setErrorMessage('Dosya okunamadı. Lütfen geçerli bir Excel/CSV dosyası yükleyin.');
                     setTimeout(() => setErrorMessage(""), 5000);
                 }
             };
 
-            reader.onerror = () => {
+            reader.onerror = (err) => {
+                console.error('[Excel Upload] FileReader error:', err);
                 setErrorMessage('Dosya yüklenirken hata oluştu.');
                 setTimeout(() => setErrorMessage(""), 5000);
             };
 
+            console.log('[Excel Upload] Starting FileReader...');
             reader.readAsBinaryString(file);
         } catch (importError) {
-            console.error('Error importing xlsx:', importError);
+            console.error('[Excel Upload] Error importing xlsx:', importError);
             setErrorMessage('Excel kütüphanesi yüklenemedi.');
             setTimeout(() => setErrorMessage(""), 5000);
         }
