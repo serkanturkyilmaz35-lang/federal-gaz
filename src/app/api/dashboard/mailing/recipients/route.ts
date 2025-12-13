@@ -236,6 +236,35 @@ export async function GET(req: Request) {
             }
         }
 
+        // ==================== STANDALONE MIN ORDERS / MIN AMOUNT FILTERS ====================
+        // Apply minOrders/minAmount even when segment is 'none' or not set
+        if (!userIds && (minOrders || minAmount)) {
+            const orderStats = await Order.findAll({
+                attributes: [
+                    'userId',
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'orderCount'],
+                    [Sequelize.fn('SUM', Sequelize.col('totalAmount')), 'totalSpent'],
+                ],
+                group: ['userId'],
+                having: Sequelize.literal(`
+                    ${minOrders ? `COUNT(id) >= ${minOrders}` : '1=1'}
+                    ${minAmount ? ` AND SUM(totalAmount) >= ${minAmount}` : ''}
+                `),
+                raw: true,
+            }) as unknown as { userId: number; orderCount: string; totalSpent: string }[];
+
+            userIds = orderStats.map(o => o.userId);
+
+            // If no users match the filters, return empty
+            if (userIds.length === 0) {
+                return NextResponse.json({
+                    recipients: [],
+                    count: 0,
+                    stats: { members: 0, guests: 0, total: 0 }
+                }, { status: 200 });
+            }
+        }
+
         // Build user query
         const userWhere: Record<string, unknown> = {};
 
