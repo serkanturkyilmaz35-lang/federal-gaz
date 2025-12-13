@@ -460,6 +460,12 @@ export default function MailingPage() {
                 status: form.scheduledAt ? 'scheduled' : 'draft',
             };
 
+            console.log('[Mailing Save] Sending body:', {
+                recipientType: body.recipientType,
+                recipientIds: body.recipientIds?.length,
+                externalRecipients: body.externalRecipients?.length
+            });
+
             const res = await fetch('/api/dashboard/mailing', {
                 method,
                 headers: { 'Content-Type': 'application/json' },
