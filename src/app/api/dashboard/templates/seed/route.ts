@@ -307,28 +307,227 @@ const defaultTemplates = [
         </div>`,
         sortOrder: 26,
     },
+    // ==================== SPECIAL CAMPAIGN TEMPLATES ====================
+    // Black Friday / Efsane Cuma
+    {
+        slug: 'black-friday',
+        nameTR: 'Efsane Cuma',
+        nameEN: 'Black Friday',
+        category: 'promotion' as const,
+        headerBgColor: 'linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#ff2d2d',
+        bannerImage: '',
+        headerHtml: `<div style="background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%); padding: 50px 30px; text-align: center; position: relative;">
+            <div style="position: absolute; top: 10px; right: 20px; background: #ff2d2d; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; animation: pulse 1.5s infinite;">CANLI</div>
+            <div style="font-size: 70px; margin-bottom: 10px;">🔥💥🛒</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 42px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px;">EFSANE CUMA</h1>
+            <div style="background: linear-gradient(90deg, #ff2d2d, #ff6b35, #ff2d2d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 60px; font-weight: 900; margin: 15px 0;">%40'a VARAN</div>
+            <p style="color: #ffd700; margin: 0; font-size: 24px; font-weight: 600;">İNDİRİM</p>
+            <p style="color: #ffffff; margin: 15px 0 0; font-size: 16px; opacity: 0.9;">{{subject}}</p>
+            <div style="margin-top: 25px; display: inline-block; background: rgba(255,255,255,0.1); padding: 15px 30px; border-radius: 10px; border: 2px solid #ff2d2d;">
+                <p style="color: #ff2d2d; margin: 0; font-size: 14px;">⏰ SADECE BU HAFTA SONU GEÇERLİ!</p>
+            </div>
+        </div>`,
+        footerHtml: `<div style="background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%); padding: 35px; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <img src="https://www.federalgaz.com/images/products/12kg-tup.webp" alt="Tüp" style="height: 80px; margin: 0 10px;">
+                <img src="https://www.federalgaz.com/images/products/oksijen-tupu.webp" alt="Oksijen" style="height: 80px; margin: 0 10px;">
+            </div>
+            <p style="color: #ff2d2d; margin: 0 0 10px; font-size: 20px; font-weight: bold;">🔥 Bu Fırsatı Kaçırmayın! 🔥</p>
+            <a href="https://www.federalgaz.com/siparis" style="display: inline-block; background: linear-gradient(135deg, #ff2d2d 0%, #cc0000 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 18px; margin: 15px 0;">HEDİYENİZİ ALIN →</a>
+            <p style="color: #ffffff; margin: 20px 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #666; margin: 0; font-size: 12px;">© {{year}} Federal Gaz - Ankara</p>
+        </div>`,
+        sortOrder: 30,
+    },
+    // Weekend / Sunday Sale
+    {
+        slug: 'weekend-sale',
+        nameTR: 'Hafta Sonu İndirimi',
+        nameEN: 'Weekend Sale',
+        category: 'promotion' as const,
+        headerBgColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#f093fb',
+        bannerImage: '',
+        headerHtml: `<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 45px 30px; text-align: center;">
+            <div style="font-size: 60px; margin-bottom: 15px;">🎉🛍️💜</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 36px; font-weight: 700;">HAFTA SONU</h1>
+            <div style="color: #ffd700; font-size: 48px; font-weight: 800; margin: 10px 0;">ÖZEL İNDİRİM</div>
+            <p style="color: rgba(255,255,255,0.9); margin: 15px 0 0; font-size: 18px;">{{subject}}</p>
+            <div style="margin-top: 20px; background: rgba(255,255,255,0.2); display: inline-block; padding: 12px 25px; border-radius: 25px;">
+                <span style="color: white; font-weight: 600;">⏰ Cumartesi - Pazar Geçerli</span>
+            </div>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 30px; text-align: center;">
+            <div style="margin-bottom: 15px;">
+                <img src="https://www.federalgaz.com/images/products/12kg-tup.webp" alt="Tüp" style="height: 60px; margin: 0 8px;">
+            </div>
+            <p style="color: #f093fb; margin: 0 0 10px; font-size: 16px;">💜 Hafta sonu alışverişin tadını çıkarın!</p>
+            <a href="https://www.federalgaz.com/siparis" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 10px 0;">ŞİMDİ SİPARİŞ VERİN</a>
+            <p style="color: #ffffff; margin: 15px 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz</p>
+        </div>`,
+        sortOrder: 31,
+    },
+    // Ramazan Bayramı
+    {
+        slug: 'ramazan-bayrami',
+        nameTR: 'Ramazan Bayramı',
+        nameEN: 'Eid al-Fitr',
+        category: 'holiday' as const,
+        headerBgColor: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        headerTextColor: '#ffd700',
+        buttonColor: '#4ecdc4',
+        bannerImage: '',
+        headerHtml: `<div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 50px 30px; text-align: center;">
+            <div style="font-size: 70px; margin-bottom: 15px;">🌙✨🕌</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <h1 style="color: #ffd700; margin: 0; font-size: 36px; font-weight: 700;">RAMAZAN BAYRAMIMIZ</h1>
+            <p style="color: #ffffff; font-size: 28px; margin: 10px 0; font-weight: 600;">MÜBAREK OLSUN</p>
+            <div style="width: 100px; height: 3px; background: #ffd700; margin: 20px auto;"></div>
+            <p style="color: rgba(255,255,255,0.9); margin: 15px 0 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: linear-gradient(135deg, #1a2744 0%, #0a1628 100%); padding: 35px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 15px;">🌙✨</div>
+            <p style="color: #ffd700; margin: 0 0 10px; font-size: 18px;">Bayramınız Kutlu, Sofralarınız Bereketli Olsun</p>
+            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px; font-size: 14px;">Sevdiklerinizle birlikte huzurlu bir bayram geçirmenizi dileriz.</p>
+            <div style="margin-bottom: 20px;">
+                <img src="https://www.federalgaz.com/images/products/12kg-tup.webp" alt="Tüp" style="height: 60px;">
+            </div>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz - Ankara</p>
+        </div>`,
+        sortOrder: 15,
+    },
+    // Kurban Bayramı
+    {
+        slug: 'kurban-bayrami',
+        nameTR: 'Kurban Bayramı',
+        nameEN: 'Eid al-Adha',
+        category: 'holiday' as const,
+        headerBgColor: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#b13329',
+        bannerImage: '',
+        headerHtml: `<div style="background: linear-gradient(135deg, #2d3436 0%, #000000 100%); padding: 50px 30px; text-align: center; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"2\" fill=\"rgba(255,215,0,0.1)\"/></svg>') repeat; opacity: 0.3;"></div>
+            <div style="position: relative; z-index: 1;">
+                <div style="font-size: 70px; margin-bottom: 15px;">🐑🌙✨</div>
+                <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+                <h1 style="color: #ffd700; margin: 0; font-size: 36px; font-weight: 700;">KURBAN BAYRAMIMIZ</h1>
+                <p style="color: #ffffff; font-size: 28px; margin: 10px 0; font-weight: 600;">MÜBAREK OLSUN</p>
+                <div style="width: 100px; height: 3px; background: linear-gradient(90deg, transparent, #ffd700, transparent); margin: 20px auto;"></div>
+                <p style="color: rgba(255,255,255,0.9); margin: 15px 0 0; font-size: 16px;">{{subject}}</p>
+            </div>
+        </div>`,
+        footerHtml: `<div style="background: linear-gradient(135deg, #1a2744 0%, #0a1628 100%); padding: 35px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 15px;">🐑🌙</div>
+            <p style="color: #ffd700; margin: 0 0 10px; font-size: 18px;">Kurbanlarınız Kabul, Bayramınız Kutlu Olsun</p>
+            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px; font-size: 14px;">Tüm İslam aleminin Kurban Bayramını kutlarız.</p>
+            <div style="margin-bottom: 20px;">
+                <img src="https://www.federalgaz.com/images/products/12kg-tup.webp" alt="Tüp" style="height: 60px;">
+            </div>
+            <p style="color: #ffffff; margin: 0 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz - Ankara</p>
+        </div>`,
+        sortOrder: 16,
+    },
+    // Winter Campaign / Kış Kampanyası
+    {
+        slug: 'winter-campaign',
+        nameTR: 'Kış Kampanyası',
+        nameEN: 'Winter Campaign',
+        category: 'promotion' as const,
+        headerBgColor: 'linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)',
+        headerTextColor: '#1a2744',
+        buttonColor: '#1a2744',
+        bannerImage: '',
+        headerHtml: `<div style="background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%); padding: 50px 30px; text-align: center; position: relative;">
+            <div style="font-size: 60px; margin-bottom: 15px;">❄️🔥☃️</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+            <h1 style="color: #1a2744; margin: 0; font-size: 38px; font-weight: 700;">KIŞ KAMPANYASI</h1>
+            <div style="color: #b13329; font-size: 32px; font-weight: 800; margin: 15px 0;">SICAK FİYATLAR!</div>
+            <p style="color: #1a2744; margin: 0; font-size: 18px; opacity: 0.8;">{{subject}}</p>
+            <div style="margin-top: 25px; background: rgba(26,39,68,0.1); display: inline-block; padding: 15px 30px; border-radius: 10px;">
+                <p style="color: #1a2744; margin: 0; font-weight: 600;">❄️ Kış boyunca geçerli avantajlar!</p>
+            </div>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 35px; text-align: center;">
+            <div style="margin-bottom: 15px;">
+                <img src="https://www.federalgaz.com/images/products/12kg-tup.webp" alt="Tüp" style="height: 70px; margin: 0 10px;">
+                <img src="https://www.federalgaz.com/images/products/oksijen-tupu.webp" alt="Oksijen" style="height: 70px; margin: 0 10px;">
+            </div>
+            <p style="color: #74ebd5; margin: 0 0 15px; font-size: 18px;">❄️ Soğuk havalarda sıcacık kalın! ❄️</p>
+            <a href="https://www.federalgaz.com/siparis" style="display: inline-block; background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%); color: #1a2744; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 10px 0;">KAMPANYAYI İNCELE</a>
+            <p style="color: #ffffff; margin: 20px 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz - Ankara</p>
+        </div>`,
+        sortOrder: 32,
+    },
+    // Welcome / Hoş Geldiniz
+    {
+        slug: 'welcome',
+        nameTR: 'Hoş Geldiniz',
+        nameEN: 'Welcome',
+        category: 'general' as const,
+        headerBgColor: 'linear-gradient(135deg, #1a2744 0%, #2d4a7c 100%)',
+        headerTextColor: '#ffffff',
+        buttonColor: '#b13329',
+        bannerImage: '',
+        headerHtml: `<div style="background: linear-gradient(135deg, #1a2744 0%, #2d4a7c 100%); padding: 50px 30px; text-align: center;">
+            <div style="font-size: 60px; margin-bottom: 15px;">👋🎉💙</div>
+            <img src="{{logoUrl}}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 36px; font-weight: 700;">HOŞ GELDİNİZ!</h1>
+            <p style="color: #ffd700; font-size: 20px; margin: 15px 0;">Federal Gaz Ailesine Katıldınız</p>
+            <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 16px;">{{subject}}</p>
+        </div>`,
+        footerHtml: `<div style="background: #1a2744; padding: 35px; text-align: center;">
+            <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 25px; margin-bottom: 20px;">
+                <p style="color: #ffffff; margin: 0 0 10px; font-size: 16px;">🎁 İlk Siparişinize Özel</p>
+                <div style="color: #b13329; font-size: 32px; font-weight: bold;">%10 İNDİRİM</div>
+                <p style="color: #ffd700; margin: 10px 0 0; font-size: 14px;">Kod: HOSGELDIN</p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <img src="https://www.federalgaz.com/images/products/12kg-tup.webp" alt="Tüp" style="height: 60px;">
+            </div>
+            <a href="https://www.federalgaz.com/siparis" style="display: inline-block; background: #b13329; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 10px 0;">İLK SİPARİŞİNİZİ VERİN</a>
+            <p style="color: #ffffff; margin: 20px 0 10px; font-size: 14px;">📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com</p>
+            <p style="color: #8899aa; margin: 0; font-size: 12px;">© {{year}} Federal Gaz - Ankara</p>
+        </div>`,
+        sortOrder: 27,
+    },
 ];
 
 export async function POST() {
     try {
         await connectToDatabase();
 
-        // Check if templates already exist
-        const existingCount = await EmailTemplate.count();
-        if (existingCount > 0) {
-            return NextResponse.json({
-                success: false,
-                message: 'Şablonlar zaten mevcut. Seed işlemi atlandı.'
-            }, { status: 200 });
-        }
+        let created = 0;
+        let updated = 0;
 
-        // Bulk create all default templates
-        await EmailTemplate.bulkCreate(defaultTemplates);
+        // Upsert each template - update if exists, create if not
+        for (const templateData of defaultTemplates) {
+            const existing = await EmailTemplate.findOne({ where: { slug: templateData.slug } });
+
+            if (existing) {
+                // Update existing template
+                await existing.update(templateData);
+                updated++;
+            } else {
+                // Create new template
+                await EmailTemplate.create(templateData as any);
+                created++;
+            }
+        }
 
         return NextResponse.json({
             success: true,
-            message: `${defaultTemplates.length} e-posta şablonu başarıyla oluşturuldu!`
-        }, { status: 201 });
+            message: `Şablonlar güncellendi! ${created} yeni eklendi, ${updated} güncellendi.`
+        }, { status: 200 });
     } catch (error) {
         console.error('Templates Seed Error:', error);
         return NextResponse.json({ error: 'Failed to seed templates' }, { status: 500 });

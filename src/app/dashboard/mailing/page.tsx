@@ -241,12 +241,27 @@ const emptyForm = {
 };
 
 const defaultTemplates: any[] = [
-    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', isActive: true },
-    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', isActive: true },
-    { id: 3, slug: 'promotion', nameTR: 'Kampanya', nameEN: 'Promotion', isActive: true },
-    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', isActive: true },
-    { id: 5, slug: 'win-back', nameTR: 'Geri Kazanım', nameEN: 'Win-back', isActive: true },
-    { id: 6, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', isActive: true },
+    // Genel Şablonlar
+    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', category: 'general', isActive: true },
+    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', category: 'general', isActive: true },
+    { id: 27, slug: 'welcome', nameTR: 'Hoş Geldiniz', nameEN: 'Welcome', category: 'general', isActive: true },
+    { id: 26, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', category: 'general', isActive: true },
+    // Bayram Şablonları
+    { id: 10, slug: 'new-year', nameTR: 'Yeni Yıl', nameEN: 'New Year', category: 'holiday', isActive: true },
+    { id: 15, slug: 'ramazan-bayrami', nameTR: 'Ramazan Bayramı', nameEN: 'Eid al-Fitr', category: 'holiday', isActive: true },
+    { id: 16, slug: 'kurban-bayrami', nameTR: 'Kurban Bayramı', nameEN: 'Eid al-Adha', category: 'holiday', isActive: true },
+    { id: 11, slug: '23-nisan', nameTR: '23 Nisan', nameEN: '23 April', category: 'holiday', isActive: true },
+    { id: 12, slug: '19-mayis', nameTR: '19 Mayıs', nameEN: '19 May', category: 'holiday', isActive: true },
+    { id: 13, slug: '30-agustos', nameTR: '30 Ağustos', nameEN: '30 August', category: 'holiday', isActive: true },
+    { id: 14, slug: '29-ekim', nameTR: '29 Ekim', nameEN: '29 October', category: 'holiday', isActive: true },
+    // Kampanya ve Promosyon Şablonları
+    { id: 30, slug: 'black-friday', nameTR: 'Efsane Cuma', nameEN: 'Black Friday', category: 'promotion', isActive: true },
+    { id: 31, slug: 'weekend-sale', nameTR: 'Hafta Sonu İndirimi', nameEN: 'Weekend Sale', category: 'promotion', isActive: true },
+    { id: 32, slug: 'winter-campaign', nameTR: 'Kış Kampanyası', nameEN: 'Winter Campaign', category: 'promotion', isActive: true },
+    { id: 3, slug: 'promotion', nameTR: 'Kampanya / İndirim', nameEN: 'Promotion', category: 'promotion', isActive: true },
+    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', category: 'promotion', isActive: true },
+    { id: 5, slug: 'win-back', nameTR: 'Geri Kazanım', nameEN: 'Win-back', category: 'promotion', isActive: true },
+    { id: 25, slug: 'season-opening', nameTR: 'Sezon Açılış', nameEN: 'Season Opening', category: 'promotion', isActive: true },
 ];
 
 export default function MailingPage() {
