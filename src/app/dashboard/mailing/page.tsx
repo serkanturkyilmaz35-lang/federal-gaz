@@ -286,6 +286,10 @@ export default function MailingPage() {
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
+    // Bulk selection and search
+    const [selectedCampaigns, setSelectedCampaigns] = useState<number[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
+
     // Error modal
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [errorLog, setErrorLog] = useState<{ email: string; error: string }[]>([]);
@@ -528,11 +532,46 @@ export default function MailingPage() {
             const res = await fetch(`/api/dashboard/mailing?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setSuccessMessage(t.campaignDeleted);
+                setSelectedCampaigns(prev => prev.filter(cid => cid !== id));
                 fetchData();
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
             console.error('Failed to delete campaign:', error);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedCampaigns.length === 0) return;
+        if (!confirm(`${selectedCampaigns.length} kampanyayı silmek istediğinizden emin misiniz?`)) return;
+
+        let successCount = 0;
+        for (const id of selectedCampaigns) {
+            try {
+                const res = await fetch(`/api/dashboard/mailing?id=${id}`, { method: 'DELETE' });
+                if (res.ok) successCount++;
+            } catch (error) {
+                console.error('Failed to delete campaign:', id, error);
+            }
+        }
+
+        setSuccessMessage(`✅ ${successCount} kampanya silindi!`);
+        setSelectedCampaigns([]);
+        fetchData();
+        setTimeout(() => setSuccessMessage(""), 3000);
+    };
+
+    const toggleCampaignSelection = (id: number) => {
+        setSelectedCampaigns(prev =>
+            prev.includes(id) ? prev.filter(cid => cid !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAllCampaigns = () => {
+        if (selectedCampaigns.length === filteredCampaigns.length) {
+            setSelectedCampaigns([]);
+        } else {
+            setSelectedCampaigns(filteredCampaigns.map(c => c.id));
         }
     };
 
@@ -582,14 +621,22 @@ export default function MailingPage() {
         );
     };
 
-    // Filter campaigns by tab
+    // Filter campaigns by tab and search
     const filteredCampaigns = campaigns.filter(c => {
-        if (activeTab === 'all') return true;
-        if (activeTab === 'draft') return c.status === 'draft';
-        if (activeTab === 'sent') return c.status === 'sent';
-        if (activeTab === 'failed') return c.status === 'failed';
-        if (activeTab === 'scheduled') return c.status === 'scheduled';
-        return true;
+        // Status filter
+        let statusMatch = true;
+        if (activeTab === 'draft') statusMatch = c.status === 'draft';
+        else if (activeTab === 'sent') statusMatch = c.status === 'sent';
+        else if (activeTab === 'failed') statusMatch = c.status === 'failed';
+        else if (activeTab === 'scheduled') statusMatch = c.status === 'scheduled';
+
+        // Search filter
+        const query = searchQuery.toLowerCase();
+        const searchMatch = !query ||
+            c.name.toLowerCase().includes(query) ||
+            c.subject.toLowerCase().includes(query);
+
+        return statusMatch && searchMatch;
     });
 
     // Stats
@@ -717,66 +764,106 @@ export default function MailingPage() {
                 ))}
             </div>
 
+            {/* Search and Bulk Actions */}
+            <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="relative flex-1 max-w-md">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
+                    <input
+                        type="text"
+                        placeholder="Kampanya ara..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                    />
+                </div>
+                {selectedCampaigns.length > 0 && (
+                    <button
+                        onClick={handleBulkDelete}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 text-sm font-medium"
+                    >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                        {selectedCampaigns.length} seçili sil
+                    </button>
+                )}
+            </div>
+
             {/* Campaign List */}
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden border border-[#3b4754]">
                 <div className="flex-1 overflow-auto">
                     <table className="w-full">
                         <thead className="bg-[#1c2127] border-b border-[#3b4754] sticky top-0">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.campaignName}</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.status}</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.recipients}</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.sent}/{t.failed}</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">{t.date}</th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">{t.actions}</th>
+                                <th className="px-3 py-2 w-10">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedCampaigns.length === filteredCampaigns.length && filteredCampaigns.length > 0}
+                                        onChange={toggleAllCampaigns}
+                                        className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded"
+                                    />
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.campaignName}</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.status}</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.recipients}</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.sent}/{t.failed}</th>
+                                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{t.date}</th>
+                                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-400 uppercase">{t.actions}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#3b4754]">
                             {filteredCampaigns.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <span className="material-symbols-outlined text-6xl text-gray-600">mail</span>
-                                            <p className="text-lg font-medium text-gray-300">{t.noCampaigns}</p>
-                                            <p className="text-sm">{t.noCampaignsDesc}</p>
+                                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className="material-symbols-outlined text-4xl text-gray-600">mail</span>
+                                            <p className="text-sm font-medium text-gray-300">{searchQuery ? 'Aramayla eşleşen kampanya bulunamadı' : t.noCampaigns}</p>
                                         </div>
                                     </td>
                                 </tr>
                             )}
                             {filteredCampaigns.map((campaign) => (
-                                <tr key={campaign.id} className="hover:bg-white/5 transition-colors">
-                                    <td className="px-4 py-3">
-                                        <p className="font-medium text-white">{campaign.name}</p>
-                                        <p className="text-sm text-gray-400">{campaign.subject}</p>
+                                <tr key={campaign.id} className={`hover:bg-white/5 transition-colors ${selectedCampaigns.includes(campaign.id) ? 'bg-[#137fec]/5' : ''}`}>
+                                    <td className="px-3 py-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCampaigns.includes(campaign.id)}
+                                            onChange={() => toggleCampaignSelection(campaign.id)}
+                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754] rounded"
+                                        />
                                     </td>
-                                    <td className="px-4 py-3">{getStatusBadge(campaign.status)}</td>
-                                    <td className="px-4 py-3 text-gray-300">{campaign.recipientCount}</td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-3 py-2">
+                                        <p className="font-medium text-white text-sm">{campaign.name}</p>
+                                        <p className="text-xs text-gray-500 truncate max-w-[200px]">{campaign.subject}</p>
+                                    </td>
+                                    <td className="px-3 py-2">{getStatusBadge(campaign.status)}</td>
+                                    <td className="px-3 py-2 text-gray-300 text-sm">{campaign.recipientCount}</td>
+                                    <td className="px-3 py-2 text-sm">
                                         <span className="text-green-400">{campaign.sentCount}</span>
                                         {campaign.failedCount > 0 && (
-                                            <span className="text-red-400 ml-2">/ {campaign.failedCount}</span>
+                                            <span className="text-red-400 ml-1">/ {campaign.failedCount}</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-gray-400">
+                                    <td className="px-3 py-2 text-xs text-gray-400">
                                         {new Date(campaign.createdAt).toLocaleDateString(language === 'TR' ? 'tr-TR' : 'en-US')}
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex gap-1 justify-end">
+                                    <td className="px-3 py-2">
+                                        <div className="flex gap-0.5 justify-end">
                                             {campaign.status === 'draft' && (
-                                                <button onClick={() => handleSend(campaign.id)} className="p-2 text-green-400 hover:text-green-300" title={t.send}>
-                                                    <span className="material-symbols-outlined">send</span>
+                                                <button onClick={() => handleSend(campaign.id)} className="p-1.5 text-green-400 hover:text-green-300" title={t.send}>
+                                                    <span className="material-symbols-outlined text-lg">send</span>
                                                 </button>
                                             )}
                                             {campaign.failedCount > 0 && (
-                                                <button onClick={() => showErrors(campaign)} className="p-2 text-yellow-400 hover:text-yellow-300" title={t.viewErrors}>
-                                                    <span className="material-symbols-outlined">warning</span>
+                                                <button onClick={() => showErrors(campaign)} className="p-1.5 text-yellow-400 hover:text-yellow-300" title={t.viewErrors}>
+                                                    <span className="material-symbols-outlined text-lg">warning</span>
                                                 </button>
                                             )}
-                                            <button onClick={() => handleEdit(campaign)} className="p-2 text-[#137fec] hover:text-[#137fec]/80" title={t.edit}>
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button onClick={() => handleDelete(campaign.id)} className="p-2 text-red-400 hover:text-red-300" title={t.delete}>
-                                                <span className="material-symbols-outlined">delete</span>
+                                            {activeTab !== 'all' && (
+                                                <button onClick={() => handleEdit(campaign)} className="p-1.5 text-[#137fec] hover:text-[#137fec]/80" title={t.edit}>
+                                                    <span className="material-symbols-outlined text-lg">edit</span>
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleDelete(campaign.id)} className="p-1.5 text-red-400 hover:text-red-300" title={t.delete}>
+                                                <span className="material-symbols-outlined text-lg">delete</span>
                                             </button>
                                         </div>
                                     </td>
