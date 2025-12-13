@@ -892,19 +892,9 @@ export default function MailingPage() {
                 ))}
             </div>
 
-            {/* Search and Bulk Actions */}
-            <div className="flex items-center justify-between gap-4 mb-4">
-                <div className="relative flex-1 max-w-md">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
-                    <input
-                        type="text"
-                        placeholder="Kampanya ara..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                    />
-                </div>
-                {selectedCampaigns.length > 0 && (
+            {/* Bulk Actions - Only show when campaigns are selected */}
+            {selectedCampaigns.length > 0 && (
+                <div className="flex items-center justify-end gap-4 mb-4">
                     <button
                         onClick={handleBulkDelete}
                         className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 text-sm font-medium"
@@ -912,8 +902,8 @@ export default function MailingPage() {
                         <span className="material-symbols-outlined text-sm">delete</span>
                         {selectedCampaigns.length} seçili sil
                     </button>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Campaign List */}
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden border border-[#3b4754]">
