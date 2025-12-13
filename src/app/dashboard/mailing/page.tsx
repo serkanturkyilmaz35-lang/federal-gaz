@@ -454,8 +454,8 @@ export default function MailingPage() {
                 content: form.content,
                 templateSlug: form.templateSlug,
                 recipientType: form.recipientType,
-                recipientIds: (form.recipientType === 'custom' || form.recipientType === 'mixed') ? form.recipientIds : undefined,
-                externalRecipients: (form.recipientType === 'external' || form.recipientType === 'mixed') ? form.externalRecipients : undefined,
+                recipientIds: form.recipientType === 'custom' ? form.recipientIds : undefined,
+                externalRecipients: form.recipientType === 'external' ? form.externalRecipients : undefined,
                 scheduledAt: form.scheduledAt || undefined,
                 status: form.scheduledAt ? 'scheduled' : 'draft',
             };
@@ -480,8 +480,8 @@ export default function MailingPage() {
                 const sendBody: { campaignId: number; externalRecipients?: { name: string; email: string }[] } = {
                     campaignId: data.campaign.id
                 };
-                // Include external recipients if that's the recipient type or mixed
-                if ((form.recipientType === 'external' || form.recipientType === 'mixed') && form.externalRecipients.length > 0) {
+                // Include external recipients if that's the recipient type
+                if (form.recipientType === 'external' && form.externalRecipients.length > 0) {
                     sendBody.externalRecipients = form.externalRecipients;
                 }
                 const sendRes = await fetch('/api/dashboard/mailing/send', {
@@ -1062,7 +1062,7 @@ export default function MailingPage() {
                                             onChange={() => setForm({ ...form, recipientType: 'custom' })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.selectMembers}</span>
-                                        {(form.recipientType === 'custom' || form.recipientType === 'mixed') && form.recipientIds.length > 0 && (
+                                        {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
                                             <span className="bg-[#137fec] text-white text-xs px-2 py-0.5 rounded-full">{form.recipientIds.length} seçili</span>
                                         )}
                                     </label>
@@ -1071,24 +1071,13 @@ export default function MailingPage() {
                                             onChange={() => setForm({ ...form, recipientType: 'external' })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.externalRecipients}</span>
-                                        {(form.recipientType === 'external' || form.recipientType === 'mixed') && form.externalRecipients.length > 0 && (
+                                        {form.recipientType === 'external' && form.externalRecipients.length > 0 && (
                                             <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">{form.externalRecipients.length} kişi</span>
-                                        )}
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" checked={form.recipientType === 'mixed'}
-                                            onChange={() => setForm({ ...form, recipientType: 'mixed' })}
-                                            className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
-                                        <span className="text-white">Kombine (Üyeler + Harici)</span>
-                                        {form.recipientType === 'mixed' && (form.recipientIds.length > 0 || form.externalRecipients.length > 0) && (
-                                            <span className="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">
-                                                {form.recipientIds.length + form.externalRecipients.length} toplam
-                                            </span>
                                         )}
                                     </label>
                                 </div>
 
-                                {(form.recipientType === 'custom' || form.recipientType === 'mixed') && (
+                                {form.recipientType === 'custom' && (
                                     <div className="bg-[#111418] border border-[#3b4754] rounded-lg overflow-hidden">
                                         {/* Search and Bulk Actions */}
                                         <div className="p-3 border-b border-[#3b4754] space-y-2">
@@ -1173,7 +1162,7 @@ export default function MailingPage() {
                                 )}
 
                                 {/* External Recipients - File Upload */}
-                                {(form.recipientType === 'external' || form.recipientType === 'mixed') && (
+                                {form.recipientType === 'external' && (
                                     <div className="bg-[#111418] border border-[#3b4754] rounded-lg overflow-hidden">
                                         {/* File Upload Area */}
                                         <div className="p-4 border-b border-[#3b4754]">
