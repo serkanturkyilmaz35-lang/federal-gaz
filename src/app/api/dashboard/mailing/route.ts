@@ -34,10 +34,24 @@ export async function POST(req: Request) {
 
         await connectToDatabase();
 
+        // Handle recipientIds - could be array or JSON string
+        let parsedRecipientIds: number[] = [];
+        if (recipientIds) {
+            if (Array.isArray(recipientIds)) {
+                parsedRecipientIds = recipientIds;
+            } else if (typeof recipientIds === 'string') {
+                try {
+                    parsedRecipientIds = JSON.parse(recipientIds);
+                } catch {
+                    parsedRecipientIds = [];
+                }
+            }
+        }
+
         // Calculate recipient count based on type
         let recipientCount = 0;
-        if (recipientType === 'custom' && recipientIds) {
-            recipientCount = JSON.parse(recipientIds).length;
+        if (recipientType === 'custom' && parsedRecipientIds.length > 0) {
+            recipientCount = parsedRecipientIds.length;
         } else {
             recipientCount = await User.count();
         }
@@ -48,7 +62,7 @@ export async function POST(req: Request) {
             content,
             templateSlug: templateSlug || 'modern',
             recipientType: recipientType || 'all',
-            recipientIds: Array.isArray(recipientIds) ? JSON.stringify(recipientIds) : undefined,
+            recipientIds: parsedRecipientIds.length > 0 ? JSON.stringify(parsedRecipientIds) : undefined,
             status: status || 'draft',
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
             recipientCount,

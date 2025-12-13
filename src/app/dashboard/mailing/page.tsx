@@ -428,7 +428,7 @@ export default function MailingPage() {
                 content: form.content,
                 templateSlug: form.templateSlug,
                 recipientType: form.recipientType,
-                recipientIds: form.recipientType === 'custom' ? JSON.stringify(form.recipientIds) : undefined,
+                recipientIds: form.recipientType === 'custom' ? form.recipientIds : undefined,
                 scheduledAt: form.scheduledAt || undefined,
                 status: form.scheduledAt ? 'scheduled' : 'draft',
             };
