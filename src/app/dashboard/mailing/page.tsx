@@ -923,12 +923,20 @@ export default function MailingPage() {
                                         <input type="radio" checked={form.recipientType === 'all'} onChange={() => setForm({ ...form, recipientType: 'all', recipientIds: [] })}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.allMembers} ({subscriberCount})</span>
+                                        {form.recipientType === 'all' && (form.segment !== 'none' || form.recipientLimit || form.minOrders || form.minAmount) && (
+                                            <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full">filtre aktif</span>
+                                        )}
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" checked={form.recipientType === 'custom'} onChange={() => setForm({ ...form, recipientType: 'custom' })}
+                                        <input type="radio" checked={form.recipientType === 'custom'}
+                                            onChange={() => {
+                                                // Auto-select all members when switching to custom
+                                                const allMemberIds = recipients.map(r => r.id);
+                                                setForm({ ...form, recipientType: 'custom', recipientIds: allMemberIds });
+                                            }}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.selectMembers}</span>
-                                        {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
+                                        {form.recipientType === 'custom' && (
                                             <span className="bg-[#137fec] text-white text-xs px-2 py-0.5 rounded-full">{form.recipientIds.length} seçili</span>
                                         )}
                                     </label>
@@ -987,7 +995,7 @@ export default function MailingPage() {
                                             </div>
                                         </div>
                                         {/* Recipient List */}
-                                        <div className="max-h-72 overflow-y-auto p-2">
+                                        <div className="max-h-[400px] overflow-y-auto p-2">
                                             {recipients
                                                 .filter(r => {
                                                     const search = (form.recipientSearch || '').toLowerCase();
@@ -1116,12 +1124,14 @@ export default function MailingPage() {
                                 )}
                             </div>
 
-                            {/* Content */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.content}</label>
-                                <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={6}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
-                            </div>
+                            {/* Content - Hide when selecting specific members */}
+                            {form.recipientType !== 'custom' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.content}</label>
+                                    <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={6}
+                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                </div>
+                            )}
 
                             {/* Schedule */}
                             <div>
