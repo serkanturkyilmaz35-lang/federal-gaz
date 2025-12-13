@@ -1360,25 +1360,29 @@ export default function MailingPage() {
                                 )}
                             </div>
 
-                            {/* Content */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.content}</label>
-                                <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={6}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
-                            </div>
+                            {/* Content - Only show for Tüm Üyeler */}
+                            {form.recipientType === 'all' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.content}</label>
+                                    <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={6}
+                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]" />
+                                </div>
+                            )}
 
-                            {/* Schedule */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.scheduleAt}</label>
-                                <input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] [color-scheme:dark]" />
-                                {form.scheduledAt && (
-                                    <p className="text-xs text-amber-400 mt-1 flex items-center gap-1">
-                                        <span className="material-symbols-outlined text-sm">info</span>
-                                        Zamanlanmış kampanyalar belirtilen zamanda otomatik olarak gönderilecektir.
-                                    </p>
-                                )}
-                            </div>
+                            {/* Schedule - Only show for Tüm Üyeler */}
+                            {form.recipientType === 'all' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.scheduleAt}</label>
+                                    <input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] [color-scheme:dark]" />
+                                    {form.scheduledAt && (
+                                        <p className="text-xs text-amber-400 mt-1 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">info</span>
+                                            Zamanlanmış kampanyalar belirtilen zamanda otomatik olarak gönderilecektir.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="p-4 border-t border-[#3b4754] flex justify-end gap-3">
