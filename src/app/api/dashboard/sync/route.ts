@@ -32,8 +32,9 @@ export async function POST() {
 
         // 2. Tüm eksik kolonları ekle
         results.push(await addColumnIfMissing(db, existingColumns, 'templateSlug', "VARCHAR(255) NOT NULL DEFAULT 'modern'"));
-        results.push(await addColumnIfMissing(db, existingColumns, 'recipientType', "ENUM('all', 'members', 'guests', 'custom') DEFAULT 'all'"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'recipientType', "ENUM('all', 'members', 'guests', 'custom', 'external') DEFAULT 'all'"));
         results.push(await addColumnIfMissing(db, existingColumns, 'recipientIds', "TEXT"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'externalRecipients', "LONGTEXT"));
         results.push(await addColumnIfMissing(db, existingColumns, 'status', "ENUM('draft', 'scheduled', 'sending', 'sent', 'failed', 'cancelled') DEFAULT 'draft'"));
         results.push(await addColumnIfMissing(db, existingColumns, 'scheduledAt', "DATETIME"));
         results.push(await addColumnIfMissing(db, existingColumns, 'sentAt', "DATETIME"));
@@ -43,6 +44,14 @@ export async function POST() {
         results.push(await addColumnIfMissing(db, existingColumns, 'openCount', "INT DEFAULT 0"));
         results.push(await addColumnIfMissing(db, existingColumns, 'clickCount', "INT DEFAULT 0"));
         results.push(await addColumnIfMissing(db, existingColumns, 'errorLog', "LONGTEXT"));
+
+        // 2.5 Update recipientType ENUM to include 'external' if it exists but doesn't have 'external'
+        try {
+            await db.query(`ALTER TABLE mailing_campaigns MODIFY COLUMN recipientType ENUM('all', 'members', 'guests', 'custom', 'external') DEFAULT 'all'`);
+            results.push('recipientType(ENUM güncellendi)');
+        } catch (e: any) {
+            results.push(`recipientType(ENUM: ${e.message.substring(0, 50)})`);
+        }
 
         // 3. MailingLogs tablosunu oluştur
         try {
