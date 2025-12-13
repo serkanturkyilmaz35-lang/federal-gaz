@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, subject, content, templateSlug, recipientType, recipientIds, status, scheduledAt } = body;
+        const { name, subject, content, templateSlug, recipientType, recipientIds, externalRecipients, status, scheduledAt } = body;
 
         if (!name || !subject || !content) {
             return NextResponse.json({ error: 'Required fields: name, subject, content' }, { status: 400 });
@@ -48,9 +48,28 @@ export async function POST(req: Request) {
             }
         }
 
+        // Handle externalRecipients - could be array or JSON string
+        let externalRecipientsJson: string | undefined;
+        let externalCount = 0;
+        if (externalRecipients) {
+            if (Array.isArray(externalRecipients)) {
+                externalRecipientsJson = JSON.stringify(externalRecipients);
+                externalCount = externalRecipients.length;
+            } else if (typeof externalRecipients === 'string') {
+                externalRecipientsJson = externalRecipients;
+                try {
+                    externalCount = JSON.parse(externalRecipients).length;
+                } catch {
+                    externalCount = 0;
+                }
+            }
+        }
+
         // Calculate recipient count based on type
         let recipientCount = 0;
-        if (recipientType === 'custom' && parsedRecipientIds.length > 0) {
+        if (recipientType === 'external' && externalCount > 0) {
+            recipientCount = externalCount;
+        } else if (recipientType === 'custom' && parsedRecipientIds.length > 0) {
             recipientCount = parsedRecipientIds.length;
         } else {
             recipientCount = await User.count();
@@ -63,6 +82,7 @@ export async function POST(req: Request) {
             templateSlug: templateSlug || 'modern',
             recipientType: recipientType || 'all',
             recipientIds: parsedRecipientIds.length > 0 ? JSON.stringify(parsedRecipientIds) : undefined,
+            externalRecipients: externalRecipientsJson,
             status: status || 'draft',
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
             recipientCount,

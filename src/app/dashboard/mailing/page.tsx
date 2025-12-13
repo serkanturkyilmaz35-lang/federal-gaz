@@ -455,6 +455,7 @@ export default function MailingPage() {
                 templateSlug: form.templateSlug,
                 recipientType: form.recipientType,
                 recipientIds: form.recipientType === 'custom' ? form.recipientIds : undefined,
+                externalRecipients: form.recipientType === 'external' ? form.externalRecipients : undefined,
                 scheduledAt: form.scheduledAt || undefined,
                 status: form.scheduledAt ? 'scheduled' : 'draft',
             };
