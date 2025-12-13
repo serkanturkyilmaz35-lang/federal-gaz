@@ -665,13 +665,91 @@ interface CampaignTemplateOptions {
     recipientName?: string;
 }
 
-export function getCampaignEmailTemplate(templateId: 'modern' | 'classic', options: CampaignTemplateOptions): string {
+export function getCampaignEmailTemplate(templateSlug: string, options: CampaignTemplateOptions): string {
     const { subject, content, recipientName = 'Değerli Müşterimiz' } = options;
     const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
+    const year = new Date().getFullYear();
 
-    if (templateId === 'modern') {
-        return `
+    // Template style configurations
+    const templateStyles: {
+        [key: string]: {
+            headerBg: string;
+            headerText: string;
+            buttonBg: string;
+            greeting: string;
+            signature: string;
+        }
+    } = {
+        'modern': {
+            headerBg: 'linear-gradient(135deg, #1a2744 0%, #0a1628 100%)',
+            headerText: '#ffffff',
+            buttonBg: 'linear-gradient(135deg, #b13329 0%, #8b1a12 100%)',
+            greeting: 'Merhaba',
+            signature: 'Federal Gaz Ekibi'
+        },
+        'classic': {
+            headerBg: '#1a2744',
+            headerText: '#ffffff',
+            buttonBg: '#b13329',
+            greeting: 'Sayın',
+            signature: 'Federal Gaz'
+        },
+        'black-friday': {
+            headerBg: 'linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%)',
+            headerText: '#ffffff',
+            buttonBg: '#ff2d2d',
+            greeting: 'Merhaba',
+            signature: 'Federal Gaz'
+        },
+        'weekend-sale': {
+            headerBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            headerText: '#ffffff',
+            buttonBg: '#f093fb',
+            greeting: 'Merhaba',
+            signature: 'Federal Gaz'
+        },
+        'ramazan-bayrami': {
+            headerBg: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+            headerText: '#ffd700',
+            buttonBg: '#4ecdc4',
+            greeting: 'Değerli Müşterimiz',
+            signature: 'Federal Gaz Ailesi'
+        },
+        'kurban-bayrami': {
+            headerBg: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)',
+            headerText: '#ffffff',
+            buttonBg: '#b13329',
+            greeting: 'Değerli Müşterimiz',
+            signature: 'Federal Gaz Ailesi'
+        },
+        'winter-campaign': {
+            headerBg: 'linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)',
+            headerText: '#1a2744',
+            buttonBg: '#1a2744',
+            greeting: 'Merhaba',
+            signature: 'Federal Gaz'
+        },
+        'welcome': {
+            headerBg: 'linear-gradient(135deg, #1a2744 0%, #2d4a7c 100%)',
+            headerText: '#ffffff',
+            buttonBg: '#b13329',
+            greeting: 'Hoş Geldiniz',
+            signature: 'Federal Gaz Ailesi'
+        },
+        'new-year': {
+            headerBg: 'linear-gradient(135deg, #1e3a5f 0%, #0d1f33 100%)',
+            headerText: '#ffd700',
+            buttonBg: '#c41e3a',
+            greeting: 'Merhaba',
+            signature: 'Federal Gaz'
+        }
+    };
+
+    // Get style or default to modern
+    const style = templateStyles[templateSlug] || templateStyles['modern'];
+
+    return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -681,16 +759,16 @@ export function getCampaignEmailTemplate(templateId: 'modern' | 'classic', optio
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-        <!-- Modern Gradient Banner -->
-        <div style="background: linear-gradient(135deg, #1a2744 0%, #0a1628 100%); padding: 40px 30px; text-align: center;">
+        <!-- Header -->
+        <div style="background: ${style.headerBg}; padding: 40px 30px; text-align: center;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">${subject}</h1>
+            <h1 style="color: ${style.headerText}; margin: 0; font-size: 28px; font-weight: 600;">${subject}</h1>
         </div>
         
         <!-- Content Area -->
         <div style="padding: 40px 30px;">
             <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                Merhaba <strong>${recipientName}</strong>,
+                ${style.greeting} <strong>${recipientName}</strong>,
             </p>
             
             <div style="color: #444; font-size: 15px; line-height: 1.8;">
@@ -699,10 +777,15 @@ export function getCampaignEmailTemplate(templateId: 'modern' | 'classic', optio
             
             <!-- CTA Button -->
             <div style="text-align: center; margin: 35px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, #b13329 0%, #8b1a12 100%); color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${style.buttonBg}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
                     Sitemizi Ziyaret Edin
                 </a>
             </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                Saygılarımızla,<br>
+                <strong>${style.signature}</strong>
+            </p>
         </div>
         
         <!-- Footer -->
@@ -711,7 +794,7 @@ export function getCampaignEmailTemplate(templateId: 'modern' | 'classic', optio
                 📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com
             </p>
             <p style="color: #8899aa; margin: 0; font-size: 12px;">
-                © ${new Date().getFullYear()} Federal Gaz - Ankara | Tüm Hakları Saklıdır
+                © ${year} Federal Gaz - Ankara | Tüm Hakları Saklıdır
             </p>
             <p style="color: #667788; margin: 15px 0 0; font-size: 11px;">
                 Bu e-postayı almak istemiyorsanız lütfen bize bildirin.
@@ -720,67 +803,5 @@ export function getCampaignEmailTemplate(templateId: 'modern' | 'classic', optio
     </div>
 </body>
 </html>
-        `;
-    } else {
-        // Classic Template
-        return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: Georgia, 'Times New Roman', serif; background-color: #f8f8f8;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0;">
-        <!-- Classic Header -->
-        <div style="background-color: #1a2744; padding: 25px; text-align: center; border-bottom: 4px solid #b13329;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px;">
-        </div>
-        
-        <!-- Subject Banner -->
-        <div style="background-color: #f0f4f8; padding: 20px 30px; border-bottom: 1px solid #e0e0e0;">
-            <h1 style="color: #1a2744; margin: 0; font-size: 24px; font-weight: normal;">${subject}</h1>
-        </div>
-        
-        <!-- Content Area -->
-        <div style="padding: 35px 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
-                Sayın <strong>${recipientName}</strong>,
-            </p>
-            
-            <div style="color: #444; font-size: 15px; line-height: 1.7; border-left: 3px solid #b13329; padding-left: 20px; margin: 25px 0;">
-                ${content.replace(/\n/g, '<br>')}
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background-color: #b13329; color: #ffffff; padding: 12px 35px; text-decoration: none; font-size: 15px; border-radius: 4px;">
-                    Web Sitemizi Ziyaret Edin →
-                </a>
-            </div>
-            
-            <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                Saygılarımızla,<br>
-                <strong>Federal Gaz Ekibi</strong>
-            </p>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f5f5f5; padding: 25px; text-align: center; border-top: 1px solid #e0e0e0;">
-            <p style="color: #666; margin: 0 0 8px; font-size: 13px;">
-                Federal Gaz - Ankara
-            </p>
-            <p style="color: #888; margin: 0 0 8px; font-size: 12px;">
-                Tel: (0312) 395 35 95 | E-posta: federal.gaz@hotmail.com
-            </p>
-            <p style="color: #999; margin: 0; font-size: 11px;">
-                © ${new Date().getFullYear()} Tüm Hakları Saklıdır
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-        `;
-    }
+    `;
 }
