@@ -876,16 +876,16 @@ export default function MailingPage() {
 
             {/* Campaign Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4 border border-[#3b4754]">
-                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white">{isNew ? t.createNew : t.editCampaign}</h2>
+                <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 pt-8 pb-8 overflow-y-auto">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-3xl m-4 border border-[#3b4754]">
+                        <div className="p-4 border-b border-[#3b4754] flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-white">{isNew ? t.createNew : t.editCampaign}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-4 space-y-3">
                             {/* Row 1: Name, Subject, Template */}
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
@@ -930,13 +930,12 @@ export default function MailingPage() {
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" checked={form.recipientType === 'custom'}
                                             onChange={() => {
-                                                // Auto-select all members when switching to custom
-                                                const allMemberIds = recipients.map(r => r.id);
-                                                setForm({ ...form, recipientType: 'custom', recipientIds: allMemberIds });
+                                                // Just switch to custom mode - don't auto-select
+                                                setForm({ ...form, recipientType: 'custom' });
                                             }}
                                             className="w-4 h-4 text-[#137fec] bg-[#111418] border-[#3b4754]" />
                                         <span className="text-white">{t.selectMembers}</span>
-                                        {form.recipientType === 'custom' && (
+                                        {form.recipientType === 'custom' && form.recipientIds.length > 0 && (
                                             <span className="bg-[#137fec] text-white text-xs px-2 py-0.5 rounded-full">{form.recipientIds.length} seçili</span>
                                         )}
                                     </label>
@@ -1147,7 +1146,7 @@ export default function MailingPage() {
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-[#3b4754] flex justify-end gap-3">
+                        <div className="p-4 border-t border-[#3b4754] flex justify-end gap-3">
                             <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600">
                                 {t.cancel}
                             </button>
