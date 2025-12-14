@@ -28,7 +28,7 @@ const translations = {
         noTemplatesDesc: "Varsayılan şablonları yüklemek için butona tıklayın.",
         edit: "Düzenle",
         general: "Genel",
-        holiday: "Özel Gün",
+        holiday: "Kutlama",
         promotion: "Kampanya",
         templateName: "Şablon Adı (TR)",
         templateNameEN: "Şablon Adı (EN)",
@@ -108,8 +108,15 @@ export default function TemplatesPage() {
         .sort((a, b) => {
             // Active templates first
             if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+
+            // Group by Category (General -> Holiday -> Promotion)
+            const catOrder: Record<string, number> = { 'general': 1, 'holiday': 2, 'promotion': 3 };
+            const catA = catOrder[a.category] || 99;
+            const catB = catOrder[b.category] || 99;
+            if (catA !== catB) return catA - catB;
+
             // Then by sortOrder
-            return a.sortOrder - b.sortOrder;
+            return (a.sortOrder || 0) - (b.sortOrder || 0);
         });
 
     useEffect(() => {
@@ -271,8 +278,8 @@ export default function TemplatesPage() {
                 <button
                     onClick={() => setSelectedCategory('all')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'all'
-                            ? 'bg-[#137fec] text-white'
-                            : 'bg-[#111418] text-gray-400 hover:text-white border border-[#3b4754]'
+                        ? 'bg-[#137fec] text-white'
+                        : 'bg-[#111418] text-gray-400 hover:text-white border border-[#3b4754]'
                         }`}
                 >
                     Tümü
@@ -281,8 +288,8 @@ export default function TemplatesPage() {
                 <button
                     onClick={() => setSelectedCategory('general')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'general'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-[#111418] text-blue-400 hover:bg-blue-500/20 border border-blue-500/30'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-[#111418] text-blue-400 hover:bg-blue-500/20 border border-blue-500/30'
                         }`}
                 >
                     {t.general}
@@ -291,8 +298,8 @@ export default function TemplatesPage() {
                 <button
                     onClick={() => setSelectedCategory('holiday')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'holiday'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-[#111418] text-red-400 hover:bg-red-500/20 border border-red-500/30'
+                        ? 'bg-red-500 text-white'
+                        : 'bg-[#111418] text-red-400 hover:bg-red-500/20 border border-red-500/30'
                         }`}
                 >
                     {t.holiday}
@@ -301,8 +308,8 @@ export default function TemplatesPage() {
                 <button
                     onClick={() => setSelectedCategory('promotion')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'promotion'
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-[#111418] text-orange-400 hover:bg-orange-500/20 border border-orange-500/30'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-[#111418] text-orange-400 hover:bg-orange-500/20 border border-orange-500/30'
                         }`}
                 >
                     {t.promotion}
