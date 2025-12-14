@@ -132,7 +132,10 @@ export default function TemplatesPage() {
         });
 
     useEffect(() => {
-        fetchTemplates();
+        // First sync to seed any missing templates, then fetch
+        fetch('/api/dashboard/sync')
+            .then(() => fetchTemplates())
+            .catch(() => fetchTemplates()); // Fetch anyway if sync fails
     }, []);
 
     // ESC key to close modals
@@ -231,11 +234,12 @@ export default function TemplatesPage() {
         }
     };
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'bannerImage' | 'logoUrl') => {
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'bannerImage' | 'logoUrl' | 'headerImage' | 'footerImage') => {
         const file = e.target.files?.[0];
         if (!file || !editingTemplate) return;
 
         setSaving(true);
+        setErrorMessage('');
         const formData = new FormData();
         formData.append('file', file);
 
@@ -245,14 +249,16 @@ export default function TemplatesPage() {
                 body: formData,
             });
             const data = await res.json();
-            if (data.url) {
+            if (res.ok && data.url) {
                 setEditingTemplate({ ...editingTemplate, [field]: data.url });
+                setSuccessMessage('Görsel yüklendi');
+                setTimeout(() => setSuccessMessage(''), 2000);
             } else {
-                setErrorMessage('Yükleme başarısız');
+                setErrorMessage(data.error || 'Yükleme başarısız');
             }
         } catch (error) {
             console.error('Upload failed:', error);
-            setErrorMessage('Yükleme hatası');
+            setErrorMessage('Yükleme hatası - bağlantı sorunu');
         } finally {
             setSaving(false);
         }
@@ -517,7 +523,7 @@ export default function TemplatesPage() {
                                         />
                                         <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
                                             <span className="material-symbols-outlined text-sm">upload</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'bannerImage')} />
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'headerImage')} />
                                         </label>
                                     </div>
                                     {editingTemplate.headerImage && (
@@ -602,7 +608,7 @@ export default function TemplatesPage() {
                                         />
                                         <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
                                             <span className="material-symbols-outlined text-sm">upload</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'bannerImage')} />
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'footerImage')} />
                                         </label>
                                     </div>
                                     {editingTemplate.footerImage && (
