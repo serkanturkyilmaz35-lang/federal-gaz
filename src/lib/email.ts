@@ -858,15 +858,15 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         customProductImageUrl,
         campaignTitle,
         campaignHighlight,
-        // Template styling options with defaults
-        headerBgColor = '#1a2744',
-        headerTextColor = '#ffffff',
+        // Template styling options - NO DEFAULTS here (defaults handled per template)
+        headerBgColor,
+        headerTextColor,
         headerImage,
-        bodyBgColor = '#ffffff',
-        bodyTextColor = '#333333',
-        buttonColor = '#b13329',
-        footerBgColor = '#1a2744',
-        footerTextColor = '#888888',
+        bodyBgColor,
+        bodyTextColor,
+        buttonColor,
+        footerBgColor,
+        footerTextColor,
         footerImage,
         headerHtml,
         footerHtml,
@@ -915,6 +915,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     const mainProductImage = customProductImageUrl || defaultImageForTemplate;
 
     // Use template colors from database or defaults
+    // Use template colors from database or override defaults per template
     const colors = {
         headerBg: headerBgColor,
         headerText: headerTextColor,
@@ -927,14 +928,15 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         gray: '#f5f5f5'
     };
 
-    // Keep brandColors for backward compatibility with existing templates
-    const brandColors = {
-        navyDark: headerBgColor || '#1a2744',
-        navyLight: '#2d4a7c',
-        red: buttonColor || '#b13329',
-        redDark: '#8b1a12',
-        gold: '#ffd700',
-        white: '#ffffff',
+    // Modern Template Defaults
+    const modernTheme = {
+        headerBg: headerBgColor || '#1a2744',
+        headerText: headerTextColor || '#ffffff',
+        bodyBg: bodyBgColor || '#ffffff',
+        bodyText: bodyTextColor || '#333333',
+        button: buttonColor || '#b13329',
+        footerBg: footerBgColor || '#1a2744',
+        footerText: footerTextColor || '#888888',
         gray: '#f5f5f5'
     };
 
@@ -950,30 +952,33 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${brandColors.gray};">
-    <div style="max-width: 600px; margin: 0 auto; background-color: ${brandColors.white};">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${modernTheme.gray};">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${modernTheme.bodyBg};">
         <!-- Header with Dynamic Background -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 40px 30px; text-align: center;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
-            <h1 style="color: ${brandColors.white}; margin: 0; font-size: 28px; font-weight: 600;">${campaignTitle || subject}</h1>
+        <div style="background: ${modernTheme.headerBg}; padding: 40px 30px; text-align: center; position: relative; background-size: cover; background-position: center;">
+             ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${headerImage}'); background-size: cover; background-position: center; opacity: 0.4; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
+                <h1 style="color: ${modernTheme.headerText}; margin: 0; font-size: 28px; font-weight: 600;">${campaignTitle || subject}</h1>
+            </div>
         </div>
         
         <!-- Product Image Banner -->
-        <div style="background: linear-gradient(135deg, ${brandColors.red} 0%, ${brandColors.redDark} 100%); padding: 20px; text-align: center;">
+        <div style="background: linear-gradient(135deg, ${modernTheme.button} 0%, #8b1a12 100%); padding: 20px; text-align: center;">
             <img src="${mainProductImage}" alt="Endüstriyel Gazlar" style="height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
         </div>
         
         <!-- Content -->
         <div style="padding: 40px 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+            <p style="color: ${modernTheme.bodyText}; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
                 Merhaba <strong>${recipientName}</strong>,
             </p>
-            <div style="color: #444; font-size: 15px; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.red};">
+            <div style="color: #444; font-size: 15px; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid ${modernTheme.button};">
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 35px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, ${brandColors.red} 0%, ${brandColors.redDark} 100%); color: ${brandColors.white}; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(177, 51, 41, 0.3);">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${modernTheme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                     🛒 Sipariş Ver
                 </a>
             </div>
@@ -984,20 +989,33 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 30px; text-align: center;">
-            <p style="color: ${brandColors.white}; margin: 0 0 10px; font-size: 14px;">
-                ${footerContact || '📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com'}
-            </p>
-            <p style="color: #8899aa; margin: 0; font-size: 12px;">
-                © ${year} Federal Gaz - Ankara | Tüm Hakları Saklıdır
-            </p>
+        <div style="background: ${modernTheme.footerBg}; padding: 30px; text-align: center; position: relative;">
+            ${footerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${footerImage}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                 <p style="color: ${modernTheme.footerText}; margin: 0 0 10px; font-size: 14px;">
+                    ${footerContact || '📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com'}
+                </p>
+                <p style="color: ${modernTheme.footerText}; opacity: 0.7; margin: 0; font-size: 12px;">
+                    © ${year} Federal Gaz - Ankara | Tüm Hakları Saklıdır
+                </p>
+            </div>
         </div>
     </div>
 </body>
 </html>`,
 
         // ==================== BLACK FRIDAY ====================
-        'black-friday': () => `
+        'black-friday': () => {
+            const theme = {
+                headerBg: headerBgColor || 'linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%)',
+                headerText: headerTextColor || '#ffffff',
+                bodyBg: bodyBgColor || '#111111',
+                bodyText: bodyTextColor || '#cccccc',
+                button: buttonColor || '#ff2d2d',
+                footerBg: footerBgColor || '#000000',
+                footerText: footerTextColor || '#888888',
+            };
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1006,51 +1024,58 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #000000;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0a;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${theme.bodyBg};">
         <!-- Black Friday Header -->
-        <div style="background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%); padding: 40px 30px; text-align: center; position: relative;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
-            <div style="background: #ff2d2d; color: #ffffff; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
-                🔥 ${campaignTitle || 'EFSANE CUMA'} 🔥
+        <div style="background: ${theme.headerBg}; padding: 40px 30px; text-align: center; position: relative; background-size: cover; background-position: center;">
+            ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${headerImage}'); background-size: cover; background-position: center; opacity: 0.4; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
+                <div style="background: ${theme.button}; color: #ffffff; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
+                    🔥 ${campaignTitle || 'EFSANE CUMA'} 🔥
+                </div>
+                <h1 style="color: ${theme.headerText}; margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 0 20px rgba(255,45,45,0.5);">${subject}</h1>
+                <p style="color: ${theme.button}; font-size: 48px; font-weight: 900; margin: 15px 0 0;">${campaignHighlight || '%50 İNDİRİM'}</p>
             </div>
-            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 0 20px rgba(255,45,45,0.5);">${subject}</h1>
-            <p style="color: #ff2d2d; font-size: 48px; font-weight: 900; margin: 15px 0 0;">${campaignHighlight || '%50 İNDİRİM'}</p>
         </div>
         
         <!-- Products Section -->
         <div style="background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); padding: 30px; text-align: center;">
             <img src="${mainProductImage}" alt="Kaynak Gazları" style="height: 150px; filter: drop-shadow(0 0 30px rgba(255,45,45,0.5));">
-            <div style="background: rgba(255,45,45,0.2); border: 2px solid #ff2d2d; border-radius: 8px; padding: 20px; margin-top: 20px;">
+            <div style="background: rgba(255,45,45,0.2); border: 2px solid ${theme.button}; border-radius: 8px; padding: 20px; margin-top: 20px;">
                 <p style="color: #ffffff; font-size: 18px; margin: 0 0 10px;">Tüm Ürünlerde Geçerli!</p>
                 <p style="color: #ffd700; font-size: 14px; margin: 0;">Stoklarla sınırlı • Kaçırmayın!</p>
             </div>
         </div>
         
         <!-- Content -->
-        <div style="padding: 30px; background: #111111;">
-            <p style="color: #cccccc; font-size: 16px; line-height: 1.6;">
+        <div style="padding: 30px; background: ${theme.bodyBg};">
+            <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6;">
                 Merhaba <strong style="color: #ffffff;">${recipientName}</strong>,
             </p>
-            <div style="color: #aaaaaa; font-size: 15px; line-height: 1.8;">
+            <div style="color: ${theme.bodyText}; opacity: 0.9; font-size: 15px; line-height: 1.8;">
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: #ff2d2d; color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 30px rgba(255,45,45,0.5);">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 30px rgba(255,45,45,0.5);">
                     FIRSATI YAKALA
                 </a>
             </div>
         </div>
         
         <!-- Footer -->
-        <div style="background-color: #000000; padding: 25px; text-align: center; border-top: 1px solid #333;">
-            <p style="color: #888; margin: 0; font-size: 12px;">
-                📞 (0312) 395 35 95 | © ${year} Federal Gaz
-            </p>
+        <div style="background: ${theme.footerBg}; padding: 25px; text-align: center; border-top: 1px solid #333; position: relative;">
+            ${footerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${footerImage}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                 <p style="color: ${theme.footerText}; margin: 0; font-size: 12px;">
+                    ${footerContact || '📞 (0312) 395 35 95 | © ' + year + ' Federal Gaz'}
+                </p>
+            </div>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== NEW YEAR ====================
         'new-year': () => `
@@ -1179,7 +1204,20 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
 </html>`,
 
         // ==================== KURBAN BAYRAMI ====================
-        'kurban-bayrami': () => `
+        'kurban-bayrami': () => {
+            const theme = {
+                headerBg: headerBgColor || '#2d3436', // Gradient base needed? Let's use solid for simplicity if overridden
+                headerText: headerTextColor || '#ffffff',
+                bodyBg: bodyBgColor || '#1a2744',
+                bodyText: bodyTextColor || '#cccccc',
+                button: buttonColor || '#b13329',
+                footerBg: footerBgColor || '#1a2744',
+                footerText: footerTextColor || '#888888'
+            };
+            // Special handling for gradient defaults if no override
+            const headerBgVal = headerBgColor || 'linear-gradient(180deg, #2d3436 0%, #000000 100%)';
+
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1188,13 +1226,13 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #1a2744;">
-    <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #2d3436 0%, #000000 100%);">
+    <div style="max-width: 600px; margin: 0 auto; background: ${headerBgVal};">
         <!-- Bayram Header -->
-        <div style="padding: 40px 30px; text-align: center; border-bottom: 3px solid ${brandColors.red};">
+        <div style="padding: 40px 30px; text-align: center; border-bottom: 3px solid ${theme.button};">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
             <p style="color: #ffd700; font-size: 36px; margin: 0;">🕌</p>
-            <h1 style="color: #ffffff; margin: 15px 0; font-size: 32px; font-weight: 600;">${campaignTitle || 'KURBAN BAYRAMINIZ'}</h1>
-            <p style="color: ${brandColors.red}; font-size: 24px; margin: 0; font-weight: 300;">${campaignHighlight || 'KUTLU OLSUN'}</p>
+            <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 32px; font-weight: 600;">${campaignTitle || 'KURBAN BAYRAMINIZ'}</h1>
+            <p style="color: ${theme.button}; font-size: 24px; margin: 0; font-weight: 300;">${campaignHighlight || 'KUTLU OLSUN'}</p>
         </div>
         
         <!-- Image -->
@@ -1206,9 +1244,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <div style="padding: 30px;">
             <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);">
                 <p style="color: #ffffff; font-size: 16px; line-height: 1.6;">
-                    Değerli <strong style="color: ${brandColors.red};">${recipientName}</strong>,
+                    Değerli <strong style="color: ${theme.button};">${recipientName}</strong>,
                 </p>
-                <div style="color: #cccccc; font-size: 15px; line-height: 1.8;">
+                <div style="color: ${theme.bodyText}; font-size: 15px; line-height: 1.8;">
                     ${templateContent.replace(/\n/g, '<br>')}
                 </div>
             </div>
@@ -1220,7 +1258,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${brandColors.red}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                     Sipariş Ver
                 </a>
             </div>
@@ -1231,17 +1269,28 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
-            <p style="color: #888; margin: 0; font-size: 12px;">
-                © ${year} Federal Gaz - Ankara
+        <div style="background-color: ${theme.footerBg}; padding: 25px; text-align: center;">
+            <p style="color: ${theme.footerText}; margin: 0; font-size: 12px;">
+                ${footerContact || '© ' + year + ' Federal Gaz - Ankara'}
             </p>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== WINTER CAMPAIGN ====================
-        'winter-campaign': () => `
+        'winter-campaign': () => {
+            const theme = {
+                headerBg: headerBgColor || 'linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)',
+                headerText: headerTextColor || '#1a2744',
+                bodyBg: bodyBgColor || '#ffffff',
+                bodyText: bodyTextColor || '#333333',
+                button: buttonColor || '#1a2744',
+                footerBg: footerBgColor || '#1a2744',
+                footerText: footerTextColor || '#8899aa'
+            };
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1250,24 +1299,24 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #e8f4f8;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${theme.bodyBg};">
         <!-- Winter Header -->
-        <div style="background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%); padding: 40px 30px; text-align: center;">
+        <div style="background: ${theme.headerBg}; padding: 40px 30px; text-align: center; position: relative;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
             <p style="font-size: 40px; margin: 0;">❄️</p>
-            <h1 style="color: ${brandColors.navyDark}; margin: 15px 0; font-size: 28px; font-weight: 600;">${subject}</h1>
+            <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 28px; font-weight: 600;">${subject}</h1>
             <p style="color: #2d4a7c; font-size: 16px; margin: 0;">Kışa hazır mısınız?</p>
         </div>
         
         <!-- Product Banner -->
-        <div style="background: ${brandColors.navyDark}; padding: 25px; text-align: center;">
+        <div style="background: ${theme.button}; padding: 25px; text-align: center;">
             <img src="${mainProductImage}" alt="LPG Tüpü" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
             <p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">Kış boyunca kesintisiz ısınma!</p>
         </div>
         
         <!-- Content -->
         <div style="padding: 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+            <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6;">
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 8px;">
@@ -1281,7 +1330,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${brandColors.navyDark}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                     Şimdi Sipariş Ver
                 </a>
             </div>
@@ -1292,20 +1341,31 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
-            <p style="color: #ffffff; margin: 0 0 8px; font-size: 13px;">
-                📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com
+        <div style="background-color: ${theme.footerBg}; padding: 25px; text-align: center;">
+            <p style="color: ${theme.footerText}; margin: 0 0 8px; font-size: 13px;">
+                ${footerContact || '📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com'}
             </p>
-            <p style="color: #8899aa; margin: 0; font-size: 12px;">
+            <p style="color: ${theme.footerText}; margin: 0; font-size: 12px; opacity: 0.8;">
                 © ${year} Federal Gaz - Ankara
             </p>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== WEEKEND SALE ====================
-        'weekend-sale': () => `
+        'weekend-sale': () => {
+            const theme = {
+                headerBg: headerBgColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                headerText: headerTextColor || '#ffffff',
+                bodyBg: bodyBgColor || '#ffffff',
+                bodyText: bodyTextColor || '#333333',
+                button: buttonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                footerBg: footerBgColor || '#1a2744',
+                footerText: footerTextColor || '#888'
+            };
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1314,14 +1374,14 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${theme.bodyBg};">
         <!-- Weekend Header -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+        <div style="background: ${theme.headerBg}; padding: 40px 30px; text-align: center;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
             <div style="background: rgba(255,255,255,0.2); display: inline-block; padding: 8px 20px; border-radius: 20px; margin-bottom: 15px;">
                 <span style="color: #ffffff; font-size: 14px; font-weight: 600;">🎉 HAFTA SONU ÖZEL 🎉</span>
             </div>
-            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">${subject}</h1>
+            <h1 style="color: ${theme.headerText}; margin: 0; font-size: 32px; font-weight: 700;">${subject}</h1>
         </div>
         
         <!-- Discount Banner -->
@@ -1337,7 +1397,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Content -->
         <div style="padding: 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+            <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6;">
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8;">
@@ -1345,7 +1405,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 16px;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 16px;">
                     Hemen Al
                 </a>
             </div>
@@ -1356,17 +1416,33 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
-            <p style="color: #888; margin: 0; font-size: 12px;">
-                © ${year} Federal Gaz - Ankara
+        <div style="background-color: ${theme.footerBg}; padding: 25px; text-align: center;">
+             <p style="color: ${theme.footerText}; margin: 0; font-size: 12px;">
+                ${footerContact || '© ' + year + ' Federal Gaz - Ankara'}
             </p>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== WELCOME ====================
-        'welcome': () => `
+        'welcome': () => {
+            const theme = {
+                headerBg: headerBgColor || '#1a2744',
+                headerText: headerTextColor || '#ffffff',
+                bodyBg: bodyBgColor || '#ffffff',
+                bodyText: bodyTextColor || '#333333',
+                button: buttonColor || '#b13329',
+                footerBg: footerBgColor || '#1a2744',
+                footerText: footerTextColor || '#8899aa',
+                navyLight: '#2d4a7c' // Keeping this specific color for gradient usage
+            };
+            const headerGradient = headerBgColor
+                ? headerBgColor
+                : `linear-gradient(135deg, ${theme.headerBg} 0%, ${theme.navyLight} 100%)`;
+
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1375,24 +1451,24 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${theme.bodyBg};">
         <!-- Welcome Header -->
-        <div style="background: linear-gradient(135deg, ${brandColors.navyDark} 0%, ${brandColors.navyLight} 100%); padding: 50px 30px; text-align: center;">
+        <div style="background: ${headerGradient}; padding: 50px 30px; text-align: center; position: relative;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 300;">Hoş Geldiniz!</h1>
+            <h1 style="color: ${theme.headerText}; margin: 0; font-size: 32px; font-weight: 300;">Hoş Geldiniz!</h1>
             <p style="color: #aabbcc; font-size: 16px; margin: 15px 0 0;">Federal Gaz ailesine katıldınız</p>
         </div>
         
         <!-- Icon -->
         <div style="text-align: center; margin-top: -30px;">
-            <div style="background: ${brandColors.red}; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(177, 51, 41, 0.3);">
+            <div style="background: ${theme.button}; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(177, 51, 41, 0.3);">
                 <span style="color: #ffffff; font-size: 28px;">✓</span>
             </div>
         </div>
         
         <!-- Content -->
         <div style="padding: 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.6; text-align: center;">
+            <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6; text-align: center;">
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8; text-align: center;">
@@ -1401,21 +1477,21 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             
             <!-- Features -->
             <div style="background: #f8f9fa; border-radius: 12px; padding: 25px; margin: 25px 0;">
-                <p style="color: ${brandColors.navyDark}; font-size: 16px; font-weight: 600; margin: 0 0 15px; text-align: center;">
+                <p style="color: ${theme.headerBg}; font-size: 16px; font-weight: 600; margin: 0 0 15px; text-align: center;">
                     Üyelik Avantajlarınız
                 </p>
                 <table style="width: 100%;">
                     <tr>
                         <td style="padding: 10px; text-align: center;">
-                            <div style="background: ${brandColors.red}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">🚚</div>
+                            <div style="background: ${theme.button}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">🚚</div>
                             <p style="color: #666; font-size: 13px; margin: 0;">Hızlı Teslimat</p>
                         </td>
                         <td style="padding: 10px; text-align: center;">
-                            <div style="background: ${brandColors.red}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">💰</div>
+                            <div style="background: ${theme.button}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">💰</div>
                             <p style="color: #666; font-size: 13px; margin: 0;">Özel Fiyatlar</p>
                         </td>
                         <td style="padding: 10px; text-align: center;">
-                            <div style="background: ${brandColors.red}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">🎁</div>
+                            <div style="background: ${theme.button}; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">🎁</div>
                             <p style="color: #666; font-size: 13px; margin: 0;">Kampanyalar</p>
                         </td>
                     </tr>
@@ -1423,7 +1499,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${brandColors.red}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                     İlk Siparişinizi Verin
                 </a>
             </div>
@@ -1434,20 +1510,31 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center;">
-            <p style="color: #ffffff; margin: 0 0 8px; font-size: 13px;">
-                📞 (0312) 395 35 95
+        <div style="background-color: ${theme.footerBg}; padding: 25px; text-align: center;">
+            <p style="color: ${theme.footerText}; margin: 0 0 8px; font-size: 13px;">
+                ${footerContact || '📞 (0312) 395 35 95'}
             </p>
-            <p style="color: #8899aa; margin: 0; font-size: 12px;">
+            <p style="color: ${theme.footerText}; margin: 0; font-size: 12px; opacity: 0.8;">
                 © ${year} Federal Gaz - Ankara
             </p>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== CLASSIC ====================
-        'classic': () => `
+        'classic': () => {
+            const theme = {
+                headerBg: headerBgColor || '#1a2744',
+                headerText: headerTextColor || '#ffffff', // Not used much in classic header except logo area
+                bodyBg: bodyBgColor || '#ffffff',
+                bodyText: bodyTextColor || '#333333',
+                button: buttonColor || '#b13329',
+                footerBg: footerBgColor || '#f5f5f5',
+                footerText: footerTextColor || '#666666'
+            };
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1456,29 +1543,32 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Georgia, 'Times New Roman', serif; background-color: #f8f8f8;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${theme.bodyBg}; border: 1px solid #e0e0e0;">
         <!-- Classic Header -->
-        <div style="background-color: ${brandColors.navyDark}; padding: 25px; text-align: center; border-bottom: 4px solid ${brandColors.red};">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px;">
+        <div style="background-color: ${theme.headerBg}; padding: 25px; text-align: center; border-bottom: 4px solid ${theme.button}; position: relative;">
+            ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${headerImage}'); background-size: cover; background-position: center; opacity: 0.4; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px;">
+            </div>
         </div>
         
         <!-- Subject Banner -->
         <div style="background-color: #f0f4f8; padding: 20px 30px; border-bottom: 1px solid #e0e0e0;">
-            <h1 style="color: ${brandColors.navyDark}; margin: 0; font-size: 24px; font-weight: normal;">${subject}</h1>
+            <h1 style="color: ${theme.headerBg}; margin: 0; font-size: 24px; font-weight: normal;">${subject}</h1>
         </div>
         
         <!-- Content -->
         <div style="padding: 35px 30px;">
-            <p style="color: #333; font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
+            <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
                 Sayın <strong>${recipientName}</strong>,
             </p>
             
-            <div style="color: #444; font-size: 15px; line-height: 1.7; border-left: 3px solid ${brandColors.red}; padding-left: 20px; margin: 25px 0;">
+            <div style="color: #444; font-size: 15px; line-height: 1.7; border-left: 3px solid ${theme.button}; padding-left: 20px; margin: 25px 0;">
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background-color: ${brandColors.red}; color: #ffffff; padding: 12px 35px; text-decoration: none; font-size: 15px; border-radius: 4px;">
+                <a href="${websiteUrl}" style="display: inline-block; background-color: ${theme.button}; color: #ffffff; padding: 12px 35px; text-decoration: none; font-size: 15px; border-radius: 4px;">
                     Web Sitemizi Ziyaret Edin →
                 </a>
             </div>
@@ -1489,18 +1579,32 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: #f5f5f5; padding: 25px; text-align: center; border-top: 1px solid #e0e0e0;">
-            <p style="color: #666; margin: 0 0 8px; font-size: 13px;">Federal Gaz - Ankara</p>
-            <p style="color: #888; margin: 0; font-size: 12px;">
-                Tel: (0312) 395 35 95 | © ${year}
-            </p>
+        <div style="background-color: ${theme.footerBg}; padding: 25px; text-align: center; border-top: 1px solid #e0e0e0; position: relative;">
+             ${footerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${footerImage}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>` : ''}
+             <div style="position: relative; z-index: 1;">
+                <p style="color: ${theme.footerText}; margin: 0 0 8px; font-size: 13px;">Federal Gaz - Ankara</p>
+                <p style="color: ${theme.footerText}; margin: 0; font-size: 12px; opacity: 0.8;">
+                    ${footerContact || 'Tel: (0312) 395 35 95 | © ' + year}
+                </p>
+            </div>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== 29 EKIM TEMPLATE ====================
-        '29-ekim': () => `
+        '29-ekim': () => {
+            const theme = {
+                headerBg: headerBgColor || '#e30a17',
+                headerText: headerTextColor || '#ffffff',
+                bodyBg: bodyBgColor || '#ffffff',
+                bodyText: bodyTextColor || '#333333',
+                button: buttonColor || '#e30a17', // Used for highlighting
+                footerBg: footerBgColor || '#333333',
+                footerText: footerTextColor || '#aaa'
+            };
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1509,13 +1613,16 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; overflow: hidden; border: 1px solid #e0e0e0;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: ${theme.bodyBg}; overflow: hidden; border: 1px solid #e0e0e0;">
         <!-- Header -->
-        <div style="background: #e30a17; padding: 40px 20px; text-align: center;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; filter: brightness(0) invert(1);">
-            <div style="margin-top: 30px; border: 2px solid #fff; padding: 15px; display: inline-block;">
-                <h1 style="color: #fff; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">${campaignTitle || '29 EKİM'}</h1>
-                <p style="color: #fff; margin: 5px 0 0; font-size: 18px;">${campaignHighlight || 'CUMHURİYET BAYRAMI'}</p>
+        <div style="background: ${theme.headerBg}; padding: 40px 20px; text-align: center; position: relative;">
+            ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${headerImage}'); background-size: cover; background-position: center; opacity: 0.6; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; filter: brightness(0) invert(1);">
+                <div style="margin-top: 30px; border: 2px solid #fff; padding: 15px; display: inline-block;">
+                    <h1 style="color: ${theme.headerText}; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">${campaignTitle || '29 EKİM'}</h1>
+                    <p style="color: ${theme.headerText}; margin: 5px 0 0; font-size: 18px;">${campaignHighlight || 'CUMHURİYET BAYRAMI'}</p>
+                </div>
             </div>
         </div>
 
@@ -1526,25 +1633,29 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Content -->
         <div style="padding: 40px 30px;">
-            <p style="font-size: 18px; line-height: 1.6; color: #333; text-align: center;">
+            <p style="font-size: 18px; line-height: 1.6; color: ${theme.bodyText}; text-align: center;">
                 <strong>${recipientName}</strong>,
             </p>
             <div style="color: #555; font-size: 16px; line-height: 1.8; text-align: center;">
                  ${templateContent.replace(/\n/g, '<br>')}
             </div>
-             <p style="text-align: center; font-size: 20px; font-weight: bold; color: #e30a17; margin-top: 30px;">
+             <p style="text-align: center; font-size: 20px; font-weight: bold; color: ${theme.button}; margin-top: 30px;">
                 NE MUTLU TÜRKÜM DİYENE!
             </p>
         </div>
         
         <!-- Footer -->
-         <div style="background-color: #333; padding: 20px; text-align: center;">
-            <p style="color: #aaa; margin: 0; font-size: 12px;">© ${year} Federal Gaz</p>
+         <div style="background-color: ${theme.footerBg}; padding: 20px; text-align: center; position: relative;">
+            ${footerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${footerImage}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                 <p style="color: ${theme.footerText}; margin: 0; font-size: 12px;">${footerContact || '© ' + year + ' Federal Gaz'}</p>
+             </div>
         </div>
     </div>
 </body>
 </html>
-`
+`;
+        }
     };
 
     // Return the template or default to modern

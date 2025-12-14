@@ -51,7 +51,9 @@ const translations = {
         save: "Kaydet",
         cancel: "İptal",
         saving: "Kaydediliyor...",
-        saved: "Şablon kaydedildi!",
+        successSave: "Şablon başarıyla kaydedildi!",
+        errorSave: "Kaydetme sırasında bir hata oluştu.",
+        errorLoad: "Şablonlar yüklenirken bir hata oluştu.",
         preview: "Önizleme",
     },
     EN: {
@@ -75,6 +77,9 @@ const translations = {
         cancel: "Cancel",
         saving: "Saving...",
         saved: "Template saved!",
+        successSave: "Template saved successfully!",
+        errorSave: "An error occurred while saving.",
+        errorLoad: "An error occurred while loading templates.",
         preview: "Preview",
     }
 };
@@ -113,23 +118,6 @@ export default function TemplatesPage() {
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [saving, setSaving] = useState(false);
-
-    // Sort templates: active first, then by sortOrder
-    const sortedTemplates = [...templates]
-        .filter(t => selectedCategory === 'all' || t.category === selectedCategory)
-        .sort((a, b) => {
-            // Active templates first
-            if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-
-            // Group by Category (General -> Holiday -> Promotion)
-            const catOrder: Record<string, number> = { 'general': 1, 'holiday': 2, 'promotion': 3 };
-            const catA = catOrder[a.category] || 99;
-            const catB = catOrder[b.category] || 99;
-            if (catA !== catB) return catA - catB;
-
-            // Then by sortOrder
-            return (a.sortOrder || 0) - (b.sortOrder || 0);
-        });
 
     useEffect(() => {
         // First sync to seed any missing templates, then fetch
@@ -268,29 +256,35 @@ export default function TemplatesPage() {
 
     const handleSave = async () => {
         if (!editingTemplate) return;
-        setSaving(true);
 
+        setSaving(true);
         try {
-            const res = await fetch('/api/dashboard/templates', {
+            const response = await fetch('/api/dashboard/templates', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editingTemplate),
             });
 
-            if (res.ok) {
-                setSuccessMessage(t.saved);
-                setEditingTemplate(null);
-                fetchTemplates();
-                setTimeout(() => setSuccessMessage(""), 3000);
-            } else {
-                const data = await res.json();
-                setErrorMessage(data.error || 'Kaydetme başarısız');
-                setTimeout(() => setErrorMessage(""), 5000);
-            }
+            if (!response.ok) throw new Error('Failed to update template');
+
+            const updatedTemplate = await response.json();
+
+            // Update local state immediately (Optimistic update)
+            setTemplates(prev => prev.map(t =>
+                t.id === updatedTemplate.id ? updatedTemplate : t
+            ));
+
+            // Also refresh from server to be sure
+            await fetchTemplates();
+
+            setSuccessMessage(t.successSave);
+            setEditingTemplate(null); // Close modal
+
+            setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            console.error('Failed to save template:', error);
-            setErrorMessage('Şablon kaydedilirken bir hata oluştu');
-            setTimeout(() => setErrorMessage(""), 5000);
+            console.error('Error updating template:', error);
+            setErrorMessage(t.errorSave);
+            setTimeout(() => setErrorMessage(""), 3000);
         } finally {
             setSaving(false);
         }
@@ -309,6 +303,16 @@ export default function TemplatesPage() {
         if (category === 'promotion') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
         return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     };
+
+    const sortedTemplates = templates
+        .filter((template) => {
+            if (selectedCategory === 'all') return true;
+            return template.category === selectedCategory;
+        })
+        .sort((a, b) => {
+            if (a.isActive === b.isActive) return 0;
+            return a.isActive ? -1 : 1;
+        });
 
     return (
         <div className="h-full flex flex-col">
