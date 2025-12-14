@@ -62,20 +62,31 @@ export async function POST(req: Request) {
                 name: r.name,
                 email: r.email
             }));
-        } else if (campaign.recipientType === 'custom' && campaign.recipientIds) {
+        } else if (campaign.recipientType === 'custom') {
             // Custom selection - get specific users
-            const ids = JSON.parse(campaign.recipientIds) as number[];
+            if (campaign.recipientIds) {
+                const ids = JSON.parse(campaign.recipientIds) as number[];
+                if (ids.length > 0) {
+                    const users = await User.findAll({
+                        where: { id: ids },
+                        attributes: ['id', 'name', 'email'],
+                    });
+                    recipients = users.map(u => ({ id: u.id, name: u.name, email: u.email }));
+                }
+            }
+            // If custom but no recipients selected, return error instead of falling back
+            if (recipients.length === 0) {
+                return NextResponse.json({ error: 'No recipients selected for custom campaign' }, { status: 400 });
+            }
+        } else if (campaign.recipientType === 'all') {
+            // Only fetch all members if explicitly set to 'all'
             const users = await User.findAll({
-                where: { id: ids },
                 attributes: ['id', 'name', 'email'],
             });
             recipients = users.map(u => ({ id: u.id, name: u.name, email: u.email }));
         } else {
-            // All members
-            const users = await User.findAll({
-                attributes: ['id', 'name', 'email'],
-            });
-            recipients = users.map(u => ({ id: u.id, name: u.name, email: u.email }));
+            // Unknown recipient type
+            return NextResponse.json({ error: `Invalid recipient type: ${campaign.recipientType}` }, { status: 400 });
         }
 
         if (recipients.length === 0) {
