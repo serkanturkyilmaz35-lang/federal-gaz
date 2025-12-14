@@ -1099,7 +1099,7 @@ export default function MailingPage() {
                                     <label className="block text-sm font-medium text-gray-300 mb-1">{t.template}</label>
                                     <select
                                         value={form.templateSlug}
-                                        onChange={(e) => setForm({ ...form, templateSlug: e.target.value })}
+                                        onChange={(e) => handleTemplateChange(e.target.value)}
                                         className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
                                     >
                                         {templates.length === 0 && <option value="modern">Modern (Varsayılan)</option>}
