@@ -1,4 +1,6 @@
-'use server';
+
+
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { EmailTemplate, connectToDatabase } from '@/lib/models';

@@ -1,5 +1,5 @@
 
-'use server';
+
 
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
@@ -64,13 +64,13 @@ export async function POST() {
             const existingEmailTemplatesColumns = emailTemplatesColumns.map((c: any) => c.Field);
 
             const columnsToAdd = [
-                { name: 'logoUrl', type: 'VARCHAR(255)' },
+                { name: 'logoUrl', type: 'LONGTEXT' }, // Changed to LONGTEXT for Base64 support
                 { name: 'bodyBgColor', type: "VARCHAR(50) DEFAULT '#ffffff'" },
                 { name: 'bodyTextColor', type: "VARCHAR(50) DEFAULT '#333333'" },
                 { name: 'footerBgColor', type: "VARCHAR(50) DEFAULT '#1a2744'" },
                 { name: 'footerTextColor', type: "VARCHAR(50) DEFAULT '#888888'" },
-                { name: 'headerImage', type: 'VARCHAR(255)' },
-                { name: 'footerImage', type: 'VARCHAR(255)' },
+                { name: 'headerImage', type: 'LONGTEXT' }, // Changed to LONGTEXT
+                { name: 'footerImage', type: 'LONGTEXT' }, // Changed to LONGTEXT
                 { name: 'headerTitle', type: 'VARCHAR(255)' },
                 { name: 'bodyContent', type: 'LONGTEXT' },
                 { name: 'footerContact', type: 'VARCHAR(255)' },
@@ -79,6 +79,18 @@ export async function POST() {
             for (const col of columnsToAdd) {
                 results.push(await addColumnIfMissing(db, 'email_templates', existingEmailTemplatesColumns, col.name, col.type));
             }
+
+            // Mevcut VARCHAR kolonlarını LONGTEXT'e çevir (Base64 için)
+            try {
+                await db.query("ALTER TABLE email_templates MODIFY COLUMN headerImage LONGTEXT");
+                await db.query("ALTER TABLE email_templates MODIFY COLUMN footerImage LONGTEXT");
+                await db.query("ALTER TABLE email_templates MODIFY COLUMN bannerImage LONGTEXT");
+                await db.query("ALTER TABLE email_templates MODIFY COLUMN logoUrl LONGTEXT");
+                results.push('email_templates imaj kolonları LONGTEXT yapıldı');
+            } catch (e: any) {
+                // Hata olursa (örn. zaten longtext ise) devam et
+            }
+
             results.push('email_templates tablo yapısı kontrol edildi.');
         } catch (e: any) {
             results.push(`email_templates yapı kontrolü hatası: ${e.message}`);

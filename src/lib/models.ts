@@ -784,7 +784,7 @@ EmailTemplate.init(
             defaultValue: '#ffffff',
         },
         headerImage: {
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT('long'),
             allowNull: true,
         },
         bodyBgColor: {
@@ -813,15 +813,15 @@ EmailTemplate.init(
             defaultValue: '#888888',
         },
         footerImage: {
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT('long'),
             allowNull: true,
         },
         bannerImage: {
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT('long'),
             allowNull: true,
         },
         logoUrl: {
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT('long'),
             allowNull: true,
         },
         headerTitle: {
