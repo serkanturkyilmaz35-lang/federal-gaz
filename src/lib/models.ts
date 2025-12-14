@@ -712,13 +712,15 @@ interface EmailTemplateAttributes {
     headerTitle?: string;      // Plain text email title
     bodyContent?: string;      // Plain text body content
     footerContact?: string;    // Plain text footer contact info
+    buttonText?: string;       // Custom button text
+    templateData?: any;        // JSON for extra template fields
     headerHtml: string; // Custom header HTML
     footerHtml: string; // Custom footer HTML
     isActive: boolean;
     sortOrder: number;
 }
 
-interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage' | 'headerImage' | 'footerImage' | 'headerTitle' | 'bodyContent' | 'footerContact'> { }
+interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage' | 'headerImage' | 'footerImage' | 'headerTitle' | 'bodyContent' | 'footerContact' | 'buttonText' | 'templateData'> { }
 
 export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateCreationAttributes> implements EmailTemplateAttributes {
     declare id: number;
@@ -740,6 +742,8 @@ export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateC
     declare headerTitle: string | undefined;
     declare bodyContent: string | undefined;
     declare footerContact: string | undefined;
+    declare buttonText: string | undefined;
+    declare templateData: any | undefined;
     declare headerHtml: string;
     declare footerHtml: string;
     declare isActive: boolean;
@@ -801,6 +805,14 @@ EmailTemplate.init(
             type: DataTypes.STRING,
             allowNull: false,
             defaultValue: '#b13329',
+        },
+        buttonText: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        templateData: {
+            type: DataTypes.JSON,
+            allowNull: true,
         },
         footerBgColor: {
             type: DataTypes.STRING,

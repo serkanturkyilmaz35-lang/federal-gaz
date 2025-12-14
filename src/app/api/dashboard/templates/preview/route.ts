@@ -19,7 +19,9 @@ export async function POST(req: Request) {
             footerHtml,
             headerTitle,
             bodyContent,
-            footerContact
+            footerContact,
+            buttonText,
+            templateData
         } = await req.json();
 
         if (!templateSlug) {
@@ -44,7 +46,9 @@ export async function POST(req: Request) {
             footerTextColor,
             footerImage,
             headerHtml,
-            footerHtml
+            footerHtml,
+            buttonText,
+            templateData,
         });
 
         return NextResponse.json({ html });

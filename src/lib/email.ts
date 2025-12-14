@@ -680,6 +680,8 @@ interface CampaignTemplateOptions {
     headerHtml?: string;
     footerHtml?: string;
     footerContact?: string;
+    buttonText?: string;
+    templateData?: any;
 }
 
 // Default professional content for each template type (Used when content is empty)
@@ -870,7 +872,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         footerImage,
         headerHtml,
         footerHtml,
-        footerContact
+        footerContact,
+        buttonText,
+        templateData
     } = options;
 
     const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
@@ -979,7 +983,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             
             <div style="text-align: center; margin: 35px 0;">
                 <a href="${websiteUrl}" style="display: inline-block; background: ${modernTheme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                    🛒 Sipariş Ver
+                    🛒 ${buttonText || 'Sipariş Ver'}
                 </a>
             </div>
             
@@ -1057,8 +1061,8 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 30px rgba(255,45,45,0.5);">
-                    FIRSATI YAKALA
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 15px 45px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">
+                    ${buttonText || '🔥 FIRSATLARI İNCELE'}
                 </a>
             </div>
         </div>
@@ -1104,9 +1108,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
              ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 0;"></div>` : ''}
             <div style="position: relative; z-index: 1;">
                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
-                <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${campaignHighlight || (year + 1)} ✨</p>
+                <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${templateData?.headerHighlight || campaignHighlight || (year + 1)} ✨</p>
                 <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 36px; font-weight: 300;">${campaignTitle || 'YENİ YIL'}</h1>
-                <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">MUTLU YILLAR!</p>
+                <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">${templateData?.headerSubtitle || 'MUTLU YILLAR!'}</p>
             </div>
         </div>
         
@@ -1128,17 +1132,17 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <p style="color: #ffd700; font-size: 18px; text-align: center; margin: 25px 0;">
-                🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄
+                ${templateData?.bodyGreeting || '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄'}
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
-                    🎁 Yeni Yıl Fırsatları
+                    ${buttonText || '🎁 Yeni Yıl Fırsatları'}
                 </a>
             </div>
             
             <p style="color: ${theme.footerText}; font-size: 14px; text-align: center;">
-                Sevgilerimizle,<br><strong style="color: #ffd700;">Federal Gaz Ailesi</strong>
+                Sevgilerimizle,<br><strong style="color: #ffd700;">${templateData?.signature || 'Federal Gaz Ailesi'}</strong>
             </p>
         </div>
         
@@ -1214,9 +1218,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 </p>
             </div>
             
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #1a2744; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Sipariş Ver
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                    ${buttonText || 'Sipariş Ver'}
                 </a>
             </div>
             
@@ -1294,8 +1298,8 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Sipariş Ver
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: 600;">
+                    ${buttonText || 'Bayram Fırsatları'}
                 </a>
             </div>
             
@@ -1366,8 +1370,8 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Şimdi Sipariş Ver
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    ${buttonText || '❄️ Hemen Sipariş Ver'}
                 </a>
             </div>
             
@@ -1440,9 +1444,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 16px 50px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 16px;">
-                    Hemen Al
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    ${buttonText || '🚀 Alışverişe Başla'}
                 </a>
             </div>
             
@@ -1536,7 +1540,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    İlk Siparişinizi Verin
+                    ${buttonText || 'İlk Siparişinizi Verin'}
                 </a>
             </div>
             
@@ -1605,7 +1609,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${websiteUrl}" style="display: inline-block; background-color: ${theme.button}; color: #ffffff; padding: 12px 35px; text-decoration: none; font-size: 15px; border-radius: 4px;">
-                    Web Sitemizi Ziyaret Edin →
+                    ${buttonText || 'Web Sitemizi Ziyaret Edin →'}
                 </a>
             </div>
             

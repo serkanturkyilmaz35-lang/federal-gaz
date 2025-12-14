@@ -24,6 +24,8 @@ interface EmailTemplate {
     headerTitle: string;      // E-posta başlığı (ör: "Yeni Yıl Kampanyası!")
     bodyContent: string;      // Ana içerik metni
     footerContact: string;    // Alt bilgi iletişim bilgileri
+    buttonText?: string;      // Custom button text
+    templateData?: any;       // JSON for extra template fields
     headerHtml: string;
     footerHtml: string;
     isActive: boolean;
@@ -258,35 +260,39 @@ export default function TemplatesPage() {
         if (!editingTemplate) return;
 
         setSaving(true);
+        setErrorMessage('');
+
+        // Optimistic UI Update
+        const updatedTemplate = { ...editingTemplate };
+        setTemplates(prev => prev.map(t => t.id === updatedTemplate.id ? updatedTemplate : t));
+        // setSortedTemplates(prev => prev.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)); // This line is commented out in the original, so I'll keep it commented or remove it if it's not used. Assuming it's not used.
+
         try {
-            const response = await fetch('/api/dashboard/templates', {
+            const res = await fetch('/api/dashboard/templates', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editingTemplate),
+                body: JSON.stringify(updatedTemplate),
             });
 
-            if (!response.ok) throw new Error('Failed to update template');
+            if (res.ok) {
+                setSuccessMessage(t.successSave); // Changed tObject to t
+                setTimeout(() => setSuccessMessage(''), 2000);
 
-            const updatedTemplate = await response.json();
-
-            // Update local state immediately (Optimistic update)
-            setTemplates(prev => prev.map(t =>
-                t.id === updatedTemplate.id ? updatedTemplate : t
-            ));
-
-            // Also refresh from server to be sure
-            await fetchTemplates();
-
-            setSuccessMessage(t.successSave);
-            setEditingTemplate(null); // Close modal
-
-            setTimeout(() => setSuccessMessage(""), 3000);
+                // Fetch in background to ensure consistency, but don't block UI
+                fetchTemplates().catch(console.error);
+            } else {
+                const data = await res.json();
+                setErrorMessage(data.error || t.errorSave); // Changed tObject to t
+                // Revert optimistic update on error is complex, for now we rely on the next fetch
+                fetchTemplates();
+            }
         } catch (error) {
-            console.error('Error updating template:', error);
-            setErrorMessage(t.errorSave);
-            setTimeout(() => setErrorMessage(""), 3000);
+            console.error('Save failed:', error);
+            setErrorMessage(t.errorSave); // Changed tObject to t
         } finally {
             setSaving(false);
+            setEditingTemplate(null); // Close modal
+            setTimeout(() => setErrorMessage(""), 3000);
         }
     };
 
@@ -598,14 +604,26 @@ export default function TemplatesPage() {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">E-posta Başlığı</label>
-                                        <input
-                                            type="text"
-                                            value={editingTemplate.headerTitle || ''}
-                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTitle: e.target.value })}
-                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                        />
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">E-posta Başlığı</label>
+                                            <input
+                                                type="text"
+                                                value={editingTemplate.headerTitle || ''}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTitle: e.target.value })}
+                                                className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Buton Metni</label>
+                                            <input
+                                                type="text"
+                                                value={editingTemplate.buttonText || ''}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, buttonText: e.target.value })}
+                                                className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                placeholder="Fırsatı Yakala"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div>
@@ -617,6 +635,70 @@ export default function TemplatesPage() {
                                         />
                                     </div>
                                 </div>
+
+                                {/* === DYNAMIC FIELDS SECTION (NEW YEAR) === */}
+                                {editingTemplate.slug === 'new-year' && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-[#3b4754]">
+                                            <span className="material-symbols-outlined text-purple-400">tune</span>
+                                            <h3 className="text-sm font-semibold text-white">Özel Alanlar</h3>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Header Vurgusu (ör: 2025)</label>
+                                                <input
+                                                    type="text"
+                                                    value={editingTemplate.templateData?.headerHighlight || ''}
+                                                    onChange={(e) => setEditingTemplate({
+                                                        ...editingTemplate,
+                                                        templateData: { ...editingTemplate.templateData, headerHighlight: e.target.value }
+                                                    })}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                    placeholder="✨ 2025 ✨"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Header Alt Başlık</label>
+                                                <input
+                                                    type="text"
+                                                    value={editingTemplate.templateData?.headerSubtitle || ''}
+                                                    onChange={(e) => setEditingTemplate({
+                                                        ...editingTemplate,
+                                                        templateData: { ...editingTemplate.templateData, headerSubtitle: e.target.value }
+                                                    })}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                    placeholder="MUTLU YILLAR!"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Karşılama Mesajı</label>
+                                                <textarea
+                                                    value={editingTemplate.templateData?.bodyGreeting || ''}
+                                                    onChange={(e) => setEditingTemplate({
+                                                        ...editingTemplate,
+                                                        templateData: { ...editingTemplate.templateData, bodyGreeting: e.target.value }
+                                                    })}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm resize-none h-20"
+                                                    placeholder="🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">İmza Metni</label>
+                                                <input
+                                                    type="text"
+                                                    value={editingTemplate.templateData?.signature || ''}
+                                                    onChange={(e) => setEditingTemplate({
+                                                        ...editingTemplate,
+                                                        templateData: { ...editingTemplate.templateData, signature: e.target.value }
+                                                    })}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                    placeholder="Federal Gaz Ailesi"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* === FOOTER SECTION === */}
                                 <div className="space-y-4">

@@ -74,6 +74,8 @@ export async function POST() {
                 { name: 'headerTitle', type: 'VARCHAR(255)' },
                 { name: 'bodyContent', type: 'LONGTEXT' },
                 { name: 'footerContact', type: 'VARCHAR(255)' },
+                { name: 'buttonText', type: 'VARCHAR(255)' },
+                { name: 'templateData', type: 'JSON' },
             ];
 
             for (const col of columnsToAdd) {
