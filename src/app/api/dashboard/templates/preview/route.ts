@@ -16,7 +16,10 @@ export async function POST(req: Request) {
             footerImage,
             logoUrl,
             headerHtml,
-            footerHtml
+            footerHtml,
+            headerTitle,
+            bodyContent,
+            footerContact
         } = await req.json();
 
         if (!templateSlug) {
@@ -25,8 +28,10 @@ export async function POST(req: Request) {
 
         // Generate preview HTML using the template function with sample data
         const html = getCampaignEmailTemplate(templateSlug, {
-            subject: 'Örnek E-posta Konusu',
-            content: '', // Empty content will use the default professional content
+            subject: headerTitle || 'Örnek E-posta Konusu',
+            campaignTitle: headerTitle, // Pass headerTitle as campaignTitle
+            content: bodyContent || '', // Pass bodyContent as content
+            footerContact: footerContact,
             recipientName: 'Mehmet Yılmaz',
             customLogoUrl: logoUrl,
             headerBgColor,

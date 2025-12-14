@@ -679,6 +679,7 @@ interface CampaignTemplateOptions {
     footerImage?: string;
     headerHtml?: string;
     footerHtml?: string;
+    footerContact?: string;
 }
 
 // Default professional content for each template type (Used when content is empty)
@@ -868,7 +869,8 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         footerTextColor = '#888888',
         footerImage,
         headerHtml,
-        footerHtml
+        footerHtml,
+        footerContact
     } = options;
 
     const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
@@ -950,10 +952,10 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${brandColors.gray};">
     <div style="max-width: 600px; margin: 0 auto; background-color: ${brandColors.white};">
-        <!-- Header with Gradient -->
-        <div style="background: linear-gradient(135deg, ${brandColors.navyDark} 0%, #0a1628 100%); padding: 40px 30px; text-align: center;">
+        <!-- Header with Dynamic Background -->
+        <div style="background-color: ${brandColors.navyDark}; padding: 40px 30px; text-align: center;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
-            <h1 style="color: ${brandColors.white}; margin: 0; font-size: 28px; font-weight: 600;">${subject}</h1>
+            <h1 style="color: ${brandColors.white}; margin: 0; font-size: 28px; font-weight: 600;">${campaignTitle || subject}</h1>
         </div>
         
         <!-- Product Image Banner -->
@@ -984,7 +986,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Footer -->
         <div style="background-color: ${brandColors.navyDark}; padding: 30px; text-align: center;">
             <p style="color: ${brandColors.white}; margin: 0 0 10px; font-size: 14px;">
-                📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com
+                ${footerContact || '📞 (0312) 395 35 95 | 📧 federal.gaz@hotmail.com'}
             </p>
             <p style="color: #8899aa; margin: 0; font-size: 12px;">
                 © ${year} Federal Gaz - Ankara | Tüm Hakları Saklıdır
