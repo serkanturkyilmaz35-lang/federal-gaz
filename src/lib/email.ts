@@ -669,8 +669,22 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     const { subject, content, recipientName = 'Değerli Müşterimiz' } = options;
     const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
-    const productImageUrl = 'https://www.federalgaz.com/tup1.png';
     const year = new Date().getFullYear();
+
+    // Federal Gaz Product Images - Absolute URLs for email compatibility
+    const productImages = {
+        oksijen: 'https://www.federalgaz.com/products/endustriyel-oksijen.png',
+        argon: 'https://www.federalgaz.com/products/argon.png',
+        asetilen: 'https://www.federalgaz.com/products/asetilen.png',
+        azot: 'https://www.federalgaz.com/products/azot.png',
+        co2: 'https://www.federalgaz.com/products/karbondioksit.png',
+        kaynakGazi: 'https://www.federalgaz.com/products/kaynak-gazi.png',
+        medikalOksijen: 'https://www.federalgaz.com/products/medikal-oksijen.png',
+        propan: 'https://www.federalgaz.com/products/propan.png',
+        helyum: 'https://www.federalgaz.com/products/helyum.png',
+        hidrojen: 'https://www.federalgaz.com/products/hidrojen.png',
+        hero: 'https://www.federalgaz.com/hero/industrial-cylinders-1.png'
+    };
 
     // Federal Gaz Brand Colors
     const brandColors = {
@@ -705,7 +719,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Product Image Banner -->
         <div style="background: linear-gradient(135deg, ${brandColors.red} 0%, ${brandColors.redDark} 100%); padding: 20px; text-align: center;">
-            <img src="${productImageUrl}" alt="Ürün" style="height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+            <img src="${productImages.hero}" alt="Endüstriyel Gazlar" style="height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
         </div>
         
         <!-- Content -->
@@ -765,7 +779,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Products Section -->
         <div style="background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); padding: 30px; text-align: center;">
-            <img src="${productImageUrl}" alt="Ürün" style="height: 150px; filter: drop-shadow(0 0 30px rgba(255,45,45,0.5));">
+            <img src="${productImages.kaynakGazi}" alt="Kaynak Gazları" style="height: 150px; filter: drop-shadow(0 0 30px rgba(255,45,45,0.5));">
             <div style="background: rgba(255,45,45,0.2); border: 2px solid #ff2d2d; border-radius: 8px; padding: 20px; margin-top: 20px;">
                 <p style="color: #ffffff; font-size: 18px; margin: 0 0 10px;">Tüm Ürünlerde Geçerli!</p>
                 <p style="color: #ffd700; font-size: 14px; margin: 0;">Stoklarla sınırlı • Kaçırmayın!</p>
@@ -823,7 +837,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Celebration Image -->
         <div style="padding: 30px; text-align: center;">
             <div style="background: rgba(255,215,0,0.1); border-radius: 50%; width: 200px; height: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                <img src="${productImageUrl}" alt="Ürün" style="height: 120px;">
+                <img src="${productImages.oksijen}" alt="Oksijen Tüpü" style="height: 120px;">
             </div>
         </div>
         
@@ -999,7 +1013,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Product Banner -->
         <div style="background: ${brandColors.navyDark}; padding: 25px; text-align: center;">
-            <img src="${productImageUrl}" alt="Tüp" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+            <img src="${productImages.propan}" alt="LPG Tüpü" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
             <p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">Kış boyunca kesintisiz ısınma!</p>
         </div>
         
@@ -1070,7 +1084,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Product -->
         <div style="padding: 30px; text-align: center; background: #fafafa;">
-            <img src="${productImageUrl}" alt="Tüp" style="height: 120px;">
+            <img src="${productImages.argon}" alt="Argon Tüpü" style="height: 120px;">
         </div>
         
         <!-- Content -->
