@@ -57,6 +57,24 @@ export async function POST() {
             results.push(`recipientType(ENUM: ${e.message.substring(0, 50)})`);
         }
 
+        // Add logoUrl to email_templates if it doesn't exist
+        try {
+            const emailTemplatesColumns: any[] = await db.query("SHOW COLUMNS FROM email_templates", { type: QueryTypes.SELECT });
+            const existingEmailTemplatesColumns = emailTemplatesColumns.map((c: any) => c.Field);
+            if (!existingEmailTemplatesColumns.includes('logoUrl')) {
+                await db.query(`ALTER TABLE email_templates ADD COLUMN logoUrl VARCHAR(255)`);
+                results.push('email_templates.logoUrl(eklendi)');
+            } else {
+                results.push('email_templates.logoUrl(var)');
+            }
+        } catch (e: any) {
+            if (e.original?.errno === 1060) {
+                results.push('email_templates.logoUrl(zaten var)');
+            } else {
+                results.push(`email_templates.logoUrl(HATA: ${e.message})`);
+            }
+        }
+
         // 3. MailingLogs tablosunu oluştur
         try {
             await db.query(`

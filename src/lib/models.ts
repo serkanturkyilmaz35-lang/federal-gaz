@@ -702,6 +702,7 @@ interface EmailTemplateAttributes {
     headerTextColor: string;
     buttonColor: string;
     bannerImage?: string;
+    logoUrl?: string;
     headerHtml: string; // Custom header HTML
     footerHtml: string; // Custom footer HTML
     isActive: boolean;
@@ -720,6 +721,7 @@ export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateC
     declare headerTextColor: string;
     declare buttonColor: string;
     declare bannerImage: string | undefined;
+    declare logoUrl: string | undefined;
     declare headerHtml: string;
     declare footerHtml: string;
     declare isActive: boolean;

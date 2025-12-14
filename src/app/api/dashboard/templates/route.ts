@@ -24,7 +24,7 @@ export async function GET() {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, nameTR, nameEN, headerBgColor, headerTextColor, buttonColor, bannerImage, headerHtml, footerHtml, isActive } = body;
+        const { id, nameTR, nameEN, headerBgColor, headerTextColor, buttonColor, bannerImage, logoUrl, headerHtml, footerHtml, isActive } = body;
 
         if (!id) {
             return NextResponse.json({ error: 'Template ID is required' }, { status: 400 });
@@ -44,6 +44,7 @@ export async function PUT(req: Request) {
             headerTextColor: headerTextColor ?? template.headerTextColor,
             buttonColor: buttonColor ?? template.buttonColor,
             bannerImage: bannerImage ?? template.bannerImage,
+            logoUrl: logoUrl ?? template.logoUrl,
             headerHtml: headerHtml ?? template.headerHtml,
             footerHtml: footerHtml ?? template.footerHtml,
             isActive: isActive ?? template.isActive,

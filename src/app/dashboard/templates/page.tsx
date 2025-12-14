@@ -13,6 +13,7 @@ interface EmailTemplate {
     headerTextColor: string;
     buttonColor: string;
     bannerImage?: string;
+    logoUrl?: string;
     headerHtml: string;
     footerHtml: string;
     isActive: boolean;
@@ -200,6 +201,33 @@ export default function TemplatesPage() {
             console.error('Failed to sync/seed templates:', error);
             setErrorMessage('Bağlantı hatası, lütfen tekrar deneyin');
             setTimeout(() => setErrorMessage(""), 5000);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'bannerImage' | 'logoUrl') => {
+        const file = e.target.files?.[0];
+        if (!file || !editingTemplate) return;
+
+        setSaving(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await res.json();
+            if (data.url) {
+                setEditingTemplate({ ...editingTemplate, [field]: data.url });
+            } else {
+                setErrorMessage('Yükleme başarısız');
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            setErrorMessage('Yükleme hatası');
         } finally {
             setSaving(false);
         }
@@ -437,16 +465,46 @@ export default function TemplatesPage() {
                                 </div>
                             </div>
 
+                            {/* Logo URL */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Logo (Varsayılan)</label>
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="text"
+                                        value={editingTemplate.logoUrl || ''}
+                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, logoUrl: e.target.value })}
+                                        className="flex-1 px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        placeholder="https://... (URL veya Dosya Seçin)"
+                                    />
+                                    <label className="px-4 py-2.5 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">upload</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'logoUrl')} />
+                                    </label>
+                                </div>
+                                {editingTemplate.logoUrl && (
+                                    <img src={editingTemplate.logoUrl} alt="Logo Preview" className="h-12 object-contain bg-white/10 p-1 rounded" />
+                                )}
+                            </div>
+
                             {/* Banner Image */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Banner Görsel URL (Varsayılan)</label>
-                                <input
-                                    type="text"
-                                    value={editingTemplate.bannerImage || ''}
-                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, bannerImage: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                    placeholder="https://..."
-                                />
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Banner Görsel (Varsayılan)</label>
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="text"
+                                        value={editingTemplate.bannerImage || ''}
+                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, bannerImage: e.target.value })}
+                                        className="flex-1 px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                        placeholder="https://... (URL veya Dosya Seçin)"
+                                    />
+                                    <label className="px-4 py-2.5 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">upload</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'bannerImage')} />
+                                    </label>
+                                </div>
+                                {editingTemplate.bannerImage && (
+                                    <img src={editingTemplate.bannerImage} alt="Banner Preview" className="h-20 object-cover w-full rounded border border-gray-700" />
+                                )}
                             </div>
 
                             {/* Preview */}
