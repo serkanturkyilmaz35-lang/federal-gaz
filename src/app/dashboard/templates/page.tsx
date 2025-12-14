@@ -97,9 +97,20 @@ export default function TemplatesPage() {
     const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
     const [previewHtml, setPreviewHtml] = useState<string>("");
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<'all' | 'general' | 'holiday' | 'promotion'>('all');
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [saving, setSaving] = useState(false);
+
+    // Sort templates: active first, then by sortOrder
+    const sortedTemplates = [...templates]
+        .filter(t => selectedCategory === 'all' || t.category === selectedCategory)
+        .sort((a, b) => {
+            // Active templates first
+            if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+            // Then by sortOrder
+            return a.sortOrder - b.sortOrder;
+        });
 
     useEffect(() => {
         fetchTemplates();
@@ -255,8 +266,52 @@ export default function TemplatesPage() {
                 </div>
             )}
 
+            {/* Category Tabs */}
+            <div className="mb-4 flex flex-wrap gap-2">
+                <button
+                    onClick={() => setSelectedCategory('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'all'
+                            ? 'bg-[#137fec] text-white'
+                            : 'bg-[#111418] text-gray-400 hover:text-white border border-[#3b4754]'
+                        }`}
+                >
+                    Tümü
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs">{templates.length}</span>
+                </button>
+                <button
+                    onClick={() => setSelectedCategory('general')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'general'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-[#111418] text-blue-400 hover:bg-blue-500/20 border border-blue-500/30'
+                        }`}
+                >
+                    {t.general}
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs">{templates.filter(t => t.category === 'general').length}</span>
+                </button>
+                <button
+                    onClick={() => setSelectedCategory('holiday')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'holiday'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-[#111418] text-red-400 hover:bg-red-500/20 border border-red-500/30'
+                        }`}
+                >
+                    {t.holiday}
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs">{templates.filter(t => t.category === 'holiday').length}</span>
+                </button>
+                <button
+                    onClick={() => setSelectedCategory('promotion')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedCategory === 'promotion'
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-[#111418] text-orange-400 hover:bg-orange-500/20 border border-orange-500/30'
+                        }`}
+                >
+                    {t.promotion}
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs">{templates.filter(t => t.category === 'promotion').length}</span>
+                </button>
+            </div>
+
             {/* Templates Grid */}
-            {templates.length === 0 ? (
+            {sortedTemplates.length === 0 ? (
                 <div className="bg-[#111418] rounded-xl p-12 text-center border border-[#3b4754]">
                     <span className="material-symbols-outlined text-6xl text-gray-600 mb-4">mail</span>
                     <p className="text-lg font-medium text-gray-300">{t.noTemplates}</p>
@@ -267,7 +322,7 @@ export default function TemplatesPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {templates.map((template) => (
+                    {sortedTemplates.map((template) => (
                         <div key={template.id} className="bg-[#111418] rounded-lg border border-[#3b4754] overflow-hidden hover:border-[#137fec]/50 transition-colors group">
                             {/* Compact Preview Header */}
                             <div className="h-14 flex items-center justify-center px-2" style={{ background: template.headerBgColor }}>
