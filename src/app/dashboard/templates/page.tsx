@@ -168,7 +168,9 @@ export default function TemplatesPage() {
                         bodyContent: targetTemplate.bodyContent,
                         footerContact: targetTemplate.footerContact,
                         headerHtml: targetTemplate.headerHtml,
-                        footerHtml: targetTemplate.footerHtml
+                        footerHtml: targetTemplate.footerHtml,
+                        buttonText: targetTemplate.buttonText,
+                        templateData: targetTemplate.templateData,
                     })
                 })
                     .then(res => res.json())
