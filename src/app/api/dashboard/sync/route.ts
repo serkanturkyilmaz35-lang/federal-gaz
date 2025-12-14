@@ -61,17 +61,29 @@ export async function POST() {
         try {
             const emailTemplatesColumns: any[] = await db.query("SHOW COLUMNS FROM email_templates", { type: QueryTypes.SELECT });
             const existingEmailTemplatesColumns = emailTemplatesColumns.map((c: any) => c.Field);
-            if (!existingEmailTemplatesColumns.includes('logoUrl')) {
-                await db.query(`ALTER TABLE email_templates ADD COLUMN logoUrl VARCHAR(255)`);
-                results.push('email_templates.logoUrl(eklendi)');
-            } else {
-                results.push('email_templates.logoUrl(var)');
+
+            // Add missing columns
+            const columnsToAdd = [
+                { name: 'logoUrl', type: 'VARCHAR(255)' },
+                { name: 'bodyBgColor', type: "VARCHAR(50) DEFAULT '#ffffff'" },
+                { name: 'bodyTextColor', type: "VARCHAR(50) DEFAULT '#333333'" },
+                { name: 'footerBgColor', type: "VARCHAR(50) DEFAULT '#1a2744'" },
+                { name: 'footerTextColor', type: "VARCHAR(50) DEFAULT '#888888'" },
+            ];
+
+            for (const col of columnsToAdd) {
+                if (!existingEmailTemplatesColumns.includes(col.name)) {
+                    await db.query(`ALTER TABLE email_templates ADD COLUMN ${col.name} ${col.type}`);
+                    results.push(`email_templates.${col.name}(eklendi)`);
+                } else {
+                    results.push(`email_templates.${col.name}(var)`);
+                }
             }
         } catch (e: any) {
             if (e.original?.errno === 1060) {
-                results.push('email_templates.logoUrl(zaten var)');
+                results.push('email_templates columns(zaten var)');
             } else {
-                results.push(`email_templates.logoUrl(HATA: ${e.message})`);
+                results.push(`email_templates columns(HATA: ${e.message})`);
             }
         }
 

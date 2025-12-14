@@ -700,7 +700,11 @@ interface EmailTemplateAttributes {
     category: 'general' | 'holiday' | 'promotion';
     headerBgColor: string;
     headerTextColor: string;
+    bodyBgColor: string;
+    bodyTextColor: string;
     buttonColor: string;
+    footerBgColor: string;
+    footerTextColor: string;
     bannerImage?: string;
     logoUrl?: string;
     headerHtml: string; // Custom header HTML
@@ -719,7 +723,11 @@ export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateC
     declare category: 'general' | 'holiday' | 'promotion';
     declare headerBgColor: string;
     declare headerTextColor: string;
+    declare bodyBgColor: string;
+    declare bodyTextColor: string;
     declare buttonColor: string;
+    declare footerBgColor: string;
+    declare footerTextColor: string;
     declare bannerImage: string | undefined;
     declare logoUrl: string | undefined;
     declare headerHtml: string;
@@ -765,10 +773,30 @@ EmailTemplate.init(
             allowNull: false,
             defaultValue: '#ffffff',
         },
+        bodyBgColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#ffffff',
+        },
+        bodyTextColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#333333',
+        },
         buttonColor: {
             type: DataTypes.STRING,
             allowNull: false,
             defaultValue: '#b13329',
+        },
+        footerBgColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#1a2744',
+        },
+        footerTextColor: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: '#888888',
         },
         bannerImage: {
             type: DataTypes.STRING,
