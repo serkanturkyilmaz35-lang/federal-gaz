@@ -48,7 +48,7 @@ export default function LoginPage() {
     const { language } = useLanguage();
     const { login } = useAuth();
     const router = useRouter();
-    const { secureFetch } = useEncryption();
+    const { secureFetch, isReady } = useEncryption();
     const t = translations[language];
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -180,10 +180,10 @@ export default function LoginPage() {
 
                     <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isLoading || !isReady}
                         className="w-full rounded-lg bg-primary py-3 text-center text-sm font-bold text-white transition-transform hover:scale-[1.02] hover:bg-primary/90 disabled:opacity-70 disabled:hover:scale-100"
                     >
-                        {isLoading ? t.loggingIn : t.loginBtn}
+                        {isLoading ? t.loggingIn : (!isReady ? (language === 'TR' ? 'Güvenlik Hazırlanıyor...' : 'Securing...') : t.loginBtn)}
                     </button>
                 </form>
 
