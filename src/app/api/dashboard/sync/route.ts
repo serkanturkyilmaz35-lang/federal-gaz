@@ -69,6 +69,8 @@ export async function POST() {
                 { name: 'bodyTextColor', type: "VARCHAR(50) DEFAULT '#333333'" },
                 { name: 'footerBgColor', type: "VARCHAR(50) DEFAULT '#1a2744'" },
                 { name: 'footerTextColor', type: "VARCHAR(50) DEFAULT '#888888'" },
+                { name: 'headerImage', type: 'VARCHAR(255)' },
+                { name: 'footerImage', type: 'VARCHAR(255)' },
             ];
 
             for (const col of columnsToAdd) {

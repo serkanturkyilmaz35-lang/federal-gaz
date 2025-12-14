@@ -256,9 +256,15 @@ export default function TemplatesPage() {
                 setEditingTemplate(null);
                 fetchTemplates();
                 setTimeout(() => setSuccessMessage(""), 3000);
+            } else {
+                const data = await res.json();
+                setErrorMessage(data.error || 'Kaydetme başarısız');
+                setTimeout(() => setErrorMessage(""), 5000);
             }
         } catch (error) {
             console.error('Failed to save template:', error);
+            setErrorMessage('Şablon kaydedilirken bir hata oluştu');
+            setTimeout(() => setErrorMessage(""), 5000);
         } finally {
             setSaving(false);
         }
@@ -584,6 +590,34 @@ export default function TemplatesPage() {
                                     {editingTemplate.footerImage && (
                                         <img src={editingTemplate.footerImage} alt="Footer" className="mt-2 h-12 w-full object-cover rounded border border-gray-700" />
                                     )}
+                                </div>
+                            </div>
+
+                            {/* === TEXT CONTENT SECTION === */}
+                            <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                                <h3 className="text-purple-400 font-semibold mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">edit_note</span>
+                                    Metin İçerikleri (Opsiyonel)
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Header HTML (özel başlık içeriği)</label>
+                                        <textarea
+                                            value={editingTemplate.headerHtml || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, headerHtml: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm font-mono h-20 resize-none"
+                                            placeholder="<div>Özel header HTML...</div>"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Footer HTML (özel alt bilgi içeriği)</label>
+                                        <textarea
+                                            value={editingTemplate.footerHtml || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, footerHtml: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm font-mono h-20 resize-none"
+                                            placeholder="<div>Özel footer HTML...</div>"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

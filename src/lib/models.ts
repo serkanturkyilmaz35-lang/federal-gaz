@@ -700,11 +700,13 @@ interface EmailTemplateAttributes {
     category: 'general' | 'holiday' | 'promotion';
     headerBgColor: string;
     headerTextColor: string;
+    headerImage?: string;
     bodyBgColor: string;
     bodyTextColor: string;
     buttonColor: string;
     footerBgColor: string;
     footerTextColor: string;
+    footerImage?: string;
     bannerImage?: string;
     logoUrl?: string;
     headerHtml: string; // Custom header HTML
@@ -713,7 +715,7 @@ interface EmailTemplateAttributes {
     sortOrder: number;
 }
 
-interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage'> { }
+interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage' | 'headerImage' | 'footerImage'> { }
 
 export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateCreationAttributes> implements EmailTemplateAttributes {
     declare id: number;
@@ -723,11 +725,13 @@ export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateC
     declare category: 'general' | 'holiday' | 'promotion';
     declare headerBgColor: string;
     declare headerTextColor: string;
+    declare headerImage: string | undefined;
     declare bodyBgColor: string;
     declare bodyTextColor: string;
     declare buttonColor: string;
     declare footerBgColor: string;
     declare footerTextColor: string;
+    declare footerImage: string | undefined;
     declare bannerImage: string | undefined;
     declare logoUrl: string | undefined;
     declare headerHtml: string;
@@ -773,6 +777,10 @@ EmailTemplate.init(
             allowNull: false,
             defaultValue: '#ffffff',
         },
+        headerImage: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         bodyBgColor: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -798,7 +806,15 @@ EmailTemplate.init(
             allowNull: false,
             defaultValue: '#888888',
         },
+        footerImage: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         bannerImage: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        logoUrl: {
             type: DataTypes.STRING,
             allowNull: true,
         },
