@@ -3,7 +3,21 @@ import { getCampaignEmailTemplate } from '@/lib/email';
 
 export async function POST(req: Request) {
     try {
-        const { templateSlug } = await req.json();
+        const {
+            templateSlug,
+            headerBgColor,
+            headerTextColor,
+            headerImage,
+            bodyBgColor,
+            bodyTextColor,
+            buttonColor,
+            footerBgColor,
+            footerTextColor,
+            footerImage,
+            logoUrl,
+            headerHtml,
+            footerHtml
+        } = await req.json();
 
         if (!templateSlug) {
             return NextResponse.json({ error: 'Template slug is required' }, { status: 400 });
@@ -13,7 +27,19 @@ export async function POST(req: Request) {
         const html = getCampaignEmailTemplate(templateSlug, {
             subject: 'Örnek E-posta Konusu',
             content: '', // Empty content will use the default professional content
-            recipientName: 'Mehmet Yılmaz'
+            recipientName: 'Mehmet Yılmaz',
+            customLogoUrl: logoUrl,
+            headerBgColor,
+            headerTextColor,
+            headerImage,
+            bodyBgColor,
+            bodyTextColor,
+            buttonColor,
+            footerBgColor,
+            footerTextColor,
+            footerImage,
+            headerHtml,
+            footerHtml
         });
 
         return NextResponse.json({ html });

@@ -667,6 +667,18 @@ interface CampaignTemplateOptions {
     customProductImageUrl?: string; // Optional: Override product image
     campaignTitle?: string; // Optional: Banner title
     campaignHighlight?: string; // Optional: Highlight/Discount text
+    // Template styling options
+    headerBgColor?: string;
+    headerTextColor?: string;
+    headerImage?: string;
+    bodyBgColor?: string;
+    bodyTextColor?: string;
+    buttonColor?: string;
+    footerBgColor?: string;
+    footerTextColor?: string;
+    footerImage?: string;
+    headerHtml?: string;
+    footerHtml?: string;
 }
 
 // Default professional content for each template type (Used when content is empty)
@@ -837,7 +849,28 @@ VIP müşterimiz olduğunuz için teşekkür ederiz.`
 };
 
 export function getCampaignEmailTemplate(templateSlug: string, options: CampaignTemplateOptions): string {
-    const { subject, content, recipientName = 'Değerli Müşterimiz', customLogoUrl, customProductImageUrl, campaignTitle, campaignHighlight } = options;
+    const {
+        subject,
+        content,
+        recipientName = 'Değerli Müşterimiz',
+        customLogoUrl,
+        customProductImageUrl,
+        campaignTitle,
+        campaignHighlight,
+        // Template styling options with defaults
+        headerBgColor = '#1a2744',
+        headerTextColor = '#ffffff',
+        headerImage,
+        bodyBgColor = '#ffffff',
+        bodyTextColor = '#333333',
+        buttonColor = '#b13329',
+        footerBgColor = '#1a2744',
+        footerTextColor = '#888888',
+        footerImage,
+        headerHtml,
+        footerHtml
+    } = options;
+
     const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
     const year = 2014;
@@ -879,11 +912,24 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     // Note: If templateSlug is not in the list above, it defaults to productImages.hero
     const mainProductImage = customProductImageUrl || defaultImageForTemplate;
 
-    // Federal Gaz Brand Colors
+    // Use template colors from database or defaults
+    const colors = {
+        headerBg: headerBgColor,
+        headerText: headerTextColor,
+        bodyBg: bodyBgColor,
+        bodyText: bodyTextColor,
+        button: buttonColor,
+        footerBg: footerBgColor,
+        footerText: footerTextColor,
+        white: '#ffffff',
+        gray: '#f5f5f5'
+    };
+
+    // Keep brandColors for backward compatibility with existing templates
     const brandColors = {
-        navyDark: '#1a2744',
+        navyDark: headerBgColor || '#1a2744',
         navyLight: '#2d4a7c',
-        red: '#b13329',
+        red: buttonColor || '#b13329',
         redDark: '#8b1a12',
         gold: '#ffd700',
         white: '#ffffff',

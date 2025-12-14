@@ -150,7 +150,21 @@ export default function TemplatesPage() {
             fetch('/api/dashboard/templates/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ templateSlug: previewTemplate.slug })
+                body: JSON.stringify({
+                    templateSlug: previewTemplate.slug,
+                    headerBgColor: previewTemplate.headerBgColor,
+                    headerTextColor: previewTemplate.headerTextColor,
+                    headerImage: previewTemplate.headerImage,
+                    bodyBgColor: previewTemplate.bodyBgColor,
+                    bodyTextColor: previewTemplate.bodyTextColor,
+                    buttonColor: previewTemplate.buttonColor,
+                    footerBgColor: previewTemplate.footerBgColor,
+                    footerTextColor: previewTemplate.footerTextColor,
+                    footerImage: previewTemplate.footerImage,
+                    logoUrl: previewTemplate.logoUrl,
+                    headerHtml: previewTemplate.headerHtml,
+                    footerHtml: previewTemplate.footerHtml
+                })
             })
                 .then(res => res.json())
                 .then(data => {
