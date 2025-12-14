@@ -1115,7 +1115,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Decorative Banner -->
-        <div style="background: linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%); height: 4px;"></div>
+        <div style="background: ${templateData?.headerStripGradient || 'linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%)'}; height: 4px;"></div>
         
         <!-- Celebration Image -->
         <div style="padding: 30px; text-align: center;">

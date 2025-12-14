@@ -443,13 +443,23 @@ export default function TemplatesPage() {
                                     <button
                                         onClick={() => {
                                             const tpl = { ...template };
+
+                                            // Global Defaults
+                                            if (!tpl.buttonText || tpl.buttonText.trim() === '') {
+                                                tpl.buttonText = tpl.slug === 'new-year' ? '🎁 Yeni Yıl Fırsatları' : 'Fırsatı Yakala';
+                                            }
+                                            if (!tpl.footerContact || tpl.footerContact.trim() === '') {
+                                                tpl.footerContact = '© 2014 Federal Gaz. Tüm hakları saklıdır. www.federalgaz.com';
+                                            }
+
                                             if (tpl.slug === 'new-year') {
                                                 tpl.templateData = {
                                                     headerHighlight: (new Date().getFullYear() + 1).toString(),
                                                     headerHighlightColor: '#ffd700',
                                                     headerSubtitle: 'MUTLU YILLAR!',
                                                     headerSubtitleColor: '#ffd700',
-                                                    headerSubtitleBgColor: 'transparent', // Default transparent or maybe '#1e3a5f' if user wants box
+                                                    headerSubtitleBgColor: '#1f2937', // Default dark blue box
+                                                    headerStripGradient: 'linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%)', // Default red-gold strip
                                                     bodyGreeting: '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄',
                                                     bodyGreetingColor: '#ffd700',
                                                     bodyGreetingBgColor: 'rgba(255,255,255,0.05)',
@@ -744,6 +754,22 @@ export default function TemplatesPage() {
                                                         />
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            {/* Header Strip Gradient */}
+                                            <div className="space-y-1 mb-4">
+                                                <label className="block text-xs font-medium text-gray-400">Header Altı Şerit (Renk veya Gradient CSS)</label>
+                                                <input
+                                                    type="text"
+                                                    value={editingTemplate.templateData?.headerStripGradient || ''}
+                                                    onChange={(e) => setEditingTemplate({
+                                                        ...editingTemplate,
+                                                        templateData: { ...editingTemplate.templateData, headerStripGradient: e.target.value }
+                                                    })}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                    placeholder="linear-gradient(...) veya #color"
+                                                />
+                                                <p className="text-[10px] text-gray-500">Örn: linear-gradient(90deg, red, gold, red) veya #ff0000</p>
                                             </div>
 
                                             {/* Recipient Name Customization */}
