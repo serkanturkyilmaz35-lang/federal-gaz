@@ -20,6 +20,10 @@ interface EmailTemplate {
     footerImage?: string;
     bannerImage?: string;
     logoUrl?: string;
+    // Plain text content fields
+    headerTitle: string;      // E-posta başlığı (ör: "Yeni Yıl Kampanyası!")
+    bodyContent: string;      // Ana içerik metni
+    footerContact: string;    // Alt bilgi iletişim bilgileri
     headerHtml: string;
     footerHtml: string;
     isActive: boolean;
@@ -77,21 +81,21 @@ const translations = {
 // Default templates for instant render
 const defaultTemplates: EmailTemplate[] = [
     // Genel
-    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 1 },
-    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 2 },
-    { id: 27, slug: 'welcome', nameTR: 'Hoş Geldiniz', nameEN: 'Welcome', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 27 },
-    { id: 26, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', category: 'general', headerBgColor: '#2c3e50', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#c41e3a', footerBgColor: '#2c3e50', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 26 },
+    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerTitle: 'Federal Gaz\'dan Önemli Duyuru', bodyContent: 'Değerli müşterimiz,\n\nFederal Gaz olarak 30 yılı aşkın tecrübemizle Ankara\'nın en güvenilir endüstriyel gaz tedarikçisiyiz.\n\nTüm gaz ihtiyaçlarınız için bizi tercih ettiğiniz için teşekkür ederiz.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 1 },
+    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerTitle: 'Federal Gaz Bilgilendirme', bodyContent: 'Değerli müşterimiz,\n\nSize en kaliteli hizmeti sunmak için çalışıyoruz.\n\nHerhangi bir sorunuz için bizimle iletişime geçebilirsiniz.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 2 },
+    { id: 27, slug: 'welcome', nameTR: 'Hoş Geldiniz', nameEN: 'Welcome', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerTitle: 'Federal Gaz Ailesine Hoş Geldiniz!', bodyContent: 'Değerli müşterimiz,\n\nFederal Gaz ailesine hoş geldiniz! Sizinle çalışmaktan mutluluk duyuyoruz.\n\n30 yılı aşkın tecrübemizle Ankara\'nın en güvenilir endüstriyel gaz tedarikçisi olarak yanınızdayız.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 27 },
+    { id: 26, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', category: 'general', headerBgColor: '#2c3e50', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#c41e3a', footerBgColor: '#2c3e50', footerTextColor: '#888888', headerTitle: 'VIP Müşterimize Özel', bodyContent: 'Değerli VIP müşterimiz,\n\nSizin için özel avantajlarımız var! VIP müşterilerimize sunduğumuz ayrıcalıklı hizmetlerden yararlanabilirsiniz.\n\nVIP müşterimiz olduğunuz için teşekkür ederiz.', footerContact: 'Federal Gaz VIP Hattı | Tel: 0312 354 32 32', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 26 },
     // Bayram
-    { id: 10, slug: 'new-year', nameTR: 'Yeni Yıl', nameEN: 'New Year', category: 'holiday', headerBgColor: '#1e3a5f', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#c41e3a', footerBgColor: '#1e3a5f', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 10 },
-    { id: 15, slug: 'ramazan-bayrami', nameTR: 'Ramazan Bayramı', nameEN: 'Eid al-Fitr', category: 'holiday', headerBgColor: '#1e3c72', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#4ecdc4', footerBgColor: '#1e3c72', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 15 },
-    { id: 16, slug: 'kurban-bayrami', nameTR: 'Kurban Bayramı', nameEN: 'Eid al-Adha', category: 'holiday', headerBgColor: '#2d3436', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#2d3436', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 16 },
-    { id: 11, slug: '23-nisan', nameTR: '23 Nisan', nameEN: '23 April', category: 'holiday', headerBgColor: '#e30a17', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#e30a17', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 11 },
+    { id: 10, slug: 'new-year', nameTR: 'Yeni Yıl', nameEN: 'New Year', category: 'holiday', headerBgColor: '#1e3a5f', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#c41e3a', footerBgColor: '#1e3a5f', footerTextColor: '#888888', headerTitle: '🎄 Mutlu Yıllar!', bodyContent: 'Değerli müşterimiz,\n\nYeni yılınız kutlu olsun! 2025\'in size ve sevdiklerinize sağlık, mutluluk ve başarı getirmesini diliyoruz.\n\nFederal Gaz ailesi olarak yeni yılda da yanınızdayız!', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 10 },
+    { id: 15, slug: 'ramazan-bayrami', nameTR: 'Ramazan Bayramı', nameEN: 'Eid al-Fitr', category: 'holiday', headerBgColor: '#1e3c72', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#4ecdc4', footerBgColor: '#1e3c72', footerTextColor: '#888888', headerTitle: '🌙 Ramazan Bayramınız Mübarek Olsun!', bodyContent: 'Değerli müşterimiz,\n\nRamazan Bayramınızı en içten dileklerimizle kutluyoruz.\n\nBu mübarek günlerin sizlere ve ailelerinize huzur ve mutluluk getirmesini diliyoruz.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 15 },
+    { id: 16, slug: 'kurban-bayrami', nameTR: 'Kurban Bayramı', nameEN: 'Eid al-Adha', category: 'holiday', headerBgColor: '#2d3436', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#2d3436', footerTextColor: '#888888', headerTitle: '🕌 Kurban Bayramınız Kutlu Olsun!', bodyContent: 'Değerli müşterimiz,\n\nKurban Bayramınızı en içten dileklerimizle kutluyoruz.\n\nBu mübarek günlerin sizlere ve sevdiklerinize sağlık ve mutluluk getirmesini diliyoruz.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 16 },
+    { id: 11, slug: '23-nisan', nameTR: '23 Nisan', nameEN: '23 April', category: 'holiday', headerBgColor: '#e30a17', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#e30a17', footerTextColor: '#ffffff', headerTitle: '🇹🇷 23 Nisan Ulusal Egemenlik ve Çocuk Bayramı', bodyContent: 'Değerli müşterimiz,\n\n23 Nisan Ulusal Egemenlik ve Çocuk Bayramı\'nı en içten dileklerimizle kutluyoruz.\n\nGazi Mustafa Kemal Atatürk ve tüm şehitlerimizi saygı ve minnetle anıyoruz.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 11 },
     // Promosyon
-    { id: 30, slug: 'black-friday', nameTR: 'Efsane Cuma', nameEN: 'Black Friday', category: 'promotion', headerBgColor: '#000000', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#ff2d2d', footerBgColor: '#000000', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 30 },
-    { id: 31, slug: 'weekend-sale', nameTR: 'Hafta Sonu İndirimi', nameEN: 'Weekend Sale', category: 'promotion', headerBgColor: '#667eea', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#f093fb', footerBgColor: '#667eea', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 31 },
-    { id: 32, slug: 'winter-campaign', nameTR: 'Kış Kampanyası', nameEN: 'Winter Campaign', category: 'promotion', headerBgColor: '#74ebd5', headerTextColor: '#1a2744', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#74ebd5', footerTextColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 32 },
-    { id: 3, slug: 'promotion', nameTR: 'Kampanya / İndirim', nameEN: 'Promotion', category: 'promotion', headerBgColor: '#ff6b35', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#ff6b35', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 20 },
-    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', category: 'promotion', headerBgColor: '#2ecc71', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#2ecc71', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 21 },
+    { id: 30, slug: 'black-friday', nameTR: 'Efsane Cuma', nameEN: 'Black Friday', category: 'promotion', headerBgColor: '#000000', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#ff2d2d', footerBgColor: '#000000', footerTextColor: '#888888', headerTitle: '🔥 EFSANE CUMA BAŞLADI!', bodyContent: 'Değerli müşterimiz,\n\nYılın en büyük indirim kampanyası Federal Gaz\'da!\n\n✅ Tüm kaynak gazlarında %50\'ye varan indirim\n✅ Argon, Asetilen, CO2 karışımlarında özel fiyatlar\n✅ Toplu alımlarda ekstra avantajlar', footerContact: 'Hemen sipariş verin! Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 30 },
+    { id: 31, slug: 'weekend-sale', nameTR: 'Hafta Sonu İndirimi', nameEN: 'Weekend Sale', category: 'promotion', headerBgColor: '#667eea', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#f093fb', footerBgColor: '#667eea', footerTextColor: '#ffffff', headerTitle: '🎉 Hafta Sonu Özel İndirimi!', bodyContent: 'Değerli müşterimiz,\n\nSadece bu hafta sonu geçerli özel fiyatlarımızı kaçırmayın!\n\nTüm endüstriyel gazlarda cazip fırsatlar sizi bekliyor.', footerContact: 'Sipariş için: Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 31 },
+    { id: 32, slug: 'winter-campaign', nameTR: 'Kış Kampanyası', nameEN: 'Winter Campaign', category: 'promotion', headerBgColor: '#74ebd5', headerTextColor: '#1a2744', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#74ebd5', footerTextColor: '#1a2744', headerTitle: '❄️ Kış Kampanyası Başladı!', bodyContent: 'Değerli müşterimiz,\n\nKış aylarına özel kampanyamızdan yararlanın!\n\nPropan ve ısıtma gazlarında özel fiyat avantajları sizi bekliyor.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 32 },
+    { id: 3, slug: 'promotion', nameTR: 'Kampanya / İndirim', nameEN: 'Promotion', category: 'promotion', headerBgColor: '#ff6b35', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#ff6b35', footerTextColor: '#ffffff', headerTitle: '🎁 Özel Kampanya Fırsatı!', bodyContent: 'Değerli müşterimiz,\n\nSize özel kampanyamızı duyurmaktan mutluluk duyuyoruz!\n\nDetaylı bilgi için bizimle iletişime geçin.', footerContact: 'Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 20 },
+    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', category: 'promotion', headerBgColor: '#2ecc71', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#2ecc71', footerTextColor: '#ffffff', headerTitle: '📦 Stok Hatırlatması', bodyContent: 'Değerli müşterimiz,\n\nGaz stoklarınızın azaldığını fark ettik. Kesintisiz hizmet için siparişinizi şimdiden verebilirsiniz.\n\nAynı gün teslimat imkanımızdan yararlanın!', footerContact: 'Sipariş için: Tel: 0312 354 32 32 | www.federalgaz.com', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 21 },
 ];
 
 
@@ -611,25 +615,37 @@ export default function TemplatesPage() {
                             <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
                                 <h3 className="text-purple-400 font-semibold mb-4 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-sm">edit_note</span>
-                                    Metin İçerikleri (Opsiyonel)
+                                    Metin İçerikleri
                                 </h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Header HTML (özel başlık içeriği)</label>
-                                        <textarea
-                                            value={editingTemplate.headerHtml || ''}
-                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, headerHtml: e.target.value })}
-                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm font-mono h-20 resize-none"
-                                            placeholder="<div>Özel header HTML...</div>"
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">E-posta Başlığı (Header)</label>
+                                        <input
+                                            type="text"
+                                            value={editingTemplate.headerTitle || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTitle: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                            placeholder="Federal Gaz'dan Önemli Duyuru"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Footer HTML (özel alt bilgi içeriği)</label>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Ana İçerik Metni (Body)</label>
                                         <textarea
-                                            value={editingTemplate.footerHtml || ''}
-                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, footerHtml: e.target.value })}
-                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm font-mono h-20 resize-none"
-                                            placeholder="<div>Özel footer HTML...</div>"
+                                            value={editingTemplate.bodyContent || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyContent: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm h-32 resize-none"
+                                            placeholder="Değerli müşterimiz,&#10;&#10;E-posta içeriğinizi buraya yazın..."
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Her satır için Enter tuşuna basın. Satırlar otomatik paragraf olarak gösterilir.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Alt Bilgi / İletişim (Footer)</label>
+                                        <input
+                                            type="text"
+                                            value={editingTemplate.footerContact || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, footerContact: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                            placeholder="Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com"
                                         />
                                     </div>
                                 </div>

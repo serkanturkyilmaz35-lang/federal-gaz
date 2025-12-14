@@ -709,13 +709,16 @@ interface EmailTemplateAttributes {
     footerImage?: string;
     bannerImage?: string;
     logoUrl?: string;
+    headerTitle?: string;      // Plain text email title
+    bodyContent?: string;      // Plain text body content
+    footerContact?: string;    // Plain text footer contact info
     headerHtml: string; // Custom header HTML
     footerHtml: string; // Custom footer HTML
     isActive: boolean;
     sortOrder: number;
 }
 
-interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage' | 'headerImage' | 'footerImage'> { }
+interface EmailTemplateCreationAttributes extends Optional<EmailTemplateAttributes, 'id' | 'isActive' | 'sortOrder' | 'bannerImage' | 'headerImage' | 'footerImage' | 'headerTitle' | 'bodyContent' | 'footerContact'> { }
 
 export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateCreationAttributes> implements EmailTemplateAttributes {
     declare id: number;
@@ -734,6 +737,9 @@ export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateC
     declare footerImage: string | undefined;
     declare bannerImage: string | undefined;
     declare logoUrl: string | undefined;
+    declare headerTitle: string | undefined;
+    declare bodyContent: string | undefined;
+    declare footerContact: string | undefined;
     declare headerHtml: string;
     declare footerHtml: string;
     declare isActive: boolean;
@@ -815,6 +821,18 @@ EmailTemplate.init(
             allowNull: true,
         },
         logoUrl: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        headerTitle: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        bodyContent: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        footerContact: {
             type: DataTypes.STRING,
             allowNull: true,
         },
