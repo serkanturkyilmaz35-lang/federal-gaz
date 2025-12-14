@@ -11,7 +11,13 @@ interface EmailTemplate {
     category: 'general' | 'holiday' | 'promotion';
     headerBgColor: string;
     headerTextColor: string;
+    headerImage?: string;
+    bodyBgColor: string;
+    bodyTextColor: string;
     buttonColor: string;
+    footerBgColor: string;
+    footerTextColor: string;
+    footerImage?: string;
     bannerImage?: string;
     logoUrl?: string;
     headerHtml: string;
@@ -71,22 +77,23 @@ const translations = {
 // Default templates for instant render
 const defaultTemplates: EmailTemplate[] = [
     // Genel
-    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', category: 'general', headerBgColor: 'linear-gradient(135deg, #1a2744 0%, #0a1628 100%)', headerTextColor: '#ffffff', buttonColor: 'linear-gradient(135deg, #b13329 0%, #8b1a12 100%)', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 1 },
-    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', buttonColor: '#b13329', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 2 },
-    { id: 27, slug: 'welcome', nameTR: 'Hoş Geldiniz', nameEN: 'Welcome', category: 'general', headerBgColor: 'linear-gradient(135deg, #1a2744 0%, #2d4a7c 100%)', headerTextColor: '#ffffff', buttonColor: '#b13329', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 27 },
-    { id: 26, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', category: 'general', headerBgColor: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)', headerTextColor: '#ffd700', buttonColor: '#c41e3a', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 26 },
+    { id: 1, slug: 'modern', nameTR: 'Modern', nameEN: 'Modern', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 1 },
+    { id: 2, slug: 'classic', nameTR: 'Klasik', nameEN: 'Classic', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 2 },
+    { id: 27, slug: 'welcome', nameTR: 'Hoş Geldiniz', nameEN: 'Welcome', category: 'general', headerBgColor: '#1a2744', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#1a2744', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 27 },
+    { id: 26, slug: 'vip-customer', nameTR: 'VIP Müşteri', nameEN: 'VIP Customer', category: 'general', headerBgColor: '#2c3e50', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#c41e3a', footerBgColor: '#2c3e50', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 26 },
     // Bayram
-    { id: 10, slug: 'new-year', nameTR: 'Yeni Yıl', nameEN: 'New Year', category: 'holiday', headerBgColor: 'linear-gradient(135deg, #1e3a5f 0%, #0d1f33 100%)', headerTextColor: '#ffd700', buttonColor: '#c41e3a', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 10 },
-    { id: 15, slug: 'ramazan-bayrami', nameTR: 'Ramazan Bayramı', nameEN: 'Eid al-Fitr', category: 'holiday', headerBgColor: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', headerTextColor: '#ffd700', buttonColor: '#4ecdc4', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 15 },
-    { id: 16, slug: 'kurban-bayrami', nameTR: 'Kurban Bayramı', nameEN: 'Eid al-Adha', category: 'holiday', headerBgColor: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)', headerTextColor: '#ffffff', buttonColor: '#b13329', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 16 },
-    { id: 11, slug: '23-nisan', nameTR: '23 Nisan', nameEN: '23 April', category: 'holiday', headerBgColor: 'linear-gradient(135deg, #e30a17 0%, #b30813 100%)', headerTextColor: '#ffffff', buttonColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 11 },
+    { id: 10, slug: 'new-year', nameTR: 'Yeni Yıl', nameEN: 'New Year', category: 'holiday', headerBgColor: '#1e3a5f', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#c41e3a', footerBgColor: '#1e3a5f', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 10 },
+    { id: 15, slug: 'ramazan-bayrami', nameTR: 'Ramazan Bayramı', nameEN: 'Eid al-Fitr', category: 'holiday', headerBgColor: '#1e3c72', headerTextColor: '#ffd700', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#4ecdc4', footerBgColor: '#1e3c72', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 15 },
+    { id: 16, slug: 'kurban-bayrami', nameTR: 'Kurban Bayramı', nameEN: 'Eid al-Adha', category: 'holiday', headerBgColor: '#2d3436', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#b13329', footerBgColor: '#2d3436', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 16 },
+    { id: 11, slug: '23-nisan', nameTR: '23 Nisan', nameEN: '23 April', category: 'holiday', headerBgColor: '#e30a17', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#e30a17', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 11 },
     // Promosyon
-    { id: 30, slug: 'black-friday', nameTR: 'Efsane Cuma', nameEN: 'Black Friday', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%)', headerTextColor: '#ffffff', buttonColor: '#ff2d2d', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 30 },
-    { id: 31, slug: 'weekend-sale', nameTR: 'Hafta Sonu İndirimi', nameEN: 'Weekend Sale', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', headerTextColor: '#ffffff', buttonColor: '#f093fb', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 31 },
-    { id: 32, slug: 'winter-campaign', nameTR: 'Kış Kampanyası', nameEN: 'Winter Campaign', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)', headerTextColor: '#1a2744', buttonColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 32 },
-    { id: 3, slug: 'promotion', nameTR: 'Kampanya / İndirim', nameEN: 'Promotion', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', headerTextColor: '#ffffff', buttonColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 20 },
-    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', category: 'promotion', headerBgColor: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)', headerTextColor: '#ffffff', buttonColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 21 },
+    { id: 30, slug: 'black-friday', nameTR: 'Efsane Cuma', nameEN: 'Black Friday', category: 'promotion', headerBgColor: '#000000', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#ff2d2d', footerBgColor: '#000000', footerTextColor: '#888888', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 30 },
+    { id: 31, slug: 'weekend-sale', nameTR: 'Hafta Sonu İndirimi', nameEN: 'Weekend Sale', category: 'promotion', headerBgColor: '#667eea', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#f093fb', footerBgColor: '#667eea', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 31 },
+    { id: 32, slug: 'winter-campaign', nameTR: 'Kış Kampanyası', nameEN: 'Winter Campaign', category: 'promotion', headerBgColor: '#74ebd5', headerTextColor: '#1a2744', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#74ebd5', footerTextColor: '#1a2744', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 32 },
+    { id: 3, slug: 'promotion', nameTR: 'Kampanya / İndirim', nameEN: 'Promotion', category: 'promotion', headerBgColor: '#ff6b35', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#ff6b35', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 20 },
+    { id: 4, slug: 'stock-reminder', nameTR: 'Stok Hatırlatma', nameEN: 'Stock Reminder', category: 'promotion', headerBgColor: '#2ecc71', headerTextColor: '#ffffff', bodyBgColor: '#ffffff', bodyTextColor: '#333333', buttonColor: '#1a2744', footerBgColor: '#2ecc71', footerTextColor: '#ffffff', headerHtml: '', footerHtml: '', isActive: true, sortOrder: 21 },
 ];
+
 
 export default function TemplatesPage() {
     const { language } = useLanguage();
@@ -404,7 +411,7 @@ export default function TemplatesPage() {
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                             {/* Names */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -427,97 +434,156 @@ export default function TemplatesPage() {
                                 </div>
                             </div>
 
-                            {/* Colors */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.headerBgColor}</label>
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.headerBgColor}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, headerBgColor: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.headerTextColor}</label>
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.headerTextColor}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTextColor: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.buttonColor}</label>
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.buttonColor}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, buttonColor: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Logo URL */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Logo (Varsayılan)</label>
-                                <div className="flex gap-2 mb-2">
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.logoUrl || ''}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, logoUrl: e.target.value })}
-                                        className="flex-1 px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                        placeholder="https://... (URL veya Dosya Seçin)"
-                                    />
-                                    <label className="px-4 py-2.5 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-sm">upload</span>
-                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'logoUrl')} />
-                                    </label>
-                                </div>
-                                {editingTemplate.logoUrl && (
-                                    <img src={editingTemplate.logoUrl} alt="Logo Preview" className="h-12 object-contain bg-white/10 p-1 rounded" />
-                                )}
-                            </div>
-
-                            {/* Banner Image */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Banner Görsel (Varsayılan)</label>
-                                <div className="flex gap-2 mb-2">
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.bannerImage || ''}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, bannerImage: e.target.value })}
-                                        className="flex-1 px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                        placeholder="https://... (URL veya Dosya Seçin)"
-                                    />
-                                    <label className="px-4 py-2.5 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-sm">upload</span>
-                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'bannerImage')} />
-                                    </label>
-                                </div>
-                                {editingTemplate.bannerImage && (
-                                    <img src={editingTemplate.bannerImage} alt="Banner Preview" className="h-20 object-cover w-full rounded border border-gray-700" />
-                                )}
-                            </div>
-
-                            {/* Preview */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">{t.preview}</label>
-                                <div className="rounded-lg overflow-hidden border border-[#3b4754]">
-                                    <div className="h-20 flex items-center justify-center" style={{ background: editingTemplate.headerBgColor }}>
-                                        <span className="font-bold" style={{ color: editingTemplate.headerTextColor }}>
-                                            {editingTemplate.nameTR}
-                                        </span>
-                                    </div>
-                                    <div className="p-4 bg-white text-gray-800 text-sm">
-                                        <p>Merhaba <strong>Müşteri Adı</strong>,</p>
-                                        <p className="my-2">E-posta içeriği burada görünecek...</p>
-                                        <div className="text-center my-4">
-                                            <span className="inline-block px-6 py-2 text-white rounded" style={{ background: editingTemplate.buttonColor }}>
-                                                Buton
-                                            </span>
+                            {/* === HEADER SECTION === */}
+                            <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
+                                <h3 className="text-blue-400 font-semibold mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">view_compact</span>
+                                    Header (Üst Alan)
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.headerBgColor || '#1a2744'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, headerBgColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.headerBgColor}</span>
                                         </div>
                                     </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.headerTextColor || '#ffffff'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTextColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.headerTextColor}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Logo Upload */}
+                                <div className="mb-4">
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Logo</label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="text"
+                                            value={editingTemplate.logoUrl || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, logoUrl: e.target.value })}
+                                            className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                            placeholder="Logo URL..."
+                                        />
+                                        <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">upload</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'logoUrl')} />
+                                        </label>
+                                    </div>
+                                    {editingTemplate.logoUrl && (
+                                        <img src={editingTemplate.logoUrl} alt="Logo" className="mt-2 h-10 object-contain bg-white/10 p-1 rounded" />
+                                    )}
+                                </div>
+                                {/* Header Background Image */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Görseli (opsiyonel)</label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="text"
+                                            value={editingTemplate.headerImage || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, headerImage: e.target.value })}
+                                            className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                            placeholder="Görsel URL..."
+                                        />
+                                        <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">upload</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'bannerImage')} />
+                                        </label>
+                                    </div>
+                                    {editingTemplate.headerImage && (
+                                        <img src={editingTemplate.headerImage} alt="Header" className="mt-2 h-16 w-full object-cover rounded border border-gray-700" />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* === BODY SECTION === */}
+                            <div className="p-4 rounded-lg border border-green-500/30 bg-green-500/5">
+                                <h3 className="text-green-400 font-semibold mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">article</span>
+                                    Body (İçerik Alanı)
+                                </h3>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.bodyBgColor || '#ffffff'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyBgColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.bodyBgColor}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.bodyTextColor || '#333333'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyTextColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.bodyTextColor}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Buton Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.buttonColor || '#b13329'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, buttonColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.buttonColor}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* === FOOTER SECTION === */}
+                            <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+                                <h3 className="text-orange-400 font-semibold mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">call_to_action</span>
+                                    Footer (Alt Alan)
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.footerBgColor || '#1a2744'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, footerBgColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.footerBgColor}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={editingTemplate.footerTextColor || '#888888'}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, footerTextColor: e.target.value })}
+                                                className="w-12 h-10 rounded cursor-pointer border-0" />
+                                            <span className="text-xs text-gray-500">{editingTemplate.footerTextColor}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Footer Background Image */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Görseli (opsiyonel)</label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="text"
+                                            value={editingTemplate.footerImage || ''}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, footerImage: e.target.value })}
+                                            className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                            placeholder="Görsel URL..."
+                                        />
+                                        <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">upload</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'bannerImage')} />
+                                        </label>
+                                    </div>
+                                    {editingTemplate.footerImage && (
+                                        <img src={editingTemplate.footerImage} alt="Footer" className="mt-2 h-12 w-full object-cover rounded border border-gray-700" />
+                                    )}
                                 </div>
                             </div>
 
