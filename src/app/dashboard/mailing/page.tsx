@@ -466,9 +466,10 @@ export default function MailingPage() {
                 subject: form.subject,
                 content: form.content,
                 templateSlug: form.templateSlug,
-                recipientType: form.recipientType,
-                recipientIds: form.recipientType === 'custom' ? form.recipientIds : undefined,
-                externalRecipients: form.recipientType === 'external' ? form.externalRecipients : undefined,
+                // Prioritize custom/external lists if they have items
+                recipientType: form.recipientIds.length > 0 ? 'custom' : (form.externalRecipients.length > 0 ? 'external' : form.recipientType),
+                recipientIds: form.recipientIds.length > 0 ? form.recipientIds : undefined,
+                externalRecipients: form.externalRecipients.length > 0 && form.recipientIds.length === 0 ? form.externalRecipients : undefined,
                 scheduledAt: form.scheduledAt || undefined,
                 customLogoUrl: form.customLogoUrl || undefined,
                 customProductImageUrl: form.customProductImageUrl || undefined,
