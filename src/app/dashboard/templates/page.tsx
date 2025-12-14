@@ -94,6 +94,9 @@ export default function TemplatesPage() {
     const [templates, setTemplates] = useState<EmailTemplate[]>(defaultTemplates);
     const [loading, setLoading] = useState(false); // Start with false - show default immediately
     const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+    const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+    const [previewHtml, setPreviewHtml] = useState<string>("");
+    const [previewLoading, setPreviewLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [saving, setSaving] = useState(false);
@@ -102,16 +105,38 @@ export default function TemplatesPage() {
         fetchTemplates();
     }, []);
 
-    // ESC key to close modal
+    // ESC key to close modals
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 setEditingTemplate(null);
+                setPreviewTemplate(null);
             }
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
+
+    // Fetch preview HTML when template is selected
+    useEffect(() => {
+        if (previewTemplate) {
+            setPreviewLoading(true);
+            fetch('/api/dashboard/templates/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ templateSlug: previewTemplate.slug })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    setPreviewHtml(data.html || '');
+                    setPreviewLoading(false);
+                })
+                .catch(() => {
+                    setPreviewHtml('<p>Önizleme yüklenemedi</p>');
+                    setPreviewLoading(false);
+                });
+        }
+    }, [previewTemplate]);
 
     const fetchTemplates = async () => {
         try {
@@ -241,35 +266,44 @@ export default function TemplatesPage() {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {templates.map((template) => (
-                        <div key={template.id} className="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden hover:border-[#137fec]/50 transition-colors">
-                            {/* Preview Header */}
-                            <div className="h-24 flex items-center justify-center text-white font-bold text-lg" style={{ background: template.headerBgColor }}>
-                                <span style={{ color: template.headerTextColor }}>{language === 'TR' ? template.nameTR : template.nameEN}</span>
+                        <div key={template.id} className="bg-[#111418] rounded-lg border border-[#3b4754] overflow-hidden hover:border-[#137fec]/50 transition-colors group">
+                            {/* Compact Preview Header */}
+                            <div className="h-14 flex items-center justify-center px-2" style={{ background: template.headerBgColor }}>
+                                <span className="text-xs font-semibold text-center leading-tight truncate" style={{ color: template.headerTextColor }}>
+                                    {language === 'TR' ? template.nameTR : template.nameEN}
+                                </span>
                             </div>
 
-                            {/* Info */}
-                            <div className="p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getCategoryStyle(template.category)}`}>
+                            {/* Compact Info */}
+                            <div className="p-2">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full border ${getCategoryStyle(template.category)}`}>
                                         {getCategoryLabel(template.category)}
                                     </span>
-                                    <span className={`text-xs ${template.isActive ? 'text-green-400' : 'text-gray-500'}`}>
-                                        {template.isActive ? t.active : t.inactive}
-                                    </span>
+                                    <span className={`w-2 h-2 rounded-full ${template.isActive ? 'bg-green-400' : 'bg-gray-500'}`} title={template.isActive ? t.active : t.inactive}></span>
                                 </div>
 
-                                <p className="text-white font-medium mb-1">{language === 'TR' ? template.nameTR : template.nameEN}</p>
-                                <p className="text-gray-500 text-xs mb-3">slug: {template.slug}</p>
+                                <p className="text-gray-500 text-[10px] mb-2 truncate">slug: {template.slug}</p>
 
-                                <button
-                                    onClick={() => setEditingTemplate(template)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#137fec]/10 text-[#137fec] rounded-lg hover:bg-[#137fec]/20 transition-colors"
-                                >
-                                    <span className="material-symbols-outlined text-sm">edit</span>
-                                    {t.edit}
-                                </button>
+                                {/* Action Buttons */}
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => setPreviewTemplate(template)}
+                                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-500/10 text-amber-400 rounded text-xs hover:bg-amber-500/20 transition-colors"
+                                        title={t.preview}
+                                    >
+                                        <span className="material-symbols-outlined text-sm">visibility</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setEditingTemplate(template)}
+                                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#137fec]/10 text-[#137fec] rounded text-xs hover:bg-[#137fec]/20 transition-colors"
+                                        title={t.edit}
+                                    >
+                                        <span className="material-symbols-outlined text-sm">edit</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -380,6 +414,57 @@ export default function TemplatesPage() {
                             </button>
                             <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 disabled:opacity-50">
                                 {saving ? t.saving : t.save}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Preview Modal */}
+            {previewTemplate && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#1c2127] rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border border-[#3b4754]">
+                        {/* Header */}
+                        <div className="p-4 border-b border-[#3b4754] flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">{t.preview}: {language === 'TR' ? previewTemplate.nameTR : previewTemplate.nameEN}</h3>
+                                <p className="text-xs text-gray-500">E-posta gönderildiğinde bu şekilde görünecek</p>
+                            </div>
+                            <button
+                                onClick={() => setPreviewTemplate(null)}
+                                className="p-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        {/* Preview Content */}
+                        <div className="flex-1 overflow-auto p-4 bg-gray-100">
+                            {previewLoading ? (
+                                <div className="flex items-center justify-center h-64">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#137fec]"></div>
+                                </div>
+                            ) : (
+                                <div
+                                    className="mx-auto bg-white shadow-lg rounded-lg overflow-hidden"
+                                    style={{ maxWidth: '600px' }}
+                                >
+                                    <iframe
+                                        srcDoc={previewHtml}
+                                        className="w-full h-[500px] border-0"
+                                        title="Email Preview"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 border-t border-[#3b4754] flex justify-end">
+                            <button
+                                onClick={() => setPreviewTemplate(null)}
+                                className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                            >
+                                Kapat
                             </button>
                         </div>
                     </div>

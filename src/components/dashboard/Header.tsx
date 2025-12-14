@@ -25,7 +25,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     const isDashboardOverview = pathname === "/dashboard";
     const isAnalyticsPage = pathname === "/dashboard/analytics";
     const isMailingPage = pathname === "/dashboard/mailing";
-    const hideSearchBar = isDashboardOverview || isAnalyticsPage || isMailingPage;
+    const isTemplatesPage = pathname === "/dashboard/templates";
+    const hideSearchBar = isDashboardOverview || isAnalyticsPage || isMailingPage || isTemplatesPage;
 
     // Update URL on search change (Debounced to avoid too many refreshes)
     useEffect(() => {
