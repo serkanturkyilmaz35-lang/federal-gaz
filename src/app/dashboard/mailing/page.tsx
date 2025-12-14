@@ -576,9 +576,9 @@ export default function MailingPage() {
                 setForm(prev => ({
                     ...prev,
                     templateSlug: slug,
-                    // Only fill if empty or if coming from API (user can still override)
-                    name: prev.name || data.name || '',
-                    subject: prev.subject || data.subject || '',
+                    // Always update name and subject to match the selected template
+                    name: data.name || prev.name || '',
+                    subject: data.subject || prev.subject || '',
                     content: data.content || prev.content,
                     customLogoUrl: data.logoUrl || prev.customLogoUrl || '',
                     customProductImageUrl: data.bannerImage || prev.customProductImageUrl || '',
