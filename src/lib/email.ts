@@ -1110,7 +1110,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
                 <p style="color: ${templateData?.headerHighlightColor || '#ffd700'}; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${templateData?.headerHighlight || campaignHighlight || (year + 1)} ✨</p>
                 <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 36px; font-weight: 300;">${campaignTitle || 'YENİ YIL'}</h1>
-                <p style="color: ${templateData?.headerSubtitleColor || '#ffd700'}; font-size: 28px; font-weight: 600; margin: 0;">${templateData?.headerSubtitle || 'MUTLU YILLAR!'}</p>
+                <p style="color: ${templateData?.headerSubtitleColor || '#ffd700'}; background: ${templateData?.headerSubtitleBgColor || 'transparent'}; display: inline-block; padding: ${templateData?.headerSubtitleBgColor && templateData.headerSubtitleBgColor !== 'transparent' ? '10px 20px' : '0'}; border-radius: 8px; font-size: 28px; font-weight: 600; margin: 0;">${templateData?.headerSubtitle || 'MUTLU YILLAR!'}</p>
             </div>
         </div>
         
@@ -1125,7 +1125,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Content -->
         <div style="padding: 30px;">
             <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6; text-align: center;">
-                Sevgili <strong style="color: #ffd700;">${recipientName}</strong>,
+                Sevgili <strong style="color: ${templateData?.recipientNameColor || '#ffd700'}; background: ${templateData?.recipientNameBgColor || 'transparent'}; padding: ${templateData?.recipientNameBgColor && templateData.recipientNameBgColor !== 'transparent' ? '2px 8px' : '0'}; border-radius: 4px;">${recipientName}</strong>,
             </p>
             <div style="color: ${theme.bodyText}; font-size: 15px; line-height: 1.8; text-align: center; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; margin: 20px 0;">
                 ${templateContent.replace(/\n/g, '<br>')}

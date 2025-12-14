@@ -72,6 +72,8 @@ export async function PUT(req: Request) {
             footerContact: footerContact !== undefined ? footerContact : template.footerContact,
             headerHtml: headerHtml !== undefined ? headerHtml : template.headerHtml,
             footerHtml: footerHtml !== undefined ? footerHtml : template.footerHtml,
+            buttonText: body.buttonText !== undefined ? body.buttonText : template.buttonText,
+            templateData: body.templateData !== undefined ? body.templateData : template.templateData,
             isActive: isActive ?? template.isActive,
         });
 

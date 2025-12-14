@@ -412,8 +412,8 @@ export default function TemplatesPage() {
                     {sortedTemplates.map((template) => (
                         <div key={template.id} className="bg-[#111418] rounded-lg border border-[#3b4754] overflow-hidden hover:border-[#137fec]/50 transition-colors group">
                             {/* Compact Preview Header */}
-                            <div className="h-14 flex items-center justify-center px-2" style={{ background: template.headerBgColor }}>
-                                <span className="text-xs font-semibold text-center leading-tight truncate" style={{ color: template.headerTextColor }}>
+                            <div className="h-14 flex items-center justify-center px-2 bg-[#1a1d21] border-b border-[#3b4754]">
+                                <span className="text-xs font-semibold text-center leading-tight truncate text-gray-200">
                                     {language === 'TR' ? template.nameTR : template.nameEN}
                                 </span>
                             </div>
@@ -447,11 +447,14 @@ export default function TemplatesPage() {
                                                     headerHighlightColor: '#ffd700',
                                                     headerSubtitle: 'MUTLU YILLAR!',
                                                     headerSubtitleColor: '#ffd700',
+                                                    headerSubtitleBgColor: 'transparent', // Default transparent or maybe '#1e3a5f' if user wants box
                                                     bodyGreeting: '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄',
                                                     bodyGreetingColor: '#ffd700',
                                                     bodyGreetingBgColor: 'rgba(255,255,255,0.05)',
                                                     signature: 'Federal Gaz Ailesi',
                                                     signatureColor: '#ffd700',
+                                                    recipientNameColor: '#ffd700',
+                                                    recipientNameBgColor: 'transparent',
                                                     ...tpl.templateData
                                                 };
                                             }
@@ -695,9 +698,9 @@ export default function TemplatesPage() {
                                             </div>
 
                                             {/* Header Subtitle */}
-                                            <div className="grid grid-cols-[1fr_auto] gap-2">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Header Alt Başlık</label>
+                                            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                                                <div className="col-span-1">
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Header Alt Başlık (MUTLU YILLAR)</label>
                                                     <input
                                                         type="text"
                                                         value={editingTemplate.templateData?.headerSubtitle || ''}
@@ -710,7 +713,7 @@ export default function TemplatesPage() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Renk</label>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Yazı</label>
                                                     <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
                                                         <input
                                                             type="color"
@@ -721,6 +724,58 @@ export default function TemplatesPage() {
                                                             })}
                                                             className="w-8 h-8 rounded cursor-pointer bg-transparent"
                                                             title="Yazı Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Arka Plan</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.headerSubtitleBgColor && editingTemplate.templateData.headerSubtitleBgColor !== 'transparent' ? editingTemplate.templateData.headerSubtitleBgColor : '#ffffff'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, headerSubtitleBgColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="Arka Plan Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Recipient Name Customization */}
+                                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                                                <div className="flex items-center justify-center">
+                                                    <span className="text-xs text-gray-300">Alıcı İsmi Formatı (Ör: Sevgili <b>Mehmet Yılmaz</b>)</span>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">İsim Rengi</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.recipientNameColor || '#ffd700'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, recipientNameColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="İsim Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">İsim Arka Plan</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.recipientNameBgColor && editingTemplate.templateData.recipientNameBgColor !== 'transparent' ? editingTemplate.templateData.recipientNameBgColor : '#ffffff'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, recipientNameBgColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="İsim Arka Plan Rengi"
                                                         />
                                                     </div>
                                                 </div>
