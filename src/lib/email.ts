@@ -1078,7 +1078,18 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         },
 
         // ==================== NEW YEAR ====================
-        'new-year': () => `
+        'new-year': () => {
+            const theme = {
+                headerBg: headerBgColor || 'linear-gradient(180deg, #1e3a5f 0%, #0d1f33 100%)',
+                headerText: headerTextColor || '#ffffff',
+                bodyBg: bodyBgColor || '#0d1f33',
+                bodyText: bodyTextColor || '#e0e0e0',
+                button: buttonColor || 'linear-gradient(135deg, #c41e3a 0%, #8b0000 100%)',
+                footerBg: footerBgColor || 'rgba(0,0,0,0.3)',
+                footerText: footerTextColor || '#888888'
+            };
+
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1086,14 +1097,17 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #0d1f33;">
-    <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #1e3a5f 0%, #0d1f33 100%);">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${theme.bodyBg};">
+    <div style="max-width: 600px; margin: 0 auto; background: ${theme.headerBg};">
         <!-- New Year Header -->
-        <div style="padding: 40px 30px; text-align: center;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
-            <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${campaignHighlight || (year + 1)} ✨</p>
-            <h1 style="color: #ffffff; margin: 15px 0; font-size: 36px; font-weight: 300;">${campaignTitle || 'YENİ YIL'}</h1>
-            <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">MUTLU YILLAR!</p>
+        <div style="padding: 40px 30px; text-align: center; position: relative; background-size: cover; background-position: center; ${headerImage ? `background-image: url('${headerImage}');` : ''}">
+             ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+                <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${campaignHighlight || (year + 1)} ✨</p>
+                <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 36px; font-weight: 300;">${campaignTitle || 'YENİ YIL'}</h1>
+                <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">MUTLU YILLAR!</p>
+            </div>
         </div>
         
         <!-- Decorative Banner -->
@@ -1106,10 +1120,10 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Content -->
         <div style="padding: 30px;">
-            <p style="color: #e0e0e0; font-size: 16px; line-height: 1.6; text-align: center;">
+            <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6; text-align: center;">
                 Sevgili <strong style="color: #ffd700;">${recipientName}</strong>,
             </p>
-            <div style="color: #cccccc; font-size: 15px; line-height: 1.8; text-align: center; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; margin: 20px 0;">
+            <div style="color: ${theme.bodyText}; font-size: 15px; line-height: 1.8; text-align: center; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; margin: 20px 0;">
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
@@ -1118,28 +1132,43 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%); color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
                     🎁 Yeni Yıl Fırsatları
                 </a>
             </div>
             
-            <p style="color: #888; font-size: 14px; text-align: center;">
+            <p style="color: ${theme.footerText}; font-size: 14px; text-align: center;">
                 Sevgilerimizle,<br><strong style="color: #ffd700;">Federal Gaz Ailesi</strong>
             </p>
         </div>
         
         <!-- Footer -->
-        <div style="background-color: rgba(0,0,0,0.3); padding: 25px; text-align: center;">
-            <p style="color: #888; margin: 0; font-size: 12px;">
-                © ${year} Federal Gaz - Ankara | federalgaz.com
-            </p>
+        <div style="background: ${theme.footerBg}; padding: 25px; text-align: center; position: relative;">
+            ${footerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${footerImage}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <p style="color: ${theme.footerText}; margin: 0; font-size: 12px;">
+                    ${footerContact || '© ' + year + ' Federal Gaz - Ankara | federalgaz.com'}
+                </p>
+            </div>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== RAMAZAN BAYRAMI ====================
-        'ramazan-bayrami': () => `
+        'ramazan-bayrami': () => {
+            const theme = {
+                headerBg: headerBgColor || 'linear-gradient(180deg, #2a5298 0%, #1e3c72 100%)',
+                headerText: headerTextColor || '#ffd700',
+                bodyBg: bodyBgColor || '#1e3c72',
+                bodyText: bodyTextColor || '#e0e0e0',
+                button: buttonColor || '#4ecdc4',
+                footerBg: footerBgColor || 'rgba(0,0,0,0.2)',
+                footerText: footerTextColor || '#aaa'
+            };
+
+            return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -1147,14 +1176,17 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${subject}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #1e3c72;">
-    <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #2a5298 0%, #1e3c72 100%);">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${theme.bodyBg};">
+    <div style="max-width: 600px; margin: 0 auto; background: ${theme.headerBg};">
         <!-- Bayram Header -->
-        <div style="padding: 40px 30px; text-align: center;">
-            <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
-            <p style="color: #ffd700; font-size: 40px; margin: 0;">☪</p>
-            <h1 style="color: #ffd700; margin: 15px 0; font-size: 32px; font-weight: 600;">${campaignTitle || 'RAMAZAN BAYRAMINIZ'}</h1>
-            <p style="color: #ffffff; font-size: 24px; margin: 0;">${campaignHighlight || 'MÜBAREK OLSUN'}</p>
+        <div style="padding: 40px 30px; text-align: center; position: relative; background-size: cover; background-position: center; ${headerImage ? `background-image: url('${headerImage}');` : ''}">
+            ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
+                <p style="color: #ffd700; font-size: 40px; margin: 0;">☪</p>
+                <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 32px; font-weight: 600;">${campaignTitle || 'RAMAZAN BAYRAMINIZ'}</h1>
+                <p style="color: #ffffff; font-size: 24px; margin: 0;">${campaignHighlight || 'MÜBAREK OLSUN'}</p>
+            </div>
         </div>
         
         <!-- Image -->
@@ -1171,7 +1203,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 <p style="color: #ffffff; font-size: 16px; line-height: 1.6;">
                     Değerli <strong style="color: #ffd700;">${recipientName}</strong>,
                 </p>
-                <div style="color: #e0e0e0; font-size: 15px; line-height: 1.8;">
+                <div style="color: ${theme.bodyText}; font-size: 15px; line-height: 1.8;">
                     ${templateContent.replace(/\n/g, '<br>')}
                 </div>
             </div>
@@ -1183,7 +1215,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: #4ecdc4; color: #1a2744; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #1a2744; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600;">
                     Sipariş Ver
                 </a>
             </div>
@@ -1194,14 +1226,18 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
         
         <!-- Footer -->
-        <div style="background-color: rgba(0,0,0,0.2); padding: 25px; text-align: center;">
-            <p style="color: #aaa; margin: 0; font-size: 12px;">
-                © ${year} Federal Gaz - Ankara
-            </p>
+        <div style="background: ${theme.footerBg}; padding: 25px; text-align: center; position: relative;">
+            ${footerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${footerImage}'); background-size: cover; background-position: center; opacity: 0.15; z-index: 0;"></div>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <p style="color: ${theme.footerText}; margin: 0; font-size: 12px;">
+                    ${footerContact || '© ' + year + ' Federal Gaz - Ankara'}
+                </p>
+            </div>
         </div>
     </div>
 </body>
-</html>`,
+</html>`;
+        },
 
         // ==================== KURBAN BAYRAMI ====================
         'kurban-bayrami': () => {
