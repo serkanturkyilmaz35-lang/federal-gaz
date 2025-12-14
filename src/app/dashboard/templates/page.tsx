@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { getCampaignEmailTemplate } from "@/lib/email-templates";
 
 interface EmailTemplate {
     id: number;
@@ -140,20 +141,22 @@ export default function TemplatesPage() {
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
-    // Fetch preview HTML when template is selected or edited
+    // Generate preview HTML locally (Instant!)
     useEffect(() => {
         const targetTemplate = editingTemplate || previewTemplate;
 
         if (targetTemplate) {
             setPreviewLoading(true);
 
-            // Debounce only for editing to prevent too many requests
+            // Small debounce for smooth typing experience
             const timeoutId = setTimeout(() => {
-                fetch('/api/dashboard/templates/preview', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        templateSlug: targetTemplate.slug,
+                try {
+                    const html = getCampaignEmailTemplate(targetTemplate.slug, {
+                        subject: targetTemplate.headerTitle, // Use header title as subject for preview
+                        content: targetTemplate.bodyContent,
+                        recipientName: 'Sayın Müşteri', // Default placeholder for preview
+                        campaignTitle: targetTemplate.headerTitle,
+                        // Colors & Styles
                         headerBgColor: targetTemplate.headerBgColor,
                         headerTextColor: targetTemplate.headerTextColor,
                         headerImage: targetTemplate.headerImage,
@@ -164,25 +167,23 @@ export default function TemplatesPage() {
                         footerTextColor: targetTemplate.footerTextColor,
                         footerImage: targetTemplate.footerImage,
                         logoUrl: targetTemplate.logoUrl,
-                        headerTitle: targetTemplate.headerTitle,
-                        bodyContent: targetTemplate.bodyContent,
-                        footerContact: targetTemplate.footerContact,
+                        // Extra content
                         headerHtml: targetTemplate.headerHtml,
                         footerHtml: targetTemplate.footerHtml,
+                        footerContact: targetTemplate.footerContact,
                         buttonText: targetTemplate.buttonText,
                         templateData: targetTemplate.templateData,
-                    })
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        setPreviewHtml(data.html || '');
-                        setPreviewLoading(false);
-                    })
-                    .catch(() => {
-                        setPreviewHtml('<p>Önizleme yüklenemedi</p>');
-                        setPreviewLoading(false);
+                        customLogoUrl: targetTemplate.logoUrl
                     });
-            }, editingTemplate ? 500 : 0);
+
+                    setPreviewHtml(html);
+                    setPreviewLoading(false);
+                } catch (err) {
+                    console.error("Preview generation error:", err);
+                    setPreviewHtml('<p>Önizleme oluşturulurken bir hata oluştu.</p>');
+                    setPreviewLoading(false);
+                }
+            }, 50); // Very fast debounce since it's local
 
             return () => clearTimeout(timeoutId);
         }
