@@ -437,6 +437,18 @@ export default function TemplatesPage() {
                                 </div>
                             </div>
 
+                            {/* Banner Image */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Banner Görsel URL (Varsayılan)</label>
+                                <input
+                                    type="text"
+                                    value={editingTemplate.bannerImage || ''}
+                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, bannerImage: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
+                                    placeholder="https://..."
+                                />
+                            </div>
+
                             {/* Preview */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t.preview}</label>
