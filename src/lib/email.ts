@@ -663,13 +663,110 @@ interface CampaignTemplateOptions {
     subject: string;
     content: string;
     recipientName?: string;
+    customLogoUrl?: string;  // Optional: Override default logo
 }
 
+// Default professional content for each template type (Used when content is empty)
+const defaultTemplateContent: { [key: string]: string } = {
+    'modern': `Federal Gaz olarak 30 yılı aşkın tecrübemizle Ankara'nın en güvenilir endüstriyel gaz tedarikçisiyiz.
+
+🔹 Oksijen, Argon, Azot, Asetilen, CO2
+🔹 Kaynak gazları ve gaz karışımları
+🔹 Medikal ve gıda sınıfı gazlar
+🔹 Aynı gün teslimat imkanı
+
+Tüm gaz ihtiyaçlarınız için bizi tercih ettiğiniz için teşekkür ederiz.`,
+
+    'black-friday': `🔥 EFSANE CUMA BAŞLADI!
+
+Yılın en büyük indirim kampanyası Federal Gaz'da!
+
+✅ Tüm kaynak gazlarında %50'ye varan indirim
+✅ Argon, Asetilen, CO2 karışımlarında özel fiyatlar
+✅ Toplu alımlarda ekstra avantajlar
+✅ Ücretsiz teslimat fırsatı
+
+Stoklarla sınırlı bu fırsatı kaçırmayın!`,
+
+    'new-year': `Yeni yılda işinizi Federal Gaz kalitesiyle büyütün!
+
+2025 yılında sizlere daha iyi hizmet vermek için hazırız. Yeni yıl fiyat listemiz ve kampanyalarımız için bizimle iletişime geçin.
+
+✨ Yeni yıl özel fiyatları
+✨ Yıllık sözleşme avantajları
+✨ Öncelikli teslimat imkanı
+
+Mutlu, sağlıklı ve başarılı bir yıl diliyoruz!`,
+
+    'ramazan-bayrami': `Ramazan Bayramınızı en içten dileklerimizle kutlarız.
+
+Bu mübarek bayramda sevdiklerinizle huzurlu vakitler geçirmenizi dileriz.
+
+Federal Gaz olarak bayram süresince de işletmenizin gaz ihtiyaçlarını karşılamaya devam ediyoruz. Acil talepleriniz için 7/24 hizmetinizdeyiz.`,
+
+    'kurban-bayrami': `Kurban Bayramınız mübarek olsun!
+
+Paylaşmanın ve birlik olmanın sembolü olan bu bayramda tüm müşterilerimize sağlık ve mutluluk diliyoruz.
+
+Bayram boyunca LPG ve tüp siparişleriniz için nöbet hizmetimiz devam etmektedir.`,
+
+    'winter-campaign': `❄️ KIŞ KAMPANYASI BAŞLADI!
+
+Soğuk kış aylarına hazır mısınız?
+
+🔥 LPG ve Propan tüplerinde kış indirimi
+🏠 Isınma gazlarında toptan fiyat avantajı
+🚚 Ankara geneli aynı gün teslimat
+⚡ Acil siparişlerde öncelikli hizmet
+
+Kışa hazırlıklı girin, Federal Gaz yanınızda!`,
+
+    'weekend-sale': `🎉 HAFTA SONU ÖZEL FİYATLARI!
+
+Sadece bu hafta sonu geçerli:
+
+✅ Tüm endüstriyel gazlarda %30 indirim
+✅ Argon ve CO2'de özel fiyatlar
+✅ Minimum sipariş limiti yok
+✅ Ücretsiz teslimat
+
+Pazartesi'den önce siparişinizi verin!`,
+
+    'welcome': `Federal Gaz ailesine hoş geldiniz! 🎉
+
+Bizi tercih ettiğiniz için teşekkür ederiz. Üyeliğinizle birlikte şu avantajlardan yararlanabilirsiniz:
+
+🚚 Hızlı Teslimat - Siparişleriniz aynı gün kapınızda
+💰 Özel Fiyatlar - Üyelere özel indirimli fiyatlar
+🎁 Kampanyalar - İlk siparişte %10 indirim kodu: HOSGELDIN
+📞 7/24 Destek - Her an yanınızdayız
+
+İlk siparişinizi vermek için hemen sitemizi ziyaret edin!`,
+
+    'classic': `Sayın Müşterimiz,
+
+Federal Gaz olarak endüstriyel gaz sektöründe Ankara'nın lider tedarikçisi olarak hizmet vermekteyiz.
+
+Geniş ürün yelpazemiz:
+• Medikal Gazlar (Oksijen, Azot)
+• Kaynak Gazları (Argon, Asetilen, CO2 karışımları)
+• Endüstriyel Gazlar (Hidrojen, Helyum, Propan)
+• Özel Gaz Karışımları
+
+Kalite ve güvenilirlik için Federal Gaz'ı tercih edin.
+
+Saygılarımızla,
+Federal Gaz Ekibi`
+};
+
 export function getCampaignEmailTemplate(templateSlug: string, options: CampaignTemplateOptions): string {
-    const { subject, content, recipientName = 'Değerli Müşterimiz' } = options;
-    const logoUrl = 'https://www.federalgaz.com/logo-clean.png';
+    const { subject, content, recipientName = 'Değerli Müşterimiz', customLogoUrl } = options;
+    const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
     const year = new Date().getFullYear();
+
+    // Use default content if provided content is empty
+    const templateContent = content?.trim() || defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
 
     // Federal Gaz Product Images - Absolute URLs for email compatibility
     const productImages = {
@@ -728,7 +825,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid ${brandColors.red};">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 35px 0;">
@@ -792,7 +889,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 Merhaba <strong style="color: #ffffff;">${recipientName}</strong>,
             </p>
             <div style="color: #aaaaaa; font-size: 15px; line-height: 1.8;">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -847,7 +944,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 Sevgili <strong style="color: #ffd700;">${recipientName}</strong>,
             </p>
             <div style="color: #cccccc; font-size: 15px; line-height: 1.8; text-align: center; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; margin: 20px 0;">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <p style="color: #ffd700; font-size: 18px; text-align: center; margin: 25px 0;">
@@ -904,7 +1001,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                     Değerli <strong style="color: #ffd700;">${recipientName}</strong>,
                 </p>
                 <div style="color: #e0e0e0; font-size: 15px; line-height: 1.8;">
-                    ${content.replace(/\n/g, '<br>')}
+                    ${templateContent.replace(/\n/g, '<br>')}
                 </div>
             </div>
             
@@ -961,7 +1058,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                     Değerli <strong style="color: ${brandColors.red};">${recipientName}</strong>,
                 </p>
                 <div style="color: #cccccc; font-size: 15px; line-height: 1.8;">
-                    ${content.replace(/\n/g, '<br>')}
+                    ${templateContent.replace(/\n/g, '<br>')}
                 </div>
             </div>
             
@@ -1023,7 +1120,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 8px;">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
@@ -1093,7 +1190,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8;">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -1148,7 +1245,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 Merhaba <strong>${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8; text-align: center;">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <!-- Features -->
@@ -1226,7 +1323,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </p>
             
             <div style="color: #444; font-size: 15px; line-height: 1.7; border-left: 3px solid ${brandColors.red}; padding-left: 20px; margin: 25px 0;">
-                ${content.replace(/\n/g, '<br>')}
+                ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
