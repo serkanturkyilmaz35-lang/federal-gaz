@@ -840,7 +840,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     const { subject, content, recipientName = 'Değerli Müşterimiz', customLogoUrl, customProductImageUrl, campaignTitle, campaignHighlight } = options;
     const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
-    const year = new Date().getFullYear();
+    const year = 2014;
 
     // Use default content if provided content is empty
     const templateContent = content?.trim() || defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
@@ -1278,7 +1278,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Discount Banner -->
         <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; text-align: center;">
-            <p style="color: #ffffff; font-size: 48px; font-weight: 900; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">%30</p>
+            <p style="color: #ffffff; font-size: 48px; font-weight: 900; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">${campaignHighlight || '%30 İNDİRİM'}</p>
             <p style="color: #ffffff; font-size: 18px; margin: 5px 0 0;">TÜM ÜRÜNLERDE</p>
         </div>
         
