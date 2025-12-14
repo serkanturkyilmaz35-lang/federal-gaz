@@ -859,6 +859,10 @@ export default function MailingPage() {
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">{t.pageDesc}</p>
                 </div>
                 <div className="flex gap-2">
+                    <button onClick={syncDatabase} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-500">
+                        <span className="material-symbols-outlined text-sm">sync</span>
+                        DB Güncelle
+                    </button>
                     {templates.length === 0 && (
                         <button onClick={seedTemplates} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600">
                             <span className="material-symbols-outlined text-sm">download</span>

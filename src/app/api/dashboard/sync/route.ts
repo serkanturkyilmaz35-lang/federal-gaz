@@ -44,6 +44,10 @@ export async function POST() {
         results.push(await addColumnIfMissing(db, existingColumns, 'openCount', "INT DEFAULT 0"));
         results.push(await addColumnIfMissing(db, existingColumns, 'clickCount', "INT DEFAULT 0"));
         results.push(await addColumnIfMissing(db, existingColumns, 'errorLog', "LONGTEXT"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'customLogoUrl', "VARCHAR(255)"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'customProductImageUrl', "VARCHAR(255)"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'campaignTitle', "VARCHAR(255)"));
+        results.push(await addColumnIfMissing(db, existingColumns, 'campaignHighlight', "VARCHAR(255)"));
 
         // 2.5 Update recipientType ENUM to include 'external' if it exists but doesn't have 'external'
         try {
