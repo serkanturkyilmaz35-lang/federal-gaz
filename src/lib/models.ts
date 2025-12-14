@@ -470,6 +470,10 @@ interface MailingCampaignAttributes {
     recipientType: 'all' | 'members' | 'guests' | 'custom' | 'external';
     recipientIds?: string; // JSON array of user IDs for custom selection
     externalRecipients?: string; // JSON array of {name, email} for external recipients
+    customLogoUrl?: string; // Custom logo override
+    customProductImageUrl?: string; // Custom product image override
+    campaignTitle?: string; // Banner title override (e.g. "YAZ FIRSATI")
+    campaignHighlight?: string; // Highlight text (e.g. "%50 İNDİRİM")
     status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
     scheduledAt?: Date;
     sentAt?: Date;
@@ -481,7 +485,7 @@ interface MailingCampaignAttributes {
     errorLog?: string; // JSON array of failed emails with error messages
 }
 
-interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'templateSlug' | 'recipientType' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'sentCount' | 'failedCount' | 'openCount' | 'clickCount' | 'recipientIds' | 'externalRecipients' | 'errorLog'> { }
+interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'templateSlug' | 'recipientType' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'sentCount' | 'failedCount' | 'openCount' | 'clickCount' | 'recipientIds' | 'externalRecipients' | 'customLogoUrl' | 'customProductImageUrl' | 'campaignTitle' | 'campaignHighlight' | 'errorLog'> { }
 
 export class MailingCampaign extends Model<MailingCampaignAttributes, MailingCampaignCreationAttributes> implements MailingCampaignAttributes {
     declare id: number;
@@ -492,6 +496,10 @@ export class MailingCampaign extends Model<MailingCampaignAttributes, MailingCam
     declare recipientType: 'all' | 'members' | 'guests' | 'custom' | 'external';
     declare recipientIds: string | undefined;
     declare externalRecipients: string | undefined;
+    declare customLogoUrl: string | undefined;
+    declare customProductImageUrl: string | undefined;
+    declare campaignTitle: string | undefined;
+    declare campaignHighlight: string | undefined;
     declare status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
     declare scheduledAt: Date | undefined;
     declare sentAt: Date | undefined;
@@ -540,6 +548,22 @@ MailingCampaign.init(
         },
         externalRecipients: {
             type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        customLogoUrl: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        customProductImageUrl: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        campaignTitle: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        campaignHighlight: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
         status: {

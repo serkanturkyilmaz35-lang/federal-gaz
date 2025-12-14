@@ -21,6 +21,10 @@ interface MailingCampaign {
     clickCount: number;
     errorLog?: string;
     createdAt: string;
+    customLogoUrl?: string;
+    customProductImageUrl?: string;
+    campaignTitle?: string;
+    campaignHighlight?: string;
 }
 
 interface EmailTemplate {
@@ -257,6 +261,11 @@ const emptyForm = {
     minAmount: '' as string,
     // External recipients from Excel/CSV
     externalRecipients: [] as { name: string; email: string }[],
+    // Visual Customization
+    customLogoUrl: '',
+    customProductImageUrl: '',
+    campaignTitle: '',
+    campaignHighlight: '',
 };
 
 const defaultTemplates: any[] = [
@@ -416,6 +425,10 @@ export default function MailingPage() {
             minOrders: '',
             minAmount: '',
             externalRecipients: [],
+            customLogoUrl: campaign.customLogoUrl || '',
+            customProductImageUrl: campaign.customProductImageUrl || '',
+            campaignTitle: campaign.campaignTitle || '',
+            campaignHighlight: campaign.campaignHighlight || '',
         });
         setEditingId(campaign.id);
         setIsNew(false);
@@ -457,6 +470,10 @@ export default function MailingPage() {
                 recipientIds: form.recipientType === 'custom' ? form.recipientIds : undefined,
                 externalRecipients: form.recipientType === 'external' ? form.externalRecipients : undefined,
                 scheduledAt: form.scheduledAt || undefined,
+                customLogoUrl: form.customLogoUrl || undefined,
+                customProductImageUrl: form.customProductImageUrl || undefined,
+                campaignTitle: form.campaignTitle || undefined,
+                campaignHighlight: form.campaignHighlight || undefined,
                 status: form.scheduledAt ? 'scheduled' : 'draft',
             };
 
@@ -525,6 +542,49 @@ export default function MailingPage() {
             setTimeout(() => setErrorMessage(""), 5000);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleTemplateChange = async (slug: string) => {
+        // Default settings for templates
+        const defaults: any = {
+            'black-friday': { title: 'EFSANE CUMA', highlight: '%50 İNDİRİM' },
+            'weekend-sale': { title: 'HAFTA SONU', highlight: '%30 İNDİRİM' },
+            'winter-campaign': { title: 'KIŞ KAMPANYASI', highlight: 'ÖZEL FİYAT' },
+            'new-year': { title: 'MUTLU YILLAR', highlight: '2026' },
+            '29-ekim': { title: '29 EKİM', highlight: 'CUMHURİYET' },
+            'ramazan-bayrami': { title: 'İYİ BAYRAMLAR', highlight: 'RAMAZAN' },
+            'kurban-bayrami': { title: 'İYİ BAYRAMLAR', highlight: 'KURBAN' },
+            'stock-reminder': { title: 'STOK HATIRLATMA', highlight: 'ACİL SİPARİŞ' },
+            'promotion': { title: 'ÖZEL FIRSAT', highlight: 'FIRSAT' },
+        };
+
+        const settings = defaults[slug] || { title: '', highlight: '' };
+
+        setForm(prev => ({
+            ...prev,
+            templateSlug: slug,
+            campaignTitle: settings.title,
+            campaignHighlight: settings.highlight
+        }));
+
+        // Auto-fill content
+        try {
+            const res = await fetch(`/api/dashboard/templates/content?slug=${slug}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.content) {
+                    setForm(prev => ({
+                        ...prev,
+                        templateSlug: slug,
+                        content: data.content,
+                        campaignTitle: settings.title,
+                        campaignHighlight: settings.highlight
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch template content', e);
         }
     };
 

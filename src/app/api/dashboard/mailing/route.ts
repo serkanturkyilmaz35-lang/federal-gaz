@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, subject, content, templateSlug, recipientType, recipientIds, externalRecipients, status, scheduledAt } = body;
+        const { name, subject, content, templateSlug, recipientType, recipientIds, externalRecipients, customLogoUrl, customProductImageUrl, campaignTitle, campaignHighlight, status, scheduledAt } = body;
 
         if (!name || !subject || !content) {
             return NextResponse.json({ error: 'Required fields: name, subject, content' }, { status: 400 });
@@ -86,6 +86,10 @@ export async function POST(req: Request) {
             recipientType: recipientType || 'all',
             recipientIds: parsedRecipientIds.length > 0 ? JSON.stringify(parsedRecipientIds) : undefined,
             externalRecipients: externalRecipientsJson,
+            customLogoUrl,
+            customProductImageUrl,
+            campaignTitle,
+            campaignHighlight,
             status: status || 'draft',
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
             recipientCount,

@@ -664,6 +664,9 @@ interface CampaignTemplateOptions {
     content: string;
     recipientName?: string;
     customLogoUrl?: string;  // Optional: Override default logo
+    customProductImageUrl?: string; // Optional: Override product image
+    campaignTitle?: string; // Optional: Banner title
+    campaignHighlight?: string; // Optional: Highlight/Discount text
 }
 
 // Default professional content for each template type (Used when content is empty)
@@ -756,11 +759,85 @@ Geniş ürün yelpazemiz:
 Kalite ve güvenilirlik için Federal Gaz'ı tercih edin.
 
 Saygılarımızla,
-Federal Gaz Ekibi`
+Federal Gaz Ekibi`,
+
+    '23-nisan': `🇹🇷 23 Nisan Ulusal Egemenlik ve Çocuk Bayramı Kutlu Olsun!
+
+Ulu Önder Mustafa Kemal Atatürk'ün çocuklara armağan ettiği bu özel günde, geleceğimizin teminatı olan çocuklarımızın bayramını en içten dileklerimizle kutlarız.
+
+Federal Gaz olarak, ülkemizin sanayisine hizmet etmekten gurur duyuyoruz.
+
+Bayramınız kutlu olsun! 🎈`,
+
+    '29-ekim': `🇹🇷 29 Ekim Cumhuriyet Bayramı Kutlu Olsun!
+
+Cumhuriyetimizin ${new Date().getFullYear() - 1923}. yılını gururla kutluyoruz!
+
+Ulu Önder Mustafa Kemal Atatürk ve silah arkadaşlarını saygı ve minnetle anıyoruz.
+
+Federal Gaz olarak, Cumhuriyetimizin değerlerine sahip çıkarak Türk sanayisine hizmet etmeye devam ediyoruz.
+
+Yaşasın Cumhuriyet! 🇹🇷`,
+
+    '19-mayis': `🇹🇷 19 Mayıs Atatürk'ü Anma, Gençlik ve Spor Bayramı Kutlu Olsun!
+
+Ulu Önder Mustafa Kemal Atatürk'ün Samsun'a çıkarak başlattığı Kurtuluş Savaşı'nın yıl dönümünde, gençlerimizin bayramını kutlarız.
+
+"Gençler, Cumhuriyeti biz kurduk, onu yükseltecek ve sürdürecek olan sizlersiniz." - M. Kemal Atatürk
+
+Federal Gaz olarak gençlerimize güveniyoruz! ⚽🏆`,
+
+    '30-agustos': `🇹🇷 30 Ağustos Zafer Bayramı Kutlu Olsun!
+
+Büyük Taarruz'un ${new Date().getFullYear() - 1922}. yıl dönümünde, bu zaferi bize armağan eden başta Gazi Mustafa Kemal Atatürk olmak üzere tüm şehitlerimizi saygı ve minnetle anıyoruz.
+
+Bu zafer, milletimizin bağımsızlık aşkının en büyük kanıtıdır.
+
+Zafer Bayramınız kutlu olsun! 🎖️`,
+
+    'stock-reminder': `📦 STOK HATIRLATMASI
+
+Sayın Müşterimiz,
+
+Kayıtlarımıza göre düzenli olarak kullandığınız gazların stok tazeleme zamanı gelmiş olabilir.
+
+Mevcut stoklarınız:
+• Argon • Oksijen • Asetilen • CO2
+
+Kesintisiz üretim için siparişinizi şimdiden verin!
+
+📞 Hemen Sipariş: (0312) 395 35 95
+🚚 Aynı gün teslimat garantisi`,
+
+    'promotion': `🎁 ÖZEL KAMPANYA!
+
+Federal Gaz'dan size özel fırsat!
+
+Bu ay boyunca geçerli avantajlar:
+✅ Toplu alımlarda %20 indirim
+✅ Yeni müşterilere özel fiyatlar
+✅ Ücretsiz tüp teslim/teslimat
+✅ Esnek ödeme seçenekleri
+
+Kampanya stoklarla sınırlıdır.
+Fırsatı kaçırmayın!`,
+
+    'vip-customer': `⭐ VIP MÜŞTERİMİZ
+
+Değerli İş Ortağımız,
+
+Federal Gaz VIP müşterisi olarak size özel ayrıcalıklarınız:
+
+👑 Öncelikli Teslimat - Siparişleriniz en önce
+💎 Özel Fiyatlandırma - Size özel indirimli fiyatlar  
+📞 Dedicated Destek - Özel müşteri temsilcisi
+🎁 Sürpriz Hediyeler - Dönemsel özel hediyeler
+
+VIP müşterimiz olduğunuz için teşekkür ederiz.`
 };
 
 export function getCampaignEmailTemplate(templateSlug: string, options: CampaignTemplateOptions): string {
-    const { subject, content, recipientName = 'Değerli Müşterimiz', customLogoUrl } = options;
+    const { subject, content, recipientName = 'Değerli Müşterimiz', customLogoUrl, customProductImageUrl, campaignTitle, campaignHighlight } = options;
     const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
     const year = new Date().getFullYear();
@@ -768,20 +845,39 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     // Use default content if provided content is empty
     const templateContent = content?.trim() || defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
 
-    // Federal Gaz Product Images - Absolute URLs for email compatibility
+    // Federal Gaz Product Images
     const productImages = {
-        oksijen: 'https://www.federalgaz.com/products/endustriyel-oksijen.png',
-        argon: 'https://www.federalgaz.com/products/argon.png',
-        asetilen: 'https://www.federalgaz.com/products/asetilen.png',
-        azot: 'https://www.federalgaz.com/products/azot.png',
-        co2: 'https://www.federalgaz.com/products/karbondioksit.png',
-        kaynakGazi: 'https://www.federalgaz.com/products/kaynak-gazi.png',
-        medikalOksijen: 'https://www.federalgaz.com/products/medikal-oksijen.png',
-        propan: 'https://www.federalgaz.com/products/propan.png',
-        helyum: 'https://www.federalgaz.com/products/helyum.png',
-        hidrojen: 'https://www.federalgaz.com/products/hidrojen.png',
-        hero: 'https://www.federalgaz.com/hero/industrial-cylinders-1.png'
+        'modern': 'https://www.federalgaz.com/products/endustriyel-oksijen.png',
+        'black-friday': 'https://www.federalgaz.com/products/kaynak-gazi.png',
+        'new-year': 'https://www.federalgaz.com/products/endustriyel-oksijen.png',
+        'winter-campaign': 'https://www.federalgaz.com/products/propan.png',
+        'weekend-sale': 'https://www.federalgaz.com/products/argon.png',
+        'ramazan-bayrami': 'https://www.federalgaz.com/products/azot.png',
+        'kurban-bayrami': 'https://www.federalgaz.com/products/asetilen.png',
+        'hero': 'https://www.federalgaz.com/products/endustriyel-oksijen.png',
+        'kaynakGazi': 'https://www.federalgaz.com/products/kaynak-gazi.png',
+        'oksijen': 'https://www.federalgaz.com/products/endustriyel-oksijen.png',
+        'propan': 'https://www.federalgaz.com/products/propan.png',
+        'argon': 'https://www.federalgaz.com/products/argon.png',
+        'azot': 'https://www.federalgaz.com/products/azot.png',
+        'asetilen': 'https://www.federalgaz.com/products/asetilen.png',
+        'ataturkFlag': 'https://www.federalgaz.com/assets/images/ataturk-flag-29-ekim.jpg',
+        'christmasTree': 'https://www.federalgaz.com/assets/images/new-year-tree.jpg',
+        'ramazan': 'https://www.federalgaz.com/assets/images/ramazan-lantern.jpg',
     };
+
+    // Determine which image to use
+    let defaultImageForTemplate = productImages.hero;
+    if (templateSlug === 'black-friday') defaultImageForTemplate = productImages.kaynakGazi;
+    else if (templateSlug === 'new-year') defaultImageForTemplate = productImages.christmasTree;
+    else if (templateSlug === 'winter-campaign') defaultImageForTemplate = productImages.propan;
+    else if (templateSlug === 'weekend-sale') defaultImageForTemplate = productImages.argon;
+    else if (templateSlug === '29-ekim') defaultImageForTemplate = productImages.ataturkFlag;
+    else if (templateSlug === 'ramazan-bayrami') defaultImageForTemplate = productImages.ramazan;
+
+    // Logic: customProductImageUrl > defaultImageForTemplate
+    // Note: If templateSlug is not in the list above, it defaults to productImages.hero
+    const mainProductImage = customProductImageUrl || defaultImageForTemplate;
 
     // Federal Gaz Brand Colors
     const brandColors = {
@@ -816,7 +912,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Product Image Banner -->
         <div style="background: linear-gradient(135deg, ${brandColors.red} 0%, ${brandColors.redDark} 100%); padding: 20px; text-align: center;">
-            <img src="${productImages.hero}" alt="Endüstriyel Gazlar" style="height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+            <img src="${mainProductImage}" alt="Endüstriyel Gazlar" style="height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
         </div>
         
         <!-- Content -->
@@ -867,16 +963,15 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <div style="background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%); padding: 40px 30px; text-align: center; position: relative;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
             <div style="background: #ff2d2d; color: #ffffff; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
-                🔥 EFSANE CUMA 🔥
+                🔥 ${campaignTitle || 'EFSANE CUMA'} 🔥
             </div>
             <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 0 20px rgba(255,45,45,0.5);">${subject}</h1>
-            <p style="color: #ff2d2d; font-size: 48px; font-weight: 900; margin: 15px 0 0;">%50'YE VARAN</p>
-            <p style="color: #ffd700; font-size: 24px; margin: 5px 0;">İNDİRİM!</p>
+            <p style="color: #ff2d2d; font-size: 48px; font-weight: 900; margin: 15px 0 0;">${campaignHighlight || '%50 İNDİRİM'}</p>
         </div>
         
         <!-- Products Section -->
         <div style="background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); padding: 30px; text-align: center;">
-            <img src="${productImages.kaynakGazi}" alt="Kaynak Gazları" style="height: 150px; filter: drop-shadow(0 0 30px rgba(255,45,45,0.5));">
+            <img src="${mainProductImage}" alt="Kaynak Gazları" style="height: 150px; filter: drop-shadow(0 0 30px rgba(255,45,45,0.5));">
             <div style="background: rgba(255,45,45,0.2); border: 2px solid #ff2d2d; border-radius: 8px; padding: 20px; margin-top: 20px;">
                 <p style="color: #ffffff; font-size: 18px; margin: 0 0 10px;">Tüm Ürünlerde Geçerli!</p>
                 <p style="color: #ffd700; font-size: 14px; margin: 0;">Stoklarla sınırlı • Kaçırmayın!</p>
@@ -923,8 +1018,8 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- New Year Header -->
         <div style="padding: 40px 30px; text-align: center;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
-            <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${year + 1} ✨</p>
-            <h1 style="color: #ffffff; margin: 15px 0; font-size: 36px; font-weight: 300;">YENİ YIL</h1>
+            <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${campaignHighlight || (year + 1)} ✨</p>
+            <h1 style="color: #ffffff; margin: 15px 0; font-size: 36px; font-weight: 300;">${campaignTitle || 'YENİ YIL'}</h1>
             <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">MUTLU YILLAR!</p>
         </div>
         
@@ -933,9 +1028,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Celebration Image -->
         <div style="padding: 30px; text-align: center;">
-            <div style="background: rgba(255,215,0,0.1); border-radius: 50%; width: 200px; height: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                <img src="${productImages.oksijen}" alt="Oksijen Tüpü" style="height: 120px;">
-            </div>
+             <img src="${mainProductImage}" alt="Yeni Yıl" style="height: 180px; border-radius: 12px; box-shadow: 0 0 20px rgba(255,215,0,0.2);">
         </div>
         
         <!-- Content -->
@@ -987,8 +1080,13 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <div style="padding: 40px 30px; text-align: center;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
             <p style="color: #ffd700; font-size: 40px; margin: 0;">☪</p>
-            <h1 style="color: #ffd700; margin: 15px 0; font-size: 32px; font-weight: 600;">RAMAZAN BAYRAMINIZ</h1>
-            <p style="color: #ffffff; font-size: 24px; margin: 0;">MÜBAREK OLSUN</p>
+            <h1 style="color: #ffd700; margin: 15px 0; font-size: 32px; font-weight: 600;">${campaignTitle || 'RAMAZAN BAYRAMINIZ'}</h1>
+            <p style="color: #ffffff; font-size: 24px; margin: 0;">${campaignHighlight || 'MÜBAREK OLSUN'}</p>
+        </div>
+        
+        <!-- Image -->
+        <div style="background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%); text-align: center; padding: 0 0 20px;">
+             <img src="${mainProductImage}" alt="Ramazan" style="height: 150px; filter: drop-shadow(0 0 15px rgba(255,215,0,0.3));">
         </div>
         
         <!-- Decorative Pattern -->
@@ -1047,8 +1145,13 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <div style="padding: 40px 30px; text-align: center; border-bottom: 3px solid ${brandColors.red};">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
             <p style="color: #ffd700; font-size: 36px; margin: 0;">🕌</p>
-            <h1 style="color: #ffffff; margin: 15px 0; font-size: 32px; font-weight: 600;">KURBAN BAYRAMINIZ</h1>
-            <p style="color: ${brandColors.red}; font-size: 24px; margin: 0; font-weight: 300;">KUTLU OLSUN</p>
+            <h1 style="color: #ffffff; margin: 15px 0; font-size: 32px; font-weight: 600;">${campaignTitle || 'KURBAN BAYRAMINIZ'}</h1>
+            <p style="color: ${brandColors.red}; font-size: 24px; margin: 0; font-weight: 300;">${campaignHighlight || 'KUTLU OLSUN'}</p>
+        </div>
+        
+        <!-- Image -->
+        <div style="background: #000000; text-align: center; padding: 20px;">
+             <img src="${mainProductImage}" alt="Kurban Bayramı" style="height: 150px; border-radius: 8px;">
         </div>
         
         <!-- Content -->
@@ -1110,7 +1213,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Product Banner -->
         <div style="background: ${brandColors.navyDark}; padding: 25px; text-align: center;">
-            <img src="${productImages.propan}" alt="LPG Tüpü" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+            <img src="${mainProductImage}" alt="LPG Tüpü" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
             <p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">Kış boyunca kesintisiz ısınma!</p>
         </div>
         
@@ -1181,7 +1284,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         
         <!-- Product -->
         <div style="padding: 30px; text-align: center; background: #fafafa;">
-            <img src="${productImages.argon}" alt="Argon Tüpü" style="height: 120px;">
+            <img src="${mainProductImage}" alt="Argon Tüpü" style="height: 120px;">
         </div>
         
         <!-- Content -->
@@ -1346,7 +1449,54 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         </div>
     </div>
 </body>
-</html>`
+</html>`,
+
+        // ==================== 29 EKIM TEMPLATE ====================
+        '29-ekim': () => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; overflow: hidden; border: 1px solid #e0e0e0;">
+        <!-- Header -->
+        <div style="background: #e30a17; padding: 40px 20px; text-align: center;">
+            <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; filter: brightness(0) invert(1);">
+            <div style="margin-top: 30px; border: 2px solid #fff; padding: 15px; display: inline-block;">
+                <h1 style="color: #fff; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">${campaignTitle || '29 EKİM'}</h1>
+                <p style="color: #fff; margin: 5px 0 0; font-size: 18px;">${campaignHighlight || 'CUMHURİYET BAYRAMI'}</p>
+            </div>
+        </div>
+
+        <!-- Image -->
+        <div style="background: #fff; text-align: center; padding: 0;">
+             <img src="${mainProductImage}" alt="Atatürk ve Bayrak" style="width: 100%; height: auto; display: block;">
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+            <p style="font-size: 18px; line-height: 1.6; color: #333; text-align: center;">
+                <strong>${recipientName}</strong>,
+            </p>
+            <div style="color: #555; font-size: 16px; line-height: 1.8; text-align: center;">
+                 ${templateContent.replace(/\n/g, '<br>')}
+            </div>
+             <p style="text-align: center; font-size: 20px; font-weight: bold; color: #e30a17; margin-top: 30px;">
+                NE MUTLU TÜRKÜM DİYENE!
+            </p>
+        </div>
+        
+        <!-- Footer -->
+         <div style="background-color: #333; padding: 20px; text-align: center;">
+            <p style="color: #aaa; margin: 0; font-size: 12px;">© ${year} Federal Gaz</p>
+        </div>
+    </div>
+</body>
+</html>
+`
     };
 
     // Return the template or default to modern
