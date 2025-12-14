@@ -109,7 +109,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, name, subject, content, status, scheduledAt } = body;
+        const { id, name, subject, content, status, scheduledAt, recipientType, recipientIds, externalRecipients, templateSlug, customLogoUrl, customProductImageUrl, campaignTitle, campaignHighlight } = body;
 
         if (!id) {
             return NextResponse.json({ error: 'Campaign ID is required' }, { status: 400 });
@@ -122,12 +122,58 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
         }
 
+        // Handle recipientIds - could be array or JSON string
+        let parsedRecipientIds: number[] = [];
+        if (recipientIds) {
+            if (Array.isArray(recipientIds)) {
+                parsedRecipientIds = recipientIds;
+            } else if (typeof recipientIds === 'string') {
+                try {
+                    parsedRecipientIds = JSON.parse(recipientIds);
+                } catch {
+                    parsedRecipientIds = [];
+                }
+            }
+        }
+
+        // Handle externalRecipients
+        let externalRecipientsJson: string | undefined;
+        if (externalRecipients) {
+            if (Array.isArray(externalRecipients)) {
+                externalRecipientsJson = JSON.stringify(externalRecipients);
+            } else if (typeof externalRecipients === 'string') {
+                externalRecipientsJson = externalRecipients;
+            }
+        }
+
+        // Calculate recipient count based on type
+        let recipientCount = campaign.recipientCount;
+        if (recipientType) {
+            if (recipientType === 'external' && externalRecipientsJson) {
+                const parsed = JSON.parse(externalRecipientsJson);
+                recipientCount = Array.isArray(parsed) ? parsed.length : 0;
+            } else if (recipientType === 'custom' && parsedRecipientIds.length > 0) {
+                recipientCount = parsedRecipientIds.length;
+            } else if (recipientType === 'all') {
+                recipientCount = await User.count();
+            }
+        }
+
         await campaign.update({
-            name: name || campaign.name,
-            subject: subject || campaign.subject,
-            content: content || campaign.content,
-            status: status || campaign.status,
+            name: name ?? campaign.name,
+            subject: subject ?? campaign.subject,
+            content: content ?? campaign.content,
+            status: status ?? campaign.status,
             scheduledAt: scheduledAt ? new Date(scheduledAt) : campaign.scheduledAt,
+            recipientType: recipientType ?? campaign.recipientType,
+            recipientIds: parsedRecipientIds.length > 0 ? JSON.stringify(parsedRecipientIds) : (recipientType === 'custom' ? undefined : campaign.recipientIds),
+            externalRecipients: externalRecipientsJson ?? campaign.externalRecipients,
+            templateSlug: templateSlug ?? campaign.templateSlug,
+            customLogoUrl: customLogoUrl ?? campaign.customLogoUrl,
+            customProductImageUrl: customProductImageUrl ?? campaign.customProductImageUrl,
+            campaignTitle: campaignTitle ?? campaign.campaignTitle,
+            campaignHighlight: campaignHighlight ?? campaign.campaignHighlight,
+            recipientCount,
         });
 
         return NextResponse.json({ success: true, campaign }, { status: 200 });
@@ -136,6 +182,7 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: 'Failed to update campaign' }, { status: 500 });
     }
 }
+
 
 // DELETE - Delete campaign
 export async function DELETE(req: Request) {
