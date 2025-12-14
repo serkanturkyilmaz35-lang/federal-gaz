@@ -683,7 +683,7 @@ interface CampaignTemplateOptions {
 }
 
 // Default professional content for each template type (Used when content is empty)
-const defaultTemplateContent: { [key: string]: string } = {
+export const defaultTemplateContent: { [key: string]: string } = {
     'modern': `Federal Gaz olarak 30 yılı aşkın tecrübemizle Ankara'nın en güvenilir endüstriyel gaz tedarikçisiyiz.
 
 🔹 Oksijen, Argon, Azot, Asetilen, CO2

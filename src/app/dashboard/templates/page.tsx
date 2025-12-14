@@ -150,40 +150,51 @@ export default function TemplatesPage() {
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
-    // Fetch preview HTML when template is selected
+    // Fetch preview HTML when template is selected or edited
     useEffect(() => {
-        if (previewTemplate) {
+        const targetTemplate = editingTemplate || previewTemplate;
+
+        if (targetTemplate) {
             setPreviewLoading(true);
-            fetch('/api/dashboard/templates/preview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    templateSlug: previewTemplate.slug,
-                    headerBgColor: previewTemplate.headerBgColor,
-                    headerTextColor: previewTemplate.headerTextColor,
-                    headerImage: previewTemplate.headerImage,
-                    bodyBgColor: previewTemplate.bodyBgColor,
-                    bodyTextColor: previewTemplate.bodyTextColor,
-                    buttonColor: previewTemplate.buttonColor,
-                    footerBgColor: previewTemplate.footerBgColor,
-                    footerTextColor: previewTemplate.footerTextColor,
-                    footerImage: previewTemplate.footerImage,
-                    logoUrl: previewTemplate.logoUrl,
-                    headerHtml: previewTemplate.headerHtml,
-                    footerHtml: previewTemplate.footerHtml
+
+            // Debounce only for editing to prevent too many requests
+            const timeoutId = setTimeout(() => {
+                fetch('/api/dashboard/templates/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        templateSlug: targetTemplate.slug,
+                        headerBgColor: targetTemplate.headerBgColor,
+                        headerTextColor: targetTemplate.headerTextColor,
+                        headerImage: targetTemplate.headerImage,
+                        bodyBgColor: targetTemplate.bodyBgColor,
+                        bodyTextColor: targetTemplate.bodyTextColor,
+                        buttonColor: targetTemplate.buttonColor,
+                        footerBgColor: targetTemplate.footerBgColor,
+                        footerTextColor: targetTemplate.footerTextColor,
+                        footerImage: targetTemplate.footerImage,
+                        logoUrl: targetTemplate.logoUrl,
+                        headerTitle: targetTemplate.headerTitle,
+                        bodyContent: targetTemplate.bodyContent,
+                        footerContact: targetTemplate.footerContact,
+                        headerHtml: targetTemplate.headerHtml,
+                        footerHtml: targetTemplate.footerHtml
+                    })
                 })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    setPreviewHtml(data.html || '');
-                    setPreviewLoading(false);
-                })
-                .catch(() => {
-                    setPreviewHtml('<p>Önizleme yüklenemedi</p>');
-                    setPreviewLoading(false);
-                });
+                    .then(res => res.json())
+                    .then(data => {
+                        setPreviewHtml(data.html || '');
+                        setPreviewLoading(false);
+                    })
+                    .catch(() => {
+                        setPreviewHtml('<p>Önizleme yüklenemedi</p>');
+                        setPreviewLoading(false);
+                    });
+            }, editingTemplate ? 500 : 0);
+
+            return () => clearTimeout(timeoutId);
         }
-    }, [previewTemplate]);
+    }, [previewTemplate, editingTemplate]);
 
     const fetchTemplates = async () => {
         try {
@@ -431,303 +442,295 @@ export default function TemplatesPage() {
                 </div>
             )}
 
-            {/* Edit Modal */}
+            {/* Edit Modal with Live Preview */}
             {editingTemplate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 border border-[#3b4754]">
-                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white">{editingTemplate.nameTR}</h2>
-                            <button onClick={() => setEditingTemplate(null)} className="text-gray-400 hover:text-white">
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-[#1c2127] rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col border border-[#3b4754]">
+                        {/* Modal Header */}
+                        <div className="p-4 border-b border-[#3b4754] flex items-center justify-between shrink-0">
+                            <div>
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[#137fec]">edit_document</span>
+                                    {editingTemplate.nameTR}
+                                </h2>
+                                <p className="text-xs text-gray-400">Değişiklikleri anlık olarak sağ tarafta görebilirsiniz</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-2 cursor-pointer bg-[#111418] px-3 py-1.5 rounded-lg border border-[#3b4754]">
+                                    <input
+                                        type="checkbox"
+                                        checked={editingTemplate.isActive}
+                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, isActive: e.target.checked })}
+                                        className="w-4 h-4 text-[#137fec] rounded focus:ring-0"
+                                    />
+                                    <span className="text-sm text-gray-300">{editingTemplate.isActive ? t.active : t.inactive}</span>
+                                </label>
+                                <button onClick={() => setEditingTemplate(null)} className="text-gray-400 hover:text-white p-1">
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                            {/* Names */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.templateName}</label>
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.nameTR}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, nameTR: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">{t.templateNameEN}</label>
-                                    <input
-                                        type="text"
-                                        value={editingTemplate.nameEN}
-                                        onChange={(e) => setEditingTemplate({ ...editingTemplate, nameEN: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec]"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* === HEADER SECTION === */}
-                            <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
-                                <h3 className="text-blue-400 font-semibold mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm">view_compact</span>
-                                    Header (Üst Alan)
-                                </h3>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
+                        {/* Modal Body: Split View */}
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* LEFT: Editors */}
+                            <div className="w-1/2 overflow-y-auto p-6 border-r border-[#3b4754] space-y-6">
+                                {/* Names */}
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.headerBgColor || '#1a2744'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, headerBgColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.headerBgColor}</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.headerTextColor || '#ffffff'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTextColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.headerTextColor}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Logo Upload */}
-                                <div className="mb-4">
-                                    <label className="block text-xs font-medium text-gray-400 mb-1">Logo</label>
-                                    <div className="flex gap-2 items-center">
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">{t.templateName}</label>
                                         <input
                                             type="text"
-                                            value={editingTemplate.logoUrl || ''}
-                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, logoUrl: e.target.value })}
-                                            className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                            placeholder="Logo URL..."
+                                            value={editingTemplate.nameTR}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, nameTR: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:border-[#137fec] outline-none transition-colors"
                                         />
-                                        <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-sm">upload</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'logoUrl')} />
-                                        </label>
                                     </div>
-                                    {editingTemplate.logoUrl && (
-                                        <img src={editingTemplate.logoUrl} alt="Logo" className="mt-2 h-10 object-contain bg-white/10 p-1 rounded" />
-                                    )}
-                                </div>
-                                {/* Header Background Image */}
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Görseli (opsiyonel)</label>
-                                    <div className="flex gap-2 items-center">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">{t.templateNameEN}</label>
                                         <input
                                             type="text"
-                                            value={editingTemplate.headerImage || ''}
-                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, headerImage: e.target.value })}
-                                            className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                            placeholder="Görsel URL..."
+                                            value={editingTemplate.nameEN}
+                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, nameEN: e.target.value })}
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:border-[#137fec] outline-none transition-colors"
                                         />
-                                        <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-sm">upload</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'headerImage')} />
-                                        </label>
                                     </div>
-                                    {editingTemplate.headerImage && (
-                                        <img src={editingTemplate.headerImage} alt="Header" className="mt-2 h-16 w-full object-cover rounded border border-gray-700" />
-                                    )}
                                 </div>
-                            </div>
 
-                            {/* === BODY SECTION === */}
-                            <div className="p-4 rounded-lg border border-green-500/30 bg-green-500/5">
-                                <h3 className="text-green-400 font-semibold mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm">article</span>
-                                    Body (İçerik Alanı)
-                                </h3>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.bodyBgColor || '#ffffff'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyBgColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.bodyBgColor}</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.bodyTextColor || '#333333'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyTextColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.bodyTextColor}</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Buton Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.buttonColor || '#b13329'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, buttonColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.buttonColor}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* === FOOTER SECTION === */}
-                            <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
-                                <h3 className="text-orange-400 font-semibold mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm">call_to_action</span>
-                                    Footer (Alt Alan)
-                                </h3>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.footerBgColor || '#1a2744'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, footerBgColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.footerBgColor}</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={editingTemplate.footerTextColor || '#888888'}
-                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, footerTextColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer border-0" />
-                                            <span className="text-xs text-gray-500">{editingTemplate.footerTextColor}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Footer Background Image */}
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Görseli (opsiyonel)</label>
-                                    <div className="flex gap-2 items-center">
-                                        <input
-                                            type="text"
-                                            value={editingTemplate.footerImage || ''}
-                                            onChange={(e) => setEditingTemplate({ ...editingTemplate, footerImage: e.target.value })}
-                                            className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                            placeholder="Görsel URL..."
-                                        />
-                                        <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-sm">upload</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'footerImage')} />
-                                        </label>
-                                    </div>
-                                    {editingTemplate.footerImage && (
-                                        <img src={editingTemplate.footerImage} alt="Footer" className="mt-2 h-12 w-full object-cover rounded border border-gray-700" />
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* === TEXT CONTENT SECTION === */}
-                            <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
-                                <h3 className="text-purple-400 font-semibold mb-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm">edit_note</span>
-                                    Metin İçerikleri
-                                </h3>
+                                {/* === HEADER SECTION === */}
                                 <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-[#3b4754]">
+                                        <span className="material-symbols-outlined text-blue-400">view_compact</span>
+                                        <h3 className="text-sm font-semibold text-white">Header Tasarımı</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan Rengi</label>
+                                            <div className="flex gap-2 items-center bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.headerBgColor || '#1a2744'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, headerBgColor: e.target.value })}
+                                                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
+                                                <span className="text-xs text-gray-400 font-mono">{editingTemplate.headerBgColor}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Yazı Rengi</label>
+                                            <div className="flex gap-2 items-center bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.headerTextColor || '#ffffff'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTextColor: e.target.value })}
+                                                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
+                                                <span className="text-xs text-gray-400 font-mono">{editingTemplate.headerTextColor}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">E-posta Başlığı (Header)</label>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Logo URL</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={editingTemplate.logoUrl || ''}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, logoUrl: e.target.value })}
+                                                className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                placeholder="https://..."
+                                            />
+                                            <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-sm">upload</span>
+                                                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'logoUrl')} />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Header Görseli (Opsiyonel)</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={editingTemplate.headerImage || ''}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, headerImage: e.target.value })}
+                                                className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                placeholder="https://..."
+                                            />
+                                            <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-sm">upload</span>
+                                                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'headerImage')} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* === CONTENT SECTION === */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-[#3b4754]">
+                                        <span className="material-symbols-outlined text-green-400">article</span>
+                                        <h3 className="text-sm font-semibold text-white">İçerik Alanı</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan</label>
+                                            <div className="bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.bodyBgColor || '#ffffff'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyBgColor: e.target.value })}
+                                                    className="w-full h-6 cursor-pointer bg-transparent" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Yazı</label>
+                                            <div className="bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.bodyTextColor || '#333333'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyTextColor: e.target.value })}
+                                                    className="w-full h-6 cursor-pointer bg-transparent" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Buton</label>
+                                            <div className="bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.buttonColor || '#b13329'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, buttonColor: e.target.value })}
+                                                    className="w-full h-6 cursor-pointer bg-transparent" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">E-posta Başlığı</label>
                                         <input
                                             type="text"
                                             value={editingTemplate.headerTitle || ''}
                                             onChange={(e) => setEditingTemplate({ ...editingTemplate, headerTitle: e.target.value })}
                                             className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                            placeholder="Federal Gaz'dan Önemli Duyuru"
                                         />
                                     </div>
+
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Ana İçerik Metni (Body)</label>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">İçerik Metni</label>
                                         <textarea
                                             value={editingTemplate.bodyContent || ''}
                                             onChange={(e) => setEditingTemplate({ ...editingTemplate, bodyContent: e.target.value })}
-                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm h-32 resize-none"
-                                            placeholder="Değerli müşterimiz,&#10;&#10;E-posta içeriğinizi buraya yazın..."
+                                            className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm h-40 resize-none font-sans leading-relaxed"
                                         />
-                                        <p className="text-xs text-gray-500 mt-1">Her satır için Enter tuşuna basın. Satırlar otomatik paragraf olarak gösterilir.</p>
                                     </div>
+                                </div>
+
+                                {/* === FOOTER SECTION === */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-[#3b4754]">
+                                        <span className="material-symbols-outlined text-orange-400">call_to_action</span>
+                                        <h3 className="text-sm font-semibold text-white">Footer Tasarımı</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Arkaplan</label>
+                                            <div className="bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.footerBgColor || '#1a2744'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, footerBgColor: e.target.value })}
+                                                    className="w-full h-6 cursor-pointer bg-transparent" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-400 mb-1">Yazı</label>
+                                            <div className="bg-[#111418] p-1 rounded border border-[#3b4754]">
+                                                <input type="color" value={editingTemplate.footerTextColor || '#888888'}
+                                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, footerTextColor: e.target.value })}
+                                                    className="w-full h-6 cursor-pointer bg-transparent" />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">Alt Bilgi / İletişim (Footer)</label>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">İletişim Bilgisi</label>
                                         <input
                                             type="text"
                                             value={editingTemplate.footerContact || ''}
                                             onChange={(e) => setEditingTemplate({ ...editingTemplate, footerContact: e.target.value })}
                                             className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                            placeholder="Federal Gaz | Tel: 0312 354 32 32 | www.federalgaz.com"
                                         />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Footer Görseli (Opsiyonel)</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={editingTemplate.footerImage || ''}
+                                                onChange={(e) => setEditingTemplate({ ...editingTemplate, footerImage: e.target.value })}
+                                                className="flex-1 px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                placeholder="https://..."
+                                            />
+                                            <label className="px-3 py-2 bg-gray-700 text-white rounded-lg cursor-pointer hover:bg-gray-600 flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-sm">upload</span>
+                                                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUpload(e, 'footerImage')} />
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Active Toggle */}
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={editingTemplate.isActive}
-                                    onChange={(e) => setEditingTemplate({ ...editingTemplate, isActive: e.target.checked })}
-                                    className="w-5 h-5 text-[#137fec] bg-[#111418] border-[#3b4754] rounded focus:ring-2 focus:ring-[#137fec]/20"
-                                />
-                                <span className="text-white">{editingTemplate.isActive ? t.active : t.inactive}</span>
-                            </label>
+                            {/* RIGHT: Live Preview */}
+                            <div className="w-1/2 bg-gray-100 flex flex-col h-full">
+                                <div className="p-3 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
+                                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-green-600 text-lg">visibility</span>
+                                        Canlı Önizleme
+                                    </h3>
+                                    <div className="text-xs text-gray-500">
+                                        {previewLoading ? 'Güncelleniyor...' : 'Anlık güncel'}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-auto p-4 flex items-start justify-center bg-gray-200/50">
+                                    <div className="bg-white shadow-2xl rounded-lg overflow-hidden w-full max-w-[600px] min-h-[500px] transition-all duration-300">
+                                        {previewLoading && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+                                            </div>
+                                        )}
+                                        <iframe
+                                            srcDoc={previewHtml}
+                                            className="w-full h-[800px] border-0"
+                                            title="Live Preview"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="p-6 border-t border-[#3b4754] flex justify-end gap-3">
-                            <button onClick={() => setEditingTemplate(null)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600">
-                                {t.cancel}
-                            </button>
-                            <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 disabled:opacity-50">
-                                {saving ? t.saving : t.save}
-                            </button>
+                        {/* Modal Footer */}
+                        <div className="p-4 border-t border-[#3b4754] flex items-center justify-between shrink-0 bg-[#1c2127]">
+                            <div className="text-xs text-gray-500">
+                                * Değişiklikleri kaydetmeden önce önizlemeyi kontrol ediniz.
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setEditingTemplate(null)} className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors">
+                                    {t.cancel}
+                                </button>
+                                <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 disabled:opacity-50 shadow-lg shadow-blue-500/20 transition-all">
+                                    {saving ? t.saving : t.save}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Preview Modal */}
-            {previewTemplate && (
+            {/* Old Preview Modal (Only for list view preview) */}
+            {previewTemplate && !editingTemplate && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    {/* ... same preview content ... */}
                     <div className="bg-[#1c2127] rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border border-[#3b4754]">
-                        {/* Header */}
                         <div className="p-4 border-b border-[#3b4754] flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold text-white">{t.preview}: {language === 'TR' ? previewTemplate.nameTR : previewTemplate.nameEN}</h3>
-                                <p className="text-xs text-gray-500">E-posta gönderildiğinde bu şekilde görünecek</p>
-                            </div>
-                            <button
-                                onClick={() => setPreviewTemplate(null)}
-                                className="p-2 text-gray-400 hover:text-white transition-colors"
-                            >
+                            <h3 className="text-lg font-semibold text-white">{t.preview}</h3>
+                            <button onClick={() => setPreviewTemplate(null)} className="text-gray-400 hover:text-white">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
-
-                        {/* Preview Content */}
                         <div className="flex-1 overflow-auto p-4 bg-gray-100">
-                            {previewLoading ? (
-                                <div className="flex items-center justify-center h-64">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#137fec]"></div>
-                                </div>
-                            ) : (
-                                <div
-                                    className="mx-auto bg-white shadow-lg rounded-lg overflow-hidden"
-                                    style={{ maxWidth: '600px' }}
-                                >
-                                    <iframe
-                                        srcDoc={previewHtml}
-                                        className="w-full h-[500px] border-0"
-                                        title="Email Preview"
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="p-4 border-t border-[#3b4754] flex justify-end">
-                            <button
-                                onClick={() => setPreviewTemplate(null)}
-                                className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
-                            >
-                                Kapat
-                            </button>
+                            <div className="mx-auto bg-white shadow-lg rounded-lg overflow-hidden" style={{ maxWidth: '600px' }}>
+                                <iframe srcDoc={previewHtml} className="w-full h-[600px] border-0" title="Preview" />
+                            </div>
                         </div>
                     </div>
                 </div>

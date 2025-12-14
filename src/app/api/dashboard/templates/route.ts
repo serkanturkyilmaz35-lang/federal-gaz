@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { EmailTemplate, connectToDatabase } from '@/lib/models';
+import { defaultTemplateContent } from '@/lib/email';
 
 // GET - List all templates
 export async function GET() {
@@ -15,7 +16,20 @@ export async function GET() {
             order: [['sortOrder', 'ASC'], ['id', 'ASC']],
         });
 
-        return NextResponse.json({ templates }, { status: 200 });
+        // Fill in default content if missing in DB
+        const enrichedTemplates = templates.map(t => {
+            const tmpl = t.toJSON();
+            if (!tmpl.bodyContent || tmpl.bodyContent.trim() === '') {
+                tmpl.bodyContent = defaultTemplateContent[tmpl.slug] || defaultTemplateContent['modern'] || '';
+            }
+            // Ensure headerTitle has a fallback
+            if (!tmpl.headerTitle || tmpl.headerTitle.trim() === '') {
+                tmpl.headerTitle = tmpl.nameTR || 'Duyuru';
+            }
+            return tmpl;
+        });
+
+        return NextResponse.json({ templates: enrichedTemplates }, { status: 200 });
     } catch (error) {
         console.error('Templates GET Error:', error);
         return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
