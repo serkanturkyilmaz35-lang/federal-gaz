@@ -1108,9 +1108,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
              ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 0;"></div>` : ''}
             <div style="position: relative; z-index: 1;">
                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
-                <p style="color: #ffd700; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${templateData?.headerHighlight || campaignHighlight || (year + 1)} ✨</p>
+                <p style="color: ${templateData?.headerHighlightColor || '#ffd700'}; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${templateData?.headerHighlight || campaignHighlight || (year + 1)} ✨</p>
                 <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 36px; font-weight: 300;">${campaignTitle || 'YENİ YIL'}</h1>
-                <p style="color: #ffd700; font-size: 28px; font-weight: 600; margin: 0;">${templateData?.headerSubtitle || 'MUTLU YILLAR!'}</p>
+                <p style="color: ${templateData?.headerSubtitleColor || '#ffd700'}; font-size: 28px; font-weight: 600; margin: 0;">${templateData?.headerSubtitle || 'MUTLU YILLAR!'}</p>
             </div>
         </div>
         
@@ -1131,9 +1131,9 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
-            <p style="color: #ffd700; font-size: 18px; text-align: center; margin: 25px 0;">
+            <div style="color: ${templateData?.bodyGreetingColor || '#ffd700'}; background: ${templateData?.bodyGreetingBgColor || 'transparent'}; font-size: 18px; text-align: center; margin: 25px 0; padding: 10px; border-radius: 8px;">
                 ${templateData?.bodyGreeting || '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄'}
-            </p>
+            </div>
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
@@ -1142,7 +1142,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <p style="color: ${theme.footerText}; font-size: 14px; text-align: center;">
-                Sevgilerimizle,<br><strong style="color: #ffd700;">${templateData?.signature || 'Federal Gaz Ailesi'}</strong>
+                Sevgilerimizle,<br><strong style="color: ${templateData?.signatureColor || '#ffd700'};">${templateData?.signature || 'Federal Gaz Ailesi'}</strong>
             </p>
         </div>
         

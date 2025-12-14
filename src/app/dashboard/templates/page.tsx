@@ -439,7 +439,24 @@ export default function TemplatesPage() {
                                         <span className="material-symbols-outlined text-sm">visibility</span>
                                     </button>
                                     <button
-                                        onClick={() => setEditingTemplate(template)}
+                                        onClick={() => {
+                                            const tpl = { ...template };
+                                            if (tpl.slug === 'new-year') {
+                                                tpl.templateData = {
+                                                    headerHighlight: (new Date().getFullYear() + 1).toString(),
+                                                    headerHighlightColor: '#ffd700',
+                                                    headerSubtitle: 'MUTLU YILLAR!',
+                                                    headerSubtitleColor: '#ffd700',
+                                                    bodyGreeting: '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄',
+                                                    bodyGreetingColor: '#ffd700',
+                                                    bodyGreetingBgColor: 'rgba(255,255,255,0.05)',
+                                                    signature: 'Federal Gaz Ailesi',
+                                                    signatureColor: '#ffd700',
+                                                    ...tpl.templateData
+                                                };
+                                            }
+                                            setEditingTemplate(tpl);
+                                        }}
                                         className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#137fec]/10 text-[#137fec] rounded text-xs hover:bg-[#137fec]/20 transition-colors"
                                         title={t.edit}
                                     >
@@ -645,56 +662,144 @@ export default function TemplatesPage() {
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">Header Vurgusu (ör: 2025)</label>
-                                                <input
-                                                    type="text"
-                                                    value={editingTemplate.templateData?.headerHighlight || ''}
-                                                    onChange={(e) => setEditingTemplate({
-                                                        ...editingTemplate,
-                                                        templateData: { ...editingTemplate.templateData, headerHighlight: e.target.value }
-                                                    })}
-                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                                    placeholder="✨ 2025 ✨"
-                                                />
+                                            {/* Header Highlight */}
+                                            <div className="grid grid-cols-[1fr_auto] gap-2">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Header Vurgusu (ör: 2025)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingTemplate.templateData?.headerHighlight || ''}
+                                                        onChange={(e) => setEditingTemplate({
+                                                            ...editingTemplate,
+                                                            templateData: { ...editingTemplate.templateData, headerHighlight: e.target.value }
+                                                        })}
+                                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                        placeholder="✨ 2025 ✨"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Renk</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.headerHighlightColor || '#ffd700'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, headerHighlightColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="Yazı Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">Header Alt Başlık</label>
-                                                <input
-                                                    type="text"
-                                                    value={editingTemplate.templateData?.headerSubtitle || ''}
-                                                    onChange={(e) => setEditingTemplate({
-                                                        ...editingTemplate,
-                                                        templateData: { ...editingTemplate.templateData, headerSubtitle: e.target.value }
-                                                    })}
-                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                                    placeholder="MUTLU YILLAR!"
-                                                />
+
+                                            {/* Header Subtitle */}
+                                            <div className="grid grid-cols-[1fr_auto] gap-2">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Header Alt Başlık</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingTemplate.templateData?.headerSubtitle || ''}
+                                                        onChange={(e) => setEditingTemplate({
+                                                            ...editingTemplate,
+                                                            templateData: { ...editingTemplate.templateData, headerSubtitle: e.target.value }
+                                                        })}
+                                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                        placeholder="MUTLU YILLAR!"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Renk</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.headerSubtitleColor || '#ffd700'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, headerSubtitleColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="Yazı Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            {/* Greeting */}
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-400 mb-1">Karşılama Mesajı</label>
-                                                <textarea
-                                                    value={editingTemplate.templateData?.bodyGreeting || ''}
-                                                    onChange={(e) => setEditingTemplate({
-                                                        ...editingTemplate,
-                                                        templateData: { ...editingTemplate.templateData, bodyGreeting: e.target.value }
-                                                    })}
-                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm resize-none h-20"
-                                                    placeholder="🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄"
-                                                />
+                                                <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                                                    <textarea
+                                                        value={editingTemplate.templateData?.bodyGreeting || ''}
+                                                        onChange={(e) => setEditingTemplate({
+                                                            ...editingTemplate,
+                                                            templateData: { ...editingTemplate.templateData, bodyGreeting: e.target.value }
+                                                        })}
+                                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm resize-none h-[38px]"
+                                                        placeholder="Mesajınız..."
+                                                    />
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2" title="Yazı Rengi">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.bodyGreetingColor || '#ffd700'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, bodyGreetingColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2" title="Arka Plan Rengi">
+                                                        {/* Simple color picker for bg (mostly transparent/dark) - use text input for RGBA or simple color? User asked for color picker. */}
+                                                        {/* RGBA is better for transparency but standard color picker is hex. I'll afford HEX picker assuming they pick solid or I map it. */}
+                                                        {/* Actually html color input supports hex only. For rgba they might need text input but let's stick to HEX for simplicity or maybe a preset palette? No, user generic request. */}
+                                                        {/* I will use a text input for RGBA if they want transparency, but a color picker is requested. I'll provide a color picker for solid color, and maybe they can edit it manually elsewhere? */}
+                                                        {/* Let's just use color picker. It will be solid color. */}
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.bodyGreetingBgColor?.length === 7 ? editingTemplate.templateData.bodyGreetingBgColor : '#ffffff'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, bodyGreetingBgColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 mt-1">İpucu: Transparan arka plan için varsayılanı koruyun veya hex kodu girin.</p>
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">İmza Metni</label>
-                                                <input
-                                                    type="text"
-                                                    value={editingTemplate.templateData?.signature || ''}
-                                                    onChange={(e) => setEditingTemplate({
-                                                        ...editingTemplate,
-                                                        templateData: { ...editingTemplate.templateData, signature: e.target.value }
-                                                    })}
-                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
-                                                    placeholder="Federal Gaz Ailesi"
-                                                />
+
+                                            {/* Signature */}
+                                            <div className="grid grid-cols-[1fr_auto] gap-2">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">İmza Metni</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingTemplate.templateData?.signature || ''}
+                                                        onChange={(e) => setEditingTemplate({
+                                                            ...editingTemplate,
+                                                            templateData: { ...editingTemplate.templateData, signature: e.target.value }
+                                                        })}
+                                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                        placeholder="Federal Gaz Ailesi"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Renk</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.signatureColor || '#ffd700'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, signatureColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="Yazı Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
