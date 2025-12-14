@@ -204,25 +204,16 @@ export default function TemplatesPage() {
         setErrorMessage("");
         setSuccessMessage("");
         try {
-            // First sync database to create tables
+            // One sync to rule them all (schema updates + seeding)
             const syncRes = await fetch('/api/dashboard/sync', { method: 'POST' });
             const syncData = await syncRes.json();
 
-            if (!syncRes.ok) {
-                setErrorMessage(syncData.error || syncData.details || 'Veritabanı senkronizasyonu başarısız');
-                setTimeout(() => setErrorMessage(""), 5000);
-                return;
-            }
-
-            // Then seed templates
-            const seedRes = await fetch('/api/dashboard/templates/seed', { method: 'POST' });
-            const seedData = await seedRes.json();
-
-            if (seedRes.ok) {
-                setSuccessMessage(seedData.message || 'Şablonlar yüklendi!');
-                fetchTemplates();
+            if (syncRes.ok) {
+                setSuccessMessage(syncData.message || 'Veritabanı onarıldı ve şablonlar yüklendi!');
+                // Wait a bit then fetch templates
+                setTimeout(() => fetchTemplates(), 1000);
             } else {
-                setErrorMessage(seedData.error || 'Şablon yükleme başarısız');
+                setErrorMessage(syncData.error || syncData.details || 'Veritabanı senkronizasyonu başarısız');
             }
             setTimeout(() => { setSuccessMessage(""); setErrorMessage(""); }, 5000);
         } catch (error) {
@@ -315,6 +306,16 @@ export default function TemplatesPage() {
                 <div className="flex flex-col gap-1">
                     <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">{t.pageTitle}</h1>
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">{t.pageDesc}</p>
+                </div>
+                <div>
+                    <button
+                        onClick={syncAndSeedTemplates}
+                        disabled={saving}
+                        className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors flex items-center gap-2 text-sm font-medium"
+                    >
+                        <span className={`material-symbols-outlined text-lg ${saving ? 'animate-spin' : ''}`}>sync</span>
+                        {saving ? 'Onarılıyor...' : 'Veritabanını Onar'}
+                    </button>
                 </div>
             </div>
 
