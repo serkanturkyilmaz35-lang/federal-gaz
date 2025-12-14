@@ -279,10 +279,6 @@ export default function TemplatesPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">{t.pageTitle}</h1>
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">{t.pageDesc}</p>
                 </div>
-                <button onClick={syncAndSeedTemplates} disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50">
-                    <span className="material-symbols-outlined text-sm">{saving ? 'sync' : 'download'}</span>
-                    {saving ? 'Yükleniyor...' : t.seedTemplates}
-                </button>
             </div>
 
             {/* Success Message */}
@@ -351,9 +347,6 @@ export default function TemplatesPage() {
                     <span className="material-symbols-outlined text-6xl text-gray-600 mb-4">mail</span>
                     <p className="text-lg font-medium text-gray-300">{t.noTemplates}</p>
                     <p className="text-sm text-gray-500 mb-4">{t.noTemplatesDesc}</p>
-                    <button onClick={syncAndSeedTemplates} disabled={saving} className="px-6 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#137fec]/90 disabled:opacity-50">
-                        {t.seedTemplates}
-                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
