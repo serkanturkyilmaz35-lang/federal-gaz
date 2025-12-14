@@ -568,20 +568,23 @@ export default function MailingPage() {
             campaignHighlight: settings.highlight
         }));
 
-        // Auto-fill content
+        // Auto-fill content, subject, name, and visual settings from API
         try {
             const res = await fetch(`/api/dashboard/templates/content?slug=${slug}`);
             if (res.ok) {
                 const data = await res.json();
-                if (data.content) {
-                    setForm(prev => ({
-                        ...prev,
-                        templateSlug: slug,
-                        content: data.content,
-                        campaignTitle: settings.title,
-                        campaignHighlight: settings.highlight
-                    }));
-                }
+                setForm(prev => ({
+                    ...prev,
+                    templateSlug: slug,
+                    // Only fill if empty or if coming from API (user can still override)
+                    name: prev.name || data.name || '',
+                    subject: prev.subject || data.subject || '',
+                    content: data.content || prev.content,
+                    customLogoUrl: data.logoUrl || prev.customLogoUrl || '',
+                    customProductImageUrl: data.bannerImage || prev.customProductImageUrl || '',
+                    campaignTitle: settings.title,
+                    campaignHighlight: settings.highlight
+                }));
             }
         } catch (e) {
             console.error('Failed to fetch template content', e);

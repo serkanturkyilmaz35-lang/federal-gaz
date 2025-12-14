@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { EmailTemplate, connectToDatabase } from '@/lib/models';
 
 // Default professional content for each template type
 // This is exported for use in the mailing page
@@ -168,16 +169,60 @@ Federal Gaz VIP müşterisi olarak size özel ayrıcalıklarınız:
 VIP müşterimiz olduğunuz için teşekkür ederiz.`
 };
 
+// Default subject and name for each template
+const defaultTemplateSubjects: { [key: string]: { subject: string; name: string } } = {
+    'modern': { subject: 'Federal Gaz - Endüstriyel Gaz Çözümleri', name: 'Genel Bilgilendirme' },
+    'black-friday': { subject: '🔥 Efsane Cuma İndirimlerini Kaçırmayın!', name: 'Black Friday Kampanyası' },
+    'new-year': { subject: '✨ Yeni Yılınız Kutlu Olsun!', name: 'Yeni Yıl Kutlaması' },
+    'ramazan-bayrami': { subject: '🌙 Ramazan Bayramınız Mübarek Olsun', name: 'Ramazan Bayramı Kutlaması' },
+    'kurban-bayrami': { subject: '🕌 Kurban Bayramınız Kutlu Olsun', name: 'Kurban Bayramı Kutlaması' },
+    'winter-campaign': { subject: '❄️ Kış Kampanyası Başladı!', name: 'Kış Kampanyası' },
+    'weekend-sale': { subject: '🎉 Hafta Sonu Özel İndirimleri', name: 'Hafta Sonu Kampanyası' },
+    'welcome': { subject: '🎉 Federal Gaz Ailesine Hoş Geldiniz!', name: 'Hoş Geldiniz E-postası' },
+    'classic': { subject: 'Federal Gaz - Bilgilendirme', name: 'Klasik Bilgilendirme' },
+    '23-nisan': { subject: '🇹🇷 23 Nisan Kutlu Olsun!', name: '23 Nisan Kutlaması' },
+    '29-ekim': { subject: '🇹🇷 Cumhuriyet Bayramı Kutlu Olsun!', name: '29 Ekim Kutlaması' },
+    '19-mayis': { subject: '🇹🇷 19 Mayıs Kutlu Olsun!', name: '19 Mayıs Kutlaması' },
+    '30-agustos': { subject: '🇹🇷 Zafer Bayramı Kutlu Olsun!', name: '30 Ağustos Kutlaması' },
+    'stock-reminder': { subject: '📦 Stok Hatırlatması - Siparişinizi Verin', name: 'Stok Hatırlatma' },
+    'promotion': { subject: '🎁 Size Özel Kampanya Fırsatı!', name: 'Kampanya Duyurusu' },
+    'vip-customer': { subject: '⭐ VIP Müşterimize Özel', name: 'VIP Müşteri E-postası' },
+};
+
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const templateSlug = searchParams.get('slug');
 
     if (templateSlug) {
-        // Return specific template content
+        // Get default content
         const content = defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
-        return NextResponse.json({ content });
+        const subjectData = defaultTemplateSubjects[templateSlug] || defaultTemplateSubjects['modern'];
+
+        // Try to get template from DB for logo and banner
+        let logoUrl = '';
+        let bannerImage = '';
+
+        try {
+            await connectToDatabase();
+            const template = await EmailTemplate.findOne({ where: { slug: templateSlug } });
+            if (template) {
+                logoUrl = template.logoUrl || '';
+                bannerImage = template.bannerImage || '';
+            }
+        } catch (e) {
+            console.error('Failed to fetch template from DB:', e);
+        }
+
+        return NextResponse.json({
+            content,
+            subject: subjectData.subject,
+            name: subjectData.name,
+            logoUrl,
+            bannerImage
+        });
     }
 
     // Return all template contents
     return NextResponse.json({ contents: defaultTemplateContent });
 }
+
