@@ -311,9 +311,9 @@ export default function ContentPagesPage() {
                                         </a>
                                         {page.editable && (
                                             <Link
-                                                href="/dashboard/settings"
+                                                href={`/dashboard/content/pages/${page.slug.replace('/', '')}`}
                                                 className="text-[#94847c] hover:text-[#b13329]"
-                                                title="İçeriği Düzenle (Ayarlar → Yasal)"
+                                                title="İçeriği Düzenle"
                                             >
                                                 <span className="material-symbols-outlined">edit</span>
                                             </Link>
