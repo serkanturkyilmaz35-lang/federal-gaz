@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSettings } from "@/context/SettingsContext";
 import { useEncryption } from "@/context/EncryptionContext";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import SuccessModal from "@/components/SuccessModal";
 
 const translations = {
@@ -64,6 +65,7 @@ export default function IletisimPage() {
     const [customValues, setCustomValues] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const { executeRecaptcha } = useRecaptcha();
 
     // Helper to format phone for href (remove spaces, parens)
     const formatPhone = (phone: string) => phone.replace(/[^0-9+]/g, '');
@@ -82,9 +84,12 @@ export default function IletisimPage() {
                 });
             }
 
+            // Get reCAPTCHA token
+            const recaptchaToken = await executeRecaptcha('contact_form');
+
             const res = await secureFetch('/api/contact', {
                 method: 'POST',
-                body: JSON.stringify({ ...formData, message: finalMessage })
+                body: JSON.stringify({ ...formData, message: finalMessage, recaptchaToken })
             });
 
             if (res.ok) {

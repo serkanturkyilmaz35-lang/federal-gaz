@@ -3,13 +3,23 @@ import { User, connectToDatabase } from '@/lib/models';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { decryptRequest, encryptResponse } from '@/lib/server-secure';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(req: Request) {
     try {
         await connectToDatabase();
 
         // Decrypt Request Body
-        const { email, password } = await decryptRequest(req);
+        const { email, password, recaptchaToken } = await decryptRequest(req);
+
+        // Verify reCAPTCHA
+        const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'login');
+        if (!recaptchaResult.success) {
+            console.warn('reCAPTCHA failed for login:', recaptchaResult.error);
+            return NextResponse.json({
+                error: 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.'
+            }, { status: 400 });
+        }
 
         if (!email || !password) {
             return NextResponse.json({ error: 'E-posta ve şifre gereklidir.' }, { status: 400 });

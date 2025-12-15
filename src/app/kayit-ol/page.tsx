@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useRouter } from "next/navigation";
 import { useEncryption } from "@/context/EncryptionContext";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const translations = {
     TR: {
@@ -66,6 +67,7 @@ export default function RegisterPage() {
     const t = translations[language];
     const router = useRouter();
     const { secureFetch, isReady } = useEncryption();
+    const { executeRecaptcha } = useRecaptcha();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -111,10 +113,13 @@ export default function RegisterPage() {
         try {
             const { confirmPassword, ...payload } = formData;
 
+            // Get reCAPTCHA token
+            const recaptchaToken = await executeRecaptcha('register');
+
             // Use secureFetch
             const res = await secureFetch('/api/auth/register', {
                 method: 'POST',
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ ...payload, recaptchaToken }),
             });
 
             if (!res.ok) {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/SettingsContext";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import WarningModal from "@/components/WarningModal";
 import AuthChoiceModal from "@/components/AuthChoiceModal";
 import OrderSummaryModal from "@/components/OrderSummaryModal";
@@ -128,6 +129,7 @@ export default function SiparisPage() {
     const { language } = useLanguage();
     const { user } = useAuth();
     const { settings } = useSettings();
+    const { executeRecaptcha } = useRecaptcha();
     const router = useRouter();
     const t = translations[language];
     const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -405,6 +407,9 @@ export default function SiparisPage() {
                 });
             }
 
+            // Get reCAPTCHA token
+            const recaptchaToken = await executeRecaptcha('order_form');
+
             const orderData = {
                 name: contactData.name,
                 company: contactData.company,
@@ -413,7 +418,8 @@ export default function SiparisPage() {
                 address: contactData.address,
                 notes: finalNotes,
                 items: orderItems,
-                language
+                language,
+                recaptchaToken
             };
 
             const res = await fetch('/api/orders', {

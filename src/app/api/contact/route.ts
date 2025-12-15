@@ -2,11 +2,21 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { ContactRequest, connectToDatabase } from '@/lib/models';
 import { decryptRequest } from '@/lib/server-secure';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(req: Request) {
     try {
         await connectToDatabase();
-        const { name, email, phone, message, company } = await decryptRequest(req);
+        const { name, email, phone, message, company, recaptchaToken } = await decryptRequest(req);
+
+        // Verify reCAPTCHA
+        const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'contact_form');
+        if (!recaptchaResult.success) {
+            console.warn('reCAPTCHA failed for contact form:', recaptchaResult.error);
+            return NextResponse.json({
+                error: 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.'
+            }, { status: 400 });
+        }
 
         // 1. Save to Database
         await ContactRequest.create({

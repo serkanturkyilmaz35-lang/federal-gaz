@@ -3,13 +3,23 @@ import { User, connectToDatabase } from '@/lib/models';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { decryptRequest, encryptResponse } from '@/lib/server-secure';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(req: Request) {
     try {
         await connectToDatabase();
 
         // Decrypt Request Body
-        const { name, email, phone, password } = await decryptRequest(req);
+        const { name, email, phone, password, recaptchaToken } = await decryptRequest(req);
+
+        // Verify reCAPTCHA
+        const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'register');
+        if (!recaptchaResult.success) {
+            console.warn('reCAPTCHA failed for register:', recaptchaResult.error);
+            return NextResponse.json({
+                error: 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.'
+            }, { status: 400 });
+        }
 
         // Validate
         if (!name || !email || !password) {

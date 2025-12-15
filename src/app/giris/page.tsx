@@ -6,6 +6,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEncryption } from "@/context/EncryptionContext";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const translations = {
     TR: {
@@ -49,6 +50,7 @@ export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
     const { secureFetch, isReady } = useEncryption();
+    const { executeRecaptcha } = useRecaptcha();
     const t = translations[language];
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -62,10 +64,13 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
+            // Get reCAPTCHA token
+            const recaptchaToken = await executeRecaptcha('login');
+
             // Use secureFetch to send encrypted payload
             const res = await secureFetch('/api/auth/login', {
                 method: 'POST',
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password, recaptchaToken })
             });
 
             if (res.ok) {

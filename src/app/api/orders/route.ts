@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Order, connectToDatabase } from '@/lib/models';
 import { sendEmail, getOrderNotificationEmail, getCustomerOrderConfirmationEmail } from '@/lib/email';
 import { verifyToken } from '@/lib/auth';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 import { cookies } from 'next/headers';
 
 // GET: Fetch all orders (Admin only)
@@ -65,7 +66,16 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, company, email, phone, address, items, products: legacyProduct, amount: legacyAmount, unit: legacyUnit, notes, language = 'TR' } = body;
+        const { name, company, email, phone, address, items, products: legacyProduct, amount: legacyAmount, unit: legacyUnit, notes, language = 'TR', recaptchaToken } = body;
+
+        // Verify reCAPTCHA
+        const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'order_form');
+        if (!recaptchaResult.success) {
+            console.warn('reCAPTCHA failed for order form:', recaptchaResult.error);
+            return NextResponse.json({
+                error: 'Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.'
+            }, { status: 400 });
+        }
 
         // Validation
         // Support both new 'items' array OR legacy single product fields (for backward compat if needed, but UI will send items)
