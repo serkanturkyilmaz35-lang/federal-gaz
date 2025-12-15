@@ -141,7 +141,6 @@ export default function KVKKPage() {
                         <li>KVKK&apos;nın 7. maddesindeki şartlar çerçevesinde kişisel verilerin silinmesini veya yok edilmesini isteme</li>
                         <li>Düzeltme, silme veya yok edilme işlemlerinin kişisel verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme</li>
                         <li>İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edilmesi suretiyle aleyhinize bir sonucun ortaya çıkmasına itiraz etme</li>
-                        <li>Kişisel verilerin kanuna aykırı olarak işlenmesi sebebiyle zarara uğramanız halinde zararın giderilmesini talep etme</li>
                     </ul>
 
                     <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">6. Başvuru Yöntemi</h2>
