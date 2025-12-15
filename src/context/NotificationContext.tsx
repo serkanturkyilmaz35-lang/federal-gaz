@@ -93,7 +93,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 5000);
+        const interval = setInterval(fetchNotifications, 60000); // 60 seconds - optimized for Vercel limits
         return () => clearInterval(interval);
     }, []);
 

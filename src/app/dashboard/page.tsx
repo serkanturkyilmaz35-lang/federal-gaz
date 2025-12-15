@@ -187,7 +187,7 @@ export default function DashboardPage() {
                     }
                 })
                 .catch(err => console.error("Background refresh failed", err));
-        }, 15000);
+        }, 180000); // 3 minutes - optimized for Vercel limits
         return () => clearInterval(interval);
     }, [dateRange, customStartDate, customEndDate]);
 

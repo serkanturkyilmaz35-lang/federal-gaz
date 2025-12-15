@@ -64,12 +64,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         refreshUser();
 
-        // Periodic session check when on dashboard (every 10 seconds)
+        // Periodic session check when on dashboard (every 2 minutes - optimized for Vercel limits)
         const interval = setInterval(() => {
             if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
                 refreshUser();
             }
-        }, 10000);
+        }, 120000);
 
         return () => clearInterval(interval);
     }, []);
