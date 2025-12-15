@@ -162,130 +162,125 @@ export default function CookieBanner() {
                 />
             )}
 
-            {/* Main Banner */}
-            <div className={`fixed ${showDetails ? 'inset-0 flex items-center justify-center z-[9999] p-4' : 'bottom-0 left-0 right-0 z-[9999]'}`}>
-                <div className={`bg-white dark:bg-gray-900 shadow-2xl ${showDetails ? 'rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto' : 'border-t border-gray-200 dark:border-gray-700'}`}>
-                    <div className="p-6">
-                        {/* Header */}
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                                <span className="material-symbols-outlined text-primary">cookie</span>
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t.title}</h3>
-                            {showDetails && (
+            {/* Details Modal */}
+            {showDetails && (
+                <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+                    <div className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t.title}</h3>
                                 <button
                                     onClick={() => setShowDetails(false)}
-                                    className="ml-auto text-gray-400 hover:text-gray-600"
+                                    className="text-gray-400 hover:text-gray-600"
                                 >
                                     <span className="material-symbols-outlined">close</span>
                                 </button>
-                            )}
-                        </div>
+                            </div>
 
-                        {/* Description */}
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            {t.description}{' '}
-                            <Link href="/cerez-politikasi" className="text-primary hover:underline">
-                                {t.learnMore}
-                            </Link>
-                        </p>
-
-                        {/* Cookie Categories (only in details view) */}
-                        {showDetails && (
-                            <div className="space-y-4 mb-6">
-                                {/* Necessary - Always on */}
-                                <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900 dark:text-white">{t.necessary}</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t.necessaryDesc}</p>
+                            {/* Cookie Categories */}
+                            <div className="space-y-3 mb-6">
+                                {/* Necessary */}
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <div>
+                                        <h4 className="font-medium text-sm text-gray-900 dark:text-white">{t.necessary}</h4>
+                                        <p className="text-xs text-gray-500">{t.necessaryDesc}</p>
                                     </div>
-                                    <div className="relative">
-                                        <input type="checkbox" checked disabled className="sr-only" />
-                                        <div className="w-11 h-6 bg-primary rounded-full cursor-not-allowed opacity-50">
-                                            <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
-                                        </div>
+                                    <div className="w-11 h-6 bg-primary rounded-full opacity-50 relative">
+                                        <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
                                     </div>
                                 </div>
-
                                 {/* Analytics */}
-                                <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900 dark:text-white">{t.analytics}</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t.analyticsDesc}</p>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <div>
+                                        <h4 className="font-medium text-sm text-gray-900 dark:text-white">{t.analytics}</h4>
+                                        <p className="text-xs text-gray-500">{t.analyticsDesc}</p>
                                     </div>
                                     <button
                                         onClick={() => setPreferences(p => ({ ...p, analytics: !p.analytics }))}
-                                        className={`relative w-11 h-6 rounded-full transition-colors ${preferences.analytics ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                        className={`relative w-11 h-6 rounded-full transition-colors ${preferences.analytics ? 'bg-primary' : 'bg-gray-300'}`}
                                     >
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${preferences.analytics ? 'right-1' : 'left-1'}`}></div>
                                     </button>
                                 </div>
-
                                 {/* Marketing */}
-                                <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900 dark:text-white">{t.marketing}</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t.marketingDesc}</p>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <div>
+                                        <h4 className="font-medium text-sm text-gray-900 dark:text-white">{t.marketing}</h4>
+                                        <p className="text-xs text-gray-500">{t.marketingDesc}</p>
                                     </div>
                                     <button
                                         onClick={() => setPreferences(p => ({ ...p, marketing: !p.marketing }))}
-                                        className={`relative w-11 h-6 rounded-full transition-colors ${preferences.marketing ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                        className={`relative w-11 h-6 rounded-full transition-colors ${preferences.marketing ? 'bg-primary' : 'bg-gray-300'}`}
                                     >
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${preferences.marketing ? 'right-1' : 'left-1'}`}></div>
                                     </button>
                                 </div>
-
                                 {/* Functional */}
-                                <div className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900 dark:text-white">{t.functional}</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t.functionalDesc}</p>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <div>
+                                        <h4 className="font-medium text-sm text-gray-900 dark:text-white">{t.functional}</h4>
+                                        <p className="text-xs text-gray-500">{t.functionalDesc}</p>
                                     </div>
                                     <button
                                         onClick={() => setPreferences(p => ({ ...p, functional: !p.functional }))}
-                                        className={`relative w-11 h-6 rounded-full transition-colors ${preferences.functional ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                        className={`relative w-11 h-6 rounded-full transition-colors ${preferences.functional ? 'bg-primary' : 'bg-gray-300'}`}
                                     >
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${preferences.functional ? 'right-1' : 'left-1'}`}></div>
                                     </button>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Buttons */}
-                        <div className={`flex gap-3 ${showDetails ? 'flex-col' : 'flex-wrap justify-center sm:justify-end'}`}>
-                            {showDetails ? (
-                                <button
-                                    onClick={handleSavePreferences}
-                                    className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
-                                >
-                                    {t.save}
-                                </button>
-                            ) : (
-                                <>
-                                    <button
-                                        onClick={handleRejectAll}
-                                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                    >
-                                        {t.rejectAll}
-                                    </button>
-                                    <button
-                                        onClick={() => setShowDetails(true)}
-                                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                    >
-                                        {t.customize}
-                                    </button>
-                                    <button
-                                        onClick={handleAcceptAll}
-                                        className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
-                                    >
-                                        {t.acceptAll}
-                                    </button>
-                                </>
-                            )}
+                            <button
+                                onClick={handleSavePreferences}
+                                className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                            >
+                                {t.save}
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* Compact Banner Strip */}
+            {!showDetails && (
+                <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg">
+                    <div className="mx-auto max-w-7xl px-4 py-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            {/* Text */}
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
+                                <span className="hidden sm:inline">🍪 </span>
+                                {t.description}{' '}
+                                <Link href="/cerez-politikasi" className="text-primary hover:underline font-medium">
+                                    {t.learnMore}
+                                </Link>
+                            </p>
+
+                            {/* Buttons - always horizontal */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <button
+                                    onClick={handleRejectAll}
+                                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                                >
+                                    {t.rejectAll}
+                                </button>
+                                <button
+                                    onClick={() => setShowDetails(true)}
+                                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                                >
+                                    {t.customize}
+                                </button>
+                                <button
+                                    onClick={handleAcceptAll}
+                                    className="px-4 py-1.5 text-sm bg-primary text-white font-semibold rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap"
+                                >
+                                    {t.acceptAll}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
