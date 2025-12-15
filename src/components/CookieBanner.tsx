@@ -92,7 +92,8 @@ export default function CookieBanner() {
 
     useEffect(() => {
         // Check if banner is disabled in settings
-        if ((settings as Record<string, string>)['legal_cookie_banner_enabled'] === 'false') {
+        const settingsAny = settings as unknown as Record<string, string>;
+        if (settingsAny['legal_cookie_banner_enabled'] === 'false') {
             return;
         }
 
