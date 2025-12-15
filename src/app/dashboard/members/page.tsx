@@ -258,8 +258,26 @@ export default function MembersPage() {
 
     // Add Member Handlers
     const handleAddMember = async () => {
-        if (!addFormData.name || !addFormData.email) {
-            setSuccessMessage("Ad ve e-posta zorunludur.");
+        // Validate all required fields
+        if (!addFormData.name || !addFormData.email || !addFormData.phone) {
+            setSuccessMessage("Tüm alanlar zorunludur.");
+            setTimeout(() => setSuccessMessage(""), 3000);
+            return;
+        }
+
+        // Validate email format (must have @ and domain with .)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(addFormData.email)) {
+            setSuccessMessage("Geçerli bir e-posta adresi girin (örn: ad@domain.com)");
+            setTimeout(() => setSuccessMessage(""), 3000);
+            return;
+        }
+
+        // Validate phone (Turkish format: 05XX XXX XX XX or +90 5XX XXX XX XX)
+        const phoneClean = addFormData.phone.replace(/\s/g, '');
+        const phoneRegex = /^(\+90|0)?5[0-9]{9}$/;
+        if (!phoneRegex.test(phoneClean)) {
+            setSuccessMessage("Geçerli bir telefon numarası girin (05XX XXX XX XX)");
             setTimeout(() => setSuccessMessage(""), 3000);
             return;
         }
@@ -736,12 +754,13 @@ export default function MembersPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Telefon</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Telefon *</label>
                                 <input
                                     type="tel"
                                     value={addFormData.phone}
                                     onChange={(e) => setAddFormData({ ...addFormData, phone: e.target.value })}
                                     placeholder="05XX XXX XX XX"
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec] focus:outline-none"
                                 />
                             </div>
                         </div>
