@@ -83,6 +83,7 @@ export const metadata: Metadata = {
 
 import SecurityProvider from "@/components/SecurityProvider";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import CookieBanner from "@/components/CookieBanner";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -247,6 +248,7 @@ export default async function RootLayout({
                                                     </main>
                                                     <Footer />
                                                 </div>
+                                                <CookieBanner />
                                             </div>
                                         )}
                                     </SecurityProvider>

@@ -104,6 +104,14 @@ export default function Footer() {
                         </ul>
                     </div>
                     <div>
+                        <h4 className="mb-4 font-semibold text-white">{language === 'TR' ? 'Yasal' : 'Legal'}</h4>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="/cerez-politikasi" className="transition-colors hover:text-primary">{language === 'TR' ? 'Çerez Politikası' : 'Cookie Policy'}</Link></li>
+                            <li><Link href="/gizlilik-politikasi" className="transition-colors hover:text-primary">{language === 'TR' ? 'Gizlilik Politikası' : 'Privacy Policy'}</Link></li>
+                            <li><Link href="/kvkk" className="transition-colors hover:text-primary">{language === 'TR' ? 'KVKK Aydınlatma' : 'KVKK Notice'}</Link></li>
+                        </ul>
+                    </div>
+                    <div>
                         <h4 className="mb-4 font-semibold text-white">{t.footerSocial}</h4>
                         <div className="flex space-x-4">
                             {settings.instagram_url && (

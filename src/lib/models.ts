@@ -1342,5 +1342,83 @@ const initAssociations = () => {
     }
 };
 
+// --- CookieConsent Model (Çerez İzin Kayıtları) ---
+interface CookieConsentAttributes {
+    id: number;
+    visitorId: string; // UUID stored in cookie
+    userId?: number; // If user is logged in
+    necessary: boolean; // Always true
+    analytics: boolean;
+    marketing: boolean;
+    functional: boolean;
+    ipAddress?: string;
+    userAgent?: string;
+}
+
+interface CookieConsentCreationAttributes extends Optional<CookieConsentAttributes, 'id' | 'userId' | 'ipAddress' | 'userAgent'> { }
+
+export class CookieConsent extends Model<CookieConsentAttributes, CookieConsentCreationAttributes> implements CookieConsentAttributes {
+    declare id: number;
+    declare visitorId: string;
+    declare userId: number | undefined;
+    declare necessary: boolean;
+    declare analytics: boolean;
+    declare marketing: boolean;
+    declare functional: boolean;
+    declare ipAddress: string | undefined;
+    declare userAgent: string | undefined;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+CookieConsent.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        visitorId: {
+            type: DataTypes.STRING(36),
+            allowNull: false,
+            unique: true,
+        },
+        userId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        necessary: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+        },
+        analytics: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        marketing: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        functional: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        ipAddress: {
+            type: DataTypes.STRING(45),
+            allowNull: true,
+        },
+        userAgent: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'cookie_consents',
+    }
+);
+
 // Call association init
 initAssociations();
+
