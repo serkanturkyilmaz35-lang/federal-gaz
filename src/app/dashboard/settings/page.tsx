@@ -96,6 +96,12 @@ const defaultSettings = {
     system_disabled_keys: "[]",
     contact_form_fields: "[]",
     order_form_fields: "[]",
+
+    // Legal Settings
+    legal_cookie_banner_enabled: "true",
+    legal_privacy_page_enabled: "true",
+    legal_kvkk_page_enabled: "true",
+    legal_cookie_policy_page_enabled: "true",
 };
 type SettingsKey = keyof typeof defaultSettings;
 
@@ -117,7 +123,7 @@ export default function SettingsPage() {
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo' | 'legal'>('general');
     const [saving, setSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -262,6 +268,7 @@ export default function SettingsPage() {
         { id: 'orderForm', label: 'Sipariş Formu', icon: 'shopping_cart' },
         { id: 'social', label: 'Sosyal Medya', icon: 'public' },
         { id: 'seo', label: 'SEO', icon: 'search' },
+        { id: 'legal', label: 'Yasal', icon: 'gavel' },
     ];
 
     if (loading) {
@@ -1165,6 +1172,101 @@ export default function SettingsPage() {
                                     />
                                 </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legal Settings */}
+                    {activeTab === 'legal' && (
+                        <div className="space-y-6 max-w-4xl">
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-purple-400">gavel</span>
+                                    Yasal Sayfalar ve Çerez Yönetimi
+                                </h3>
+                                <p className="text-sm text-gray-400 mb-6">KVKK ve gizlilik uyumu için gerekli sayfa ve bileşenlerin görünürlüğünü buradan yönetebilirsiniz.</p>
+
+                                {/* Cookie Banner Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-[#1c2127] rounded-lg mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-yellow-500">cookie</span>
+                                        <div>
+                                            <p className="text-white font-medium">Çerez İzin Bildirimi</p>
+                                            <p className="text-xs text-gray-500">Ziyaretçilere çerez onayı banner&apos;ı göster</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => updateSetting('legal_cookie_banner_enabled', settings.legal_cookie_banner_enabled === 'true' ? 'false' : 'true')}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${settings.legal_cookie_banner_enabled === 'true' ? 'bg-green-500' : 'bg-gray-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.legal_cookie_banner_enabled === 'true' ? 'right-1' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+
+                                {/* Cookie Policy Page Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-[#1c2127] rounded-lg mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-blue-400">description</span>
+                                        <div>
+                                            <p className="text-white font-medium">Çerez Politikası Sayfası</p>
+                                            <p className="text-xs text-gray-500">/cerez-politikasi sayfasını aktif et</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => updateSetting('legal_cookie_policy_page_enabled', settings.legal_cookie_policy_page_enabled === 'true' ? 'false' : 'true')}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${settings.legal_cookie_policy_page_enabled === 'true' ? 'bg-green-500' : 'bg-gray-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.legal_cookie_policy_page_enabled === 'true' ? 'right-1' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+
+                                {/* Privacy Policy Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-[#1c2127] rounded-lg mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-green-400">shield</span>
+                                        <div>
+                                            <p className="text-white font-medium">Gizlilik Politikası Sayfası</p>
+                                            <p className="text-xs text-gray-500">/gizlilik-politikasi sayfasını aktif et</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => updateSetting('legal_privacy_page_enabled', settings.legal_privacy_page_enabled === 'true' ? 'false' : 'true')}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${settings.legal_privacy_page_enabled === 'true' ? 'bg-green-500' : 'bg-gray-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.legal_privacy_page_enabled === 'true' ? 'right-1' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+
+                                {/* KVKK Page Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-[#1c2127] rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-red-400">policy</span>
+                                        <div>
+                                            <p className="text-white font-medium">KVKK Aydınlatma Metni Sayfası</p>
+                                            <p className="text-xs text-gray-500">/kvkk sayfasını aktif et</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => updateSetting('legal_kvkk_page_enabled', settings.legal_kvkk_page_enabled === 'true' ? 'false' : 'true')}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${settings.legal_kvkk_page_enabled === 'true' ? 'bg-green-500' : 'bg-gray-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.legal_kvkk_page_enabled === 'true' ? 'right-1' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Info Box */}
+                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                <div className="flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-blue-400 mt-0.5">info</span>
+                                    <div>
+                                        <p className="text-blue-400 font-medium text-sm">KVKK Uyumu Hakkında</p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            6698 sayılı Kişisel Verilerin Korunması Kanunu gereği, kişisel veri toplayan web sitelerinin kullanıcıları bilgilendirmesi gerekmektedir.
+                                            Çerez banner&apos;ı ve yasal sayfalar bu yükümlülüğü yerine getirmenize yardımcı olur.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
