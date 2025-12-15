@@ -1419,6 +1419,94 @@ CookieConsent.init(
     }
 );
 
+// --- Page Model (Sayfa Yönetimi) ---
+interface PageAttributes {
+    id: number;
+    slug: string;
+    title: string;
+    titleEn?: string;
+    content: string;
+    contentEn?: string;
+    status: 'published' | 'draft';
+    type: 'legal' | 'static' | 'dynamic';
+    metaTitle?: string;
+    metaDescription?: string;
+    isSystemPage: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface PageCreationAttributes extends Optional<PageAttributes, 'id'> { }
+
+export class Page extends Model<PageAttributes, PageCreationAttributes> implements PageAttributes {
+    declare id: number;
+    declare slug: string;
+    declare title: string;
+    declare titleEn: string | undefined;
+    declare content: string;
+    declare contentEn: string | undefined;
+    declare status: 'published' | 'draft';
+    declare type: 'legal' | 'static' | 'dynamic';
+    declare metaTitle: string | undefined;
+    declare metaDescription: string | undefined;
+    declare isSystemPage: boolean;
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+Page.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        slug: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        titleEn: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        content: {
+            type: DataTypes.TEXT('long'),
+            allowNull: false,
+        },
+        contentEn: {
+            type: DataTypes.TEXT('long'),
+            allowNull: true,
+        },
+        status: {
+            type: DataTypes.ENUM('published', 'draft'),
+            defaultValue: 'published',
+        },
+        type: {
+            type: DataTypes.ENUM('legal', 'static', 'dynamic'),
+            defaultValue: 'static',
+        },
+        metaTitle: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        metaDescription: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        isSystemPage: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+    },
+    {
+        sequelize,
+        tableName: 'pages',
+    }
+);
+
 // Call association init
 initAssociations();
-

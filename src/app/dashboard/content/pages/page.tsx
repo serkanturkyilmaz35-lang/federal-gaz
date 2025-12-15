@@ -1,46 +1,97 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+interface PageData {
+    id: number;
+    slug: string;
+    title: string;
+    status: 'published' | 'draft';
+    type: 'legal' | 'static' | 'dynamic';
+    isSystemPage: boolean;
+    updatedAt: string;
+}
 
 export default function ContentPagesPage() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [pages, setPages] = useState<PageData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [seeding, setSeeding] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("all");
 
-    // Mock data
-    const pages = [
-        {
-            id: 1,
-            title: "Ana Sayfa",
-            slug: "/",
-            status: "published",
-            lastModified: "2024-12-03",
-            author: "Admin",
-        },
-        {
-            id: 2,
-            title: "Hakkımızda",
-            slug: "/hakkimizda",
-            status: "published",
-            lastModified: "2024-12-02",
-            author: "Admin",
-        },
-        {
-            id: 3,
-            title: "Hizmetlerimiz",
-            slug: "/hizmetler",
-            status: "published",
-            lastModified: "2024-12-01",
-            author: "Editor",
-        },
-        {
-            id: 4,
-            title: "İletişim",
-            slug: "/iletisim",
-            status: "draft",
-            lastModified: "2024-11-30",
-            author: "Admin",
-        },
-    ];
+    useEffect(() => {
+        fetchPages();
+    }, []);
+
+    const fetchPages = async () => {
+        try {
+            const res = await fetch('/api/dashboard/pages');
+            if (res.ok) {
+                const data = await res.json();
+                setPages(data.pages);
+            }
+        } catch (error) {
+            console.error('Error fetching pages:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const seedLegalPages = async () => {
+        setSeeding(true);
+        try {
+            const res = await fetch('/api/dashboard/pages/seed', { method: 'POST' });
+            if (res.ok) {
+                await fetchPages();
+            }
+        } catch (error) {
+            console.error('Error seeding pages:', error);
+        } finally {
+            setSeeding(false);
+        }
+    };
+
+    const deletePage = async (id: number) => {
+        if (!confirm('Bu sayfayı silmek istediğinize emin misiniz?')) return;
+
+        try {
+            const res = await fetch(`/api/dashboard/pages/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setPages(pages.filter(p => p.id !== id));
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Silme işlemi başarısız');
+            }
+        } catch (error) {
+            console.error('Error deleting page:', error);
+        }
+    };
+
+    const filteredPages = pages.filter(page => {
+        const matchesSearch = page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            page.slug.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === "all" || page.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const getTypeLabel = (type: string) => {
+        switch (type) {
+            case 'legal': return 'Yasal';
+            case 'static': return 'Statik';
+            case 'dynamic': return 'Dinamik';
+            default: return type;
+        }
+    };
+
+    const getTypeBadgeColor = (type: string) => {
+        switch (type) {
+            case 'legal': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+            case 'static': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+            case 'dynamic': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
 
     return (
         <div className="mx-auto max-w-7xl">
@@ -54,13 +105,27 @@ export default function ContentPagesPage() {
                         Web sitesi sayfalarını oluşturun ve düzenleyin
                     </p>
                 </div>
-                <Link
-                    href="/dashboard/content/pages/new"
-                    className="flex h-10 items-center gap-2 rounded-lg bg-[#b13329] px-4 text-white hover:bg-[#b13329]/90"
-                >
-                    <span className="material-symbols-outlined text-lg">add</span>
-                    <span className="text-sm font-medium">Yeni Sayfa</span>
-                </Link>
+                <div className="flex gap-2">
+                    {pages.length === 0 && !loading && (
+                        <button
+                            onClick={seedLegalPages}
+                            disabled={seeding}
+                            className="flex h-10 items-center gap-2 rounded-lg bg-purple-600 px-4 text-white hover:bg-purple-700 disabled:opacity-50"
+                        >
+                            <span className="material-symbols-outlined text-lg">gavel</span>
+                            <span className="text-sm font-medium">
+                                {seeding ? 'Oluşturuluyor...' : 'Yasal Sayfaları Oluştur'}
+                            </span>
+                        </button>
+                    )}
+                    <Link
+                        href="/dashboard/content/pages/new"
+                        className="flex h-10 items-center gap-2 rounded-lg bg-[#b13329] px-4 text-white hover:bg-[#b13329]/90"
+                    >
+                        <span className="material-symbols-outlined text-lg">add</span>
+                        <span className="text-sm font-medium">Yeni Sayfa</span>
+                    </Link>
+                </div>
             </div>
 
             {/* Search & Filters */}
@@ -79,115 +144,148 @@ export default function ContentPagesPage() {
                         placeholder="Sayfa ara..."
                     />
                 </div>
-                <select className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-[#292828] focus:border-[#b13329] focus:outline-none dark:border-[#3b4754] dark:bg-[#1c2127] dark:text-white">
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-[#292828] focus:border-[#b13329] focus:outline-none dark:border-[#3b4754] dark:bg-[#1c2127] dark:text-white"
+                >
                     <option value="all">Tüm Durumlar</option>
                     <option value="published">Yayında</option>
                     <option value="draft">Taslak</option>
                 </select>
             </div>
 
-            {/* Pages Table */}
-            <div className="overflow-hidden rounded-lg border border-gray-300 dark:border-[#3b4754]">
-                <table className="w-full">
-                    <thead className="bg-gray-100 dark:bg-[#283039]">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                Başlık
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                Slug
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                Durum
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                Yazar
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                Son Güncelleme
-                            </th>
-                            <th className="w-24 px-6 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-[#1c2127]">
-                        {pages.map((page) => (
-                            <tr
-                                key={page.id}
-                                className="border-t border-gray-200 hover:bg-gray-50 dark:border-[#3b4754] dark:hover:bg-[#283039]"
-                            >
-                                <td className="px-6 py-4">
-                                    <Link
-                                        href={`/dashboard/content/pages/${page.id}`}
-                                        className="font-medium text-[#292828] hover:text-[#b13329] dark:text-white dark:hover:text-[#b13329]"
-                                    >
-                                        {page.title}
-                                    </Link>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-[#94847c]">
-                                    {page.slug}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span
-                                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${page.status === "published"
-                                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                            }`}
-                                    >
-                                        {page.status === "published" ? "Yayında" : "Taslak"}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-[#94847c]">
-                                    {page.author}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-[#94847c]">
-                                    {page.lastModified}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <Link
-                                            href={`/dashboard/content/pages/${page.id}/edit`}
-                                            className="text-[#94847c] hover:text-[#b13329]"
-                                            title="Düzenle"
-                                        >
-                                            <span className="material-symbols-outlined">edit</span>
-                                        </Link>
-                                        <button
-                                            className="text-[#94847c] hover:text-red-500"
-                                            title="Sil"
-                                        >
-                                            <span className="material-symbols-outlined">delete</span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {/* Loading State */}
+            {loading && (
+                <div className="flex items-center justify-center py-12">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                </div>
+            )}
 
-            {/* Pagination */}
-            <div className="mt-6 flex items-center justify-between">
-                <p className="text-sm text-[#94847c]">
-                    <span className="font-medium text-[#292828] dark:text-white">4</span>{" "}
-                    sayfadan{" "}
-                    <span className="font-medium text-[#292828] dark:text-white">
-                        1-4
-                    </span>{" "}
-                    arası gösteriliyor
-                </p>
-                <div className="flex gap-2">
-                    <button className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-[#94847c] hover:bg-gray-100 disabled:opacity-50 dark:border-[#3b4754] dark:bg-[#1c2127] dark:hover:bg-[#283039]" disabled>
-                        <span className="material-symbols-outlined text-lg">
-                            chevron_left
-                        </span>
-                    </button>
-                    <button className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-[#94847c] hover:bg-gray-100 disabled:opacity-50 dark:border-[#3b4754] dark:bg-[#1c2127] dark:hover:bg-[#283039]" disabled>
-                        <span className="material-symbols-outlined text-lg">
-                            chevron_right
-                        </span>
+            {/* Empty State */}
+            {!loading && pages.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <span className="material-symbols-outlined text-6xl text-gray-400 mb-4">article</span>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Henüz sayfa yok</h3>
+                    <p className="text-gray-500 mb-4">Yasal sayfaları otomatik oluşturmak için butona tıklayın</p>
+                    <button
+                        onClick={seedLegalPages}
+                        disabled={seeding}
+                        className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
+                    >
+                        <span className="material-symbols-outlined">gavel</span>
+                        {seeding ? 'Oluşturuluyor...' : 'Yasal Sayfaları Oluştur'}
                     </button>
                 </div>
-            </div>
+            )}
+
+            {/* Pages Table */}
+            {!loading && pages.length > 0 && (
+                <div className="overflow-hidden rounded-lg border border-gray-300 dark:border-[#3b4754]">
+                    <table className="w-full">
+                        <thead className="bg-gray-100 dark:bg-[#283039]">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                    Başlık
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                    Slug
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                    Tür
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                    Durum
+                                </th>
+                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                    Son Güncelleme
+                                </th>
+                                <th className="w-24 px-6 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-[#1c2127]">
+                            {filteredPages.map((page) => (
+                                <tr
+                                    key={page.id}
+                                    className="border-t border-gray-200 hover:bg-gray-50 dark:border-[#3b4754] dark:hover:bg-[#283039]"
+                                >
+                                    <td className="px-6 py-4">
+                                        <Link
+                                            href={`/dashboard/content/pages/${page.id}`}
+                                            className="font-medium text-[#292828] hover:text-[#b13329] dark:text-white dark:hover:text-[#b13329] flex items-center gap-2"
+                                        >
+                                            {page.isSystemPage && (
+                                                <span className="material-symbols-outlined text-sm text-purple-500">lock</span>
+                                            )}
+                                            {page.title}
+                                        </Link>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-[#94847c]">
+                                        /{page.slug}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getTypeBadgeColor(page.type)}`}>
+                                            {getTypeLabel(page.type)}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span
+                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${page.status === "published"
+                                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                }`}
+                                        >
+                                            {page.status === "published" ? "Yayında" : "Taslak"}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-[#94847c]">
+                                        {new Date(page.updatedAt).toLocaleDateString('tr-TR')}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <Link
+                                                href={`/dashboard/content/pages/${page.id}`}
+                                                className="text-[#94847c] hover:text-[#b13329]"
+                                                title="Düzenle"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </Link>
+                                            <a
+                                                href={`/${page.slug}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[#94847c] hover:text-blue-500"
+                                                title="Görüntüle"
+                                            >
+                                                <span className="material-symbols-outlined">visibility</span>
+                                            </a>
+                                            {!page.isSystemPage && (
+                                                <button
+                                                    onClick={() => deletePage(page.id)}
+                                                    className="text-[#94847c] hover:text-red-500"
+                                                    title="Sil"
+                                                >
+                                                    <span className="material-symbols-outlined">delete</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && filteredPages.length > 0 && (
+                <div className="mt-6 flex items-center justify-between">
+                    <p className="text-sm text-[#94847c]">
+                        <span className="font-medium text-[#292828] dark:text-white">{filteredPages.length}</span>{" "}
+                        sayfa gösteriliyor
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
