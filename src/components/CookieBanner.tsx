@@ -245,36 +245,39 @@ export default function CookieBanner() {
             {/* Compact Banner Strip */}
             {!showDetails && (
                 <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg">
-                    <div className="mx-auto max-w-7xl px-4 py-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            {/* Text */}
-                            <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
-                                <span className="hidden sm:inline">🍪 </span>
-                                {t.description}{' '}
+                    <div className="mx-auto max-w-7xl px-3 py-2 sm:px-4 sm:py-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                            {/* Text - shorter on mobile */}
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex-1">
+                                <span className="hidden sm:inline">🍪 {t.description} </span>
+                                <span className="sm:hidden">Bu site çerez kullanmaktadır. </span>
                                 <Link href="/cerez-politikasi" className="text-primary hover:underline font-medium">
                                     {t.learnMore}
                                 </Link>
                             </p>
 
-                            {/* Buttons - always horizontal */}
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* Buttons - flex-wrap for mobile */}
+                            <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-shrink-0">
                                 <button
                                     onClick={handleRejectAll}
-                                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                                    className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                 >
-                                    {t.rejectAll}
+                                    <span className="hidden sm:inline">{t.rejectAll}</span>
+                                    <span className="sm:hidden">Reddet</span>
                                 </button>
                                 <button
                                     onClick={() => setShowDetails(true)}
-                                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                                    className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                 >
-                                    {t.customize}
+                                    <span className="hidden sm:inline">{t.customize}</span>
+                                    <span className="sm:hidden">Ayarla</span>
                                 </button>
                                 <button
                                     onClick={handleAcceptAll}
-                                    className="px-4 py-1.5 text-sm bg-primary text-white font-semibold rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap"
+                                    className="px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm bg-primary text-white font-semibold rounded-md hover:bg-primary/90 transition-colors"
                                 >
-                                    {t.acceptAll}
+                                    <span className="hidden sm:inline">{t.acceptAll}</span>
+                                    <span className="sm:hidden">Kabul Et</span>
                                 </button>
                             </div>
                         </div>
