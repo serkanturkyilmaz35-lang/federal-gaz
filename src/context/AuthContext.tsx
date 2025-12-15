@@ -28,7 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const refreshUser = async () => {
         try {
-            const res = await fetch('/api/auth/me');
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const res = await fetch('/api/auth/me', { signal: controller.signal });
+            clearTimeout(timeoutId);
+
             const data = await res.json();
 
             // Check for session expired (another device logged in)
@@ -47,7 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(null);
             }
         } catch (error) {
-            console.error('Failed to fetch user', error);
+            // On timeout or error, just set loading to false (show login button)
+            console.warn('Auth check failed or timed out:', error);
             setUser(null);
         } finally {
             setLoading(false);
