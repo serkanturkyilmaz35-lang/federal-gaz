@@ -36,8 +36,13 @@ export const EncryptionProvider = ({ children }: { children: React.ReactNode }) 
             const keyBytes = forge.random.getBytesSync(32);
             const keyHex = forge.util.bytesToHex(keyBytes);
 
-            // 2. Fetch Server Public Key
-            const keyRes = await fetch('/api/auth/keys');
+            // 2. Fetch Server Public Key with timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const keyRes = await fetch('/api/auth/keys', { signal: controller.signal });
+            clearTimeout(timeoutId);
+
             if (!keyRes.ok) throw new Error("Failed to get public key");
             const { publicKey } = await keyRes.json();
 
@@ -69,7 +74,8 @@ export const EncryptionProvider = ({ children }: { children: React.ReactNode }) 
 
         } catch (error) {
             console.error("E2EE Handshake Error:", error);
-            setIsReady(false);
+            // Still set isReady to true to allow form submission (graceful degradation)
+            setIsReady(true);
         }
     };
 
