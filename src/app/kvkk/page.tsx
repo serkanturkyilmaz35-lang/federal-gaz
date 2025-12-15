@@ -154,7 +154,7 @@ export default function KVKKPage() {
                         <li><strong>Şahsen:</strong> Kimlik belgesi ile şirketimize bizzat başvurarak</li>
                     </ul>
                     <p className="text-gray-600 dark:text-gray-400 mt-4">
-                        Başvurularınız, talebin niteliğine göre en kısa sürede ve <strong>en geç 30 (otuz) gün</strong> içinde ücretsiz olarak sonuçlandırılacaktır. İşlemin ayrıca bir maliyet gerektirmesi halinde Kişisel Verileri Koruma Kurulu tarafından belirlenen tarifedeki ücret alınabilir.
+                        Başvurularınız, talebin niteliğine göre en kısa sürede sonuçlandırılacaktır.
                     </p>
 
                     <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">7. Değişiklikler</h2>
