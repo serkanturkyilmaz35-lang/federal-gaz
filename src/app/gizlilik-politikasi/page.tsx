@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
                         <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
                             Privacy Policy
                         </h1>
-                        <p className="mt-4 text-white/60">Last Updated: December 15, 2024</p>
+                        <p className="mt-4 text-white/60">Last Updated: December 15, 2025</p>
                     </div>
                 </section>
 
@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
                             <li><strong>Identity Information:</strong> Name, surname</li>
                             <li><strong>Contact Information:</strong> Email, phone number, address</li>
                             <li><strong>Order Information:</strong> Product preferences, order history</li>
-                            <li><strong>Technical Data:</strong> IP address, browser type, device information</li>
+
                         </ul>
 
                         <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">3. Purpose of Processing</h2>
@@ -82,7 +82,7 @@ export default function PrivacyPolicyPage() {
                     <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
                         Gizlilik Politikası
                     </h1>
-                    <p className="mt-4 text-white/60">Son Güncelleme: 15 Aralık 2024</p>
+                    <p className="mt-4 text-white/60">Son Güncelleme: 15 Aralık 2025</p>
                 </div>
             </section>
 
@@ -108,7 +108,7 @@ export default function PrivacyPolicyPage() {
                         <li><strong>Kimlik Bilgileri:</strong> Ad, soyad</li>
                         <li><strong>İletişim Bilgileri:</strong> E-posta adresi, telefon numarası, adres</li>
                         <li><strong>Sipariş Bilgileri:</strong> Ürün tercihleri, sipariş geçmişi, teslimat adresi</li>
-                        <li><strong>Teknik Veriler:</strong> IP adresi, tarayıcı türü, cihaz bilgileri</li>
+
                         <li><strong>Üyelik Bilgileri:</strong> Kullanıcı adı, şifre (şifrelenmiş olarak)</li>
                     </ul>
 
