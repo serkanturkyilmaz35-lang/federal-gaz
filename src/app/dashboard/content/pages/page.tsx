@@ -1,78 +1,174 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
-interface PageData {
-    id: number;
-    slug: string;
-    title: string;
-    status: 'published' | 'draft';
-    type: 'legal' | 'static' | 'dynamic';
-    isSystemPage: boolean;
-    updatedAt: string;
-}
+// All website pages - these are hardcoded as they represent the site structure
+const websitePages = [
+    {
+        id: 1,
+        title: "Ana Sayfa",
+        slug: "/",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Web sitesinin ana sayfası",
+    },
+    {
+        id: 2,
+        title: "Hakkımızda",
+        slug: "/hakkimizda",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Şirket hakkında bilgi sayfası",
+    },
+    {
+        id: 3,
+        title: "Ürünler",
+        slug: "/urunler",
+        type: "dynamic",
+        status: "published",
+        editable: false,
+        description: "Ürün listeleme sayfası",
+    },
+    {
+        id: 4,
+        title: "Hizmetler",
+        slug: "/hizmetler",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Hizmetler ana sayfası",
+    },
+    {
+        id: 5,
+        title: "Medikal Gazlar",
+        slug: "/hizmetler/medikal-gazlar",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Medikal gaz hizmetleri",
+    },
+    {
+        id: 6,
+        title: "Kaynak Gazları",
+        slug: "/hizmetler/kaynak-gazlari",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Kaynak gazları hizmetleri",
+    },
+    {
+        id: 7,
+        title: "Özel Gaz Karışımları",
+        slug: "/hizmetler/ozel-gaz-karisimlari",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Özel gaz karışımları hizmetleri",
+    },
+    {
+        id: 8,
+        title: "Gıda Gazları",
+        slug: "/hizmetler/gida-gazlari",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Gıda gazları hizmetleri",
+    },
+    {
+        id: 9,
+        title: "Galeri",
+        slug: "/galeri",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "Fotoğraf galerisi",
+    },
+    {
+        id: 10,
+        title: "İletişim",
+        slug: "/iletisim",
+        type: "static",
+        status: "published",
+        editable: false,
+        description: "İletişim sayfası",
+    },
+    {
+        id: 11,
+        title: "Sipariş",
+        slug: "/siparis",
+        type: "dynamic",
+        status: "published",
+        editable: false,
+        description: "Online sipariş formu",
+    },
+    {
+        id: 12,
+        title: "Gizlilik Politikası",
+        slug: "/gizlilik-politikasi",
+        type: "legal",
+        status: "published",
+        editable: true,
+        description: "Gizlilik politikası sayfası",
+    },
+    {
+        id: 13,
+        title: "KVKK Aydınlatma Metni",
+        slug: "/kvkk",
+        type: "legal",
+        status: "published",
+        editable: true,
+        description: "KVKK aydınlatma metni",
+    },
+    {
+        id: 14,
+        title: "Çerez Politikası",
+        slug: "/cerez-politikasi",
+        type: "legal",
+        status: "published",
+        editable: true,
+        description: "Çerez politikası sayfası",
+    },
+    {
+        id: 15,
+        title: "Üye Girişi",
+        slug: "/giris",
+        type: "auth",
+        status: "published",
+        editable: false,
+        description: "Üye giriş sayfası",
+    },
+    {
+        id: 16,
+        title: "Kayıt Ol",
+        slug: "/kayit-ol",
+        type: "auth",
+        status: "published",
+        editable: false,
+        description: "Üyelik kayıt sayfası",
+    },
+    {
+        id: 17,
+        title: "Profil",
+        slug: "/profil",
+        type: "auth",
+        status: "published",
+        editable: false,
+        description: "Kullanıcı profil sayfası",
+    },
+];
 
 export default function ContentPagesPage() {
     const [searchQuery, setSearchQuery] = useState("");
-    const [pages, setPages] = useState<PageData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [seeding, setSeeding] = useState(false);
-    const [statusFilter, setStatusFilter] = useState("all");
+    const [typeFilter, setTypeFilter] = useState("all");
 
-    useEffect(() => {
-        fetchPages();
-    }, []);
-
-    const fetchPages = async () => {
-        try {
-            const res = await fetch('/api/dashboard/pages');
-            if (res.ok) {
-                const data = await res.json();
-                setPages(data.pages);
-            }
-        } catch (error) {
-            console.error('Error fetching pages:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const seedLegalPages = async () => {
-        setSeeding(true);
-        try {
-            const res = await fetch('/api/dashboard/pages/seed', { method: 'POST' });
-            if (res.ok) {
-                await fetchPages();
-            }
-        } catch (error) {
-            console.error('Error seeding pages:', error);
-        } finally {
-            setSeeding(false);
-        }
-    };
-
-    const deletePage = async (id: number) => {
-        if (!confirm('Bu sayfayı silmek istediğinize emin misiniz?')) return;
-
-        try {
-            const res = await fetch(`/api/dashboard/pages/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setPages(pages.filter(p => p.id !== id));
-            } else {
-                const data = await res.json();
-                alert(data.error || 'Silme işlemi başarısız');
-            }
-        } catch (error) {
-            console.error('Error deleting page:', error);
-        }
-    };
-
-    const filteredPages = pages.filter(page => {
+    const filteredPages = websitePages.filter(page => {
         const matchesSearch = page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             page.slug.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === "all" || page.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        const matchesType = typeFilter === "all" || page.type === typeFilter;
+        return matchesSearch && matchesType;
     });
 
     const getTypeLabel = (type: string) => {
@@ -80,6 +176,7 @@ export default function ContentPagesPage() {
             case 'legal': return 'Yasal';
             case 'static': return 'Statik';
             case 'dynamic': return 'Dinamik';
+            case 'auth': return 'Kimlik';
             default: return type;
         }
     };
@@ -89,6 +186,7 @@ export default function ContentPagesPage() {
             case 'legal': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
             case 'static': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
             case 'dynamic': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+            case 'auth': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -102,29 +200,22 @@ export default function ContentPagesPage() {
                         Sayfa Yönetimi
                     </h1>
                     <p className="text-base font-normal leading-normal text-[#94847c]">
-                        Web sitesi sayfalarını oluşturun ve düzenleyin
+                        Web sitesindeki tüm sayfaları görüntüleyin
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    {pages.length === 0 && !loading && (
-                        <button
-                            onClick={seedLegalPages}
-                            disabled={seeding}
-                            className="flex h-10 items-center gap-2 rounded-lg bg-purple-600 px-4 text-white hover:bg-purple-700 disabled:opacity-50"
-                        >
-                            <span className="material-symbols-outlined text-lg">gavel</span>
-                            <span className="text-sm font-medium">
-                                {seeding ? 'Oluşturuluyor...' : 'Yasal Sayfaları Oluştur'}
-                            </span>
-                        </button>
-                    )}
-                    <Link
-                        href="/dashboard/content/pages/new"
-                        className="flex h-10 items-center gap-2 rounded-lg bg-[#b13329] px-4 text-white hover:bg-[#b13329]/90"
-                    >
-                        <span className="material-symbols-outlined text-lg">add</span>
-                        <span className="text-sm font-medium">Yeni Sayfa</span>
-                    </Link>
+            </div>
+
+            {/* Info Box */}
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-blue-500">info</span>
+                    <div>
+                        <p className="text-sm text-blue-800 dark:text-blue-300">
+                            Bu sayfada web sitenizde bulunan tüm sayfalar listelenmektedir.
+                            <strong className="text-purple-600"> Yasal</strong> olarak işaretli sayfaların içeriklerini
+                            Ayarlar → Yasal sekmesinden yönetebilirsiniz.
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -145,147 +236,120 @@ export default function ContentPagesPage() {
                     />
                 </div>
                 <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
                     className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-[#292828] focus:border-[#b13329] focus:outline-none dark:border-[#3b4754] dark:bg-[#1c2127] dark:text-white"
                 >
-                    <option value="all">Tüm Durumlar</option>
-                    <option value="published">Yayında</option>
-                    <option value="draft">Taslak</option>
+                    <option value="all">Tüm Türler</option>
+                    <option value="static">Statik</option>
+                    <option value="dynamic">Dinamik</option>
+                    <option value="legal">Yasal</option>
+                    <option value="auth">Kimlik</option>
                 </select>
             </div>
 
-            {/* Loading State */}
-            {loading && (
-                <div className="flex items-center justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                </div>
-            )}
-
-            {/* Empty State */}
-            {!loading && pages.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <span className="material-symbols-outlined text-6xl text-gray-400 mb-4">article</span>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Henüz sayfa yok</h3>
-                    <p className="text-gray-500 mb-4">Yasal sayfaları otomatik oluşturmak için butona tıklayın</p>
-                    <button
-                        onClick={seedLegalPages}
-                        disabled={seeding}
-                        className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
-                    >
-                        <span className="material-symbols-outlined">gavel</span>
-                        {seeding ? 'Oluşturuluyor...' : 'Yasal Sayfaları Oluştur'}
-                    </button>
-                </div>
-            )}
-
             {/* Pages Table */}
-            {!loading && pages.length > 0 && (
-                <div className="overflow-hidden rounded-lg border border-gray-300 dark:border-[#3b4754]">
-                    <table className="w-full">
-                        <thead className="bg-gray-100 dark:bg-[#283039]">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                    Başlık
-                                </th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                    Slug
-                                </th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                    Tür
-                                </th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                    Durum
-                                </th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
-                                    Son Güncelleme
-                                </th>
-                                <th className="w-24 px-6 py-3"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-[#1c2127]">
-                            {filteredPages.map((page) => (
-                                <tr
-                                    key={page.id}
-                                    className="border-t border-gray-200 hover:bg-gray-50 dark:border-[#3b4754] dark:hover:bg-[#283039]"
-                                >
-                                    <td className="px-6 py-4">
-                                        <Link
-                                            href={`/dashboard/content/pages/${page.id}`}
-                                            className="font-medium text-[#292828] hover:text-[#b13329] dark:text-white dark:hover:text-[#b13329] flex items-center gap-2"
-                                        >
-                                            {page.isSystemPage && (
-                                                <span className="material-symbols-outlined text-sm text-purple-500">lock</span>
-                                            )}
+            <div className="overflow-hidden rounded-lg border border-gray-300 dark:border-[#3b4754]">
+                <table className="w-full">
+                    <thead className="bg-gray-100 dark:bg-[#283039]">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                Sayfa
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                URL
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                Tür
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-[#292828] dark:text-white">
+                                Durum
+                            </th>
+                            <th className="w-24 px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-[#1c2127]">
+                        {filteredPages.map((page) => (
+                            <tr
+                                key={page.id}
+                                className="border-t border-gray-200 hover:bg-gray-50 dark:border-[#3b4754] dark:hover:bg-[#283039]"
+                            >
+                                <td className="px-6 py-4">
+                                    <div>
+                                        <p className="font-medium text-[#292828] dark:text-white">
                                             {page.title}
-                                        </Link>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-[#94847c]">
-                                        /{page.slug}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getTypeBadgeColor(page.type)}`}>
-                                            {getTypeLabel(page.type)}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${page.status === "published"
-                                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                                }`}
+                                        </p>
+                                        <p className="text-xs text-[#94847c]">
+                                            {page.description}
+                                        </p>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-[#94847c]">
+                                    {page.slug}
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getTypeBadgeColor(page.type)}`}>
+                                        {getTypeLabel(page.type)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                                        Yayında
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <a
+                                            href={page.slug}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[#94847c] hover:text-blue-500"
+                                            title="Sayfayı Görüntüle"
                                         >
-                                            {page.status === "published" ? "Yayında" : "Taslak"}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-[#94847c]">
-                                        {new Date(page.updatedAt).toLocaleDateString('tr-TR')}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined">visibility</span>
+                                        </a>
+                                        {page.editable && (
                                             <Link
-                                                href={`/dashboard/content/pages/${page.id}`}
+                                                href="/dashboard/settings"
                                                 className="text-[#94847c] hover:text-[#b13329]"
-                                                title="Düzenle"
+                                                title="İçeriği Düzenle (Ayarlar → Yasal)"
                                             >
                                                 <span className="material-symbols-outlined">edit</span>
                                             </Link>
-                                            <a
-                                                href={`/${page.slug}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-[#94847c] hover:text-blue-500"
-                                                title="Görüntüle"
-                                            >
-                                                <span className="material-symbols-outlined">visibility</span>
-                                            </a>
-                                            {!page.isSystemPage && (
-                                                <button
-                                                    onClick={() => deletePage(page.id)}
-                                                    className="text-[#94847c] hover:text-red-500"
-                                                    title="Sil"
-                                                >
-                                                    <span className="material-symbols-outlined">delete</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
-            {/* Pagination */}
-            {!loading && filteredPages.length > 0 && (
-                <div className="mt-6 flex items-center justify-between">
-                    <p className="text-sm text-[#94847c]">
-                        <span className="font-medium text-[#292828] dark:text-white">{filteredPages.length}</span>{" "}
-                        sayfa gösteriliyor
-                    </p>
+            {/* Summary */}
+            <div className="mt-6 flex items-center justify-between">
+                <p className="text-sm text-[#94847c]">
+                    Toplam <span className="font-medium text-[#292828] dark:text-white">{filteredPages.length}</span> sayfa
+                </p>
+                <div className="flex gap-4 text-xs text-[#94847c]">
+                    <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                        Statik: {websitePages.filter(p => p.type === 'static').length}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+                        Dinamik: {websitePages.filter(p => p.type === 'dynamic').length}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+                        Yasal: {websitePages.filter(p => p.type === 'legal').length}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                        Kimlik: {websitePages.filter(p => p.type === 'auth').length}
+                    </span>
                 </div>
-            )}
+            </div>
         </div>
     );
 }
