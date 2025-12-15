@@ -5,7 +5,7 @@ import { useLanguage } from '@/context/LanguageContext';
 const translations = {
     TR: {
         title: 'Çerez Politikası',
-        lastUpdate: 'Son Güncelleme: 15 Aralık 2024',
+        lastUpdate: 'Son Güncelleme: 15 Aralık 2025',
         intro: 'Federal Gaz olarak, web sitemizi ziyaret ettiğinizde deneyiminizi geliştirmek ve size daha iyi hizmet sunmak amacıyla çerezler kullanmaktayız. Bu politika, kullandığımız çerez türlerini ve bunları nasıl kontrol edebileceğinizi açıklamaktadır.',
         whatAreCookies: 'Çerez Nedir?',
         whatAreCookiesDesc: 'Çerezler, web sitelerinin tarayıcınıza gönderdiği ve cihazınızda saklanan küçük metin dosyalarıdır. Bu dosyalar, siteye tekrar girdiğinizde sizi tanımamıza ve tercihlerinizi hatırlamamıza yardımcı olur.',
