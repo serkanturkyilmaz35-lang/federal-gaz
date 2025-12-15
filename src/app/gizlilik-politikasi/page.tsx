@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
                             <li><strong>Identity Information:</strong> Name, surname</li>
                             <li><strong>Contact Information:</strong> Email, phone number, address</li>
                             <li><strong>Order Information:</strong> Product preferences, order history</li>
-
+                            <li><strong>Membership Information:</strong> Username, encrypted password</li>
                         </ul>
 
                         <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">3. Purpose of Processing</h2>
@@ -60,15 +60,31 @@ export default function PrivacyPolicyPage() {
                             Your personal data will not be shared with third parties except for legally required situations, cargo/logistics companies for order delivery, and technical service providers.
                         </p>
 
-                        <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">5. Your Rights</h2>
+                        <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">5. Disclaimer</h2>
                         <p className="text-gray-600 dark:text-gray-400">
-                            You have the right to access, correct, delete, or restrict processing of your data. To exercise these rights, please contact us at {email}.
+                            The information on this website is for informational purposes only. {companyName} does not guarantee the accuracy, completeness, or timeliness of the information provided.
                         </p>
 
-                        <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">6. Contact</h2>
+                        <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">6. External Links</h2>
+                        <p className="text-gray-600 dark:text-gray-400">
+                            This policy applies only to our website. We are not responsible for the privacy practices of external websites linked from our site.
+                        </p>
+
+                        <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">7. Changes</h2>
+                        <p className="text-gray-600 dark:text-gray-400">
+                            {companyName} reserves the right to modify this privacy policy at any time without prior notice.
+                        </p>
+
+                        <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">8. Contact</h2>
                         <p className="text-gray-600 dark:text-gray-400">
                             For questions about this policy: {email}
                         </p>
+
+                        <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                By accessing and using this website, you agree to the terms of this Privacy Policy.
+                            </p>
+                        </div>
                     </div>
                 </section>
             </>
@@ -89,7 +105,7 @@ export default function PrivacyPolicyPage() {
             <section className="bg-background-light py-16 dark:bg-background-dark">
                 <div className="mx-auto max-w-4xl px-4 prose prose-lg dark:prose-invert max-w-none">
                     <p className="text-lg text-gray-600 dark:text-gray-400">
-                        {companyName} (&quot;Şirket&quot;) olarak kişisel verilerinizin korunmasına büyük önem veriyoruz. Bu gizlilik politikası, web sitemizi ve hizmetlerimizi kullandığınızda bilgilerinizi nasıl topladığımızı, kullandığımızı ve koruduğumuzu açıklamaktadır.
+                        {companyName} olarak müşterilerimizin bilgilerinin gizliliğini korumak amacıyla aşağıda belirtilen temel kuralları benimsemiştir. Kişisel verilerinizin güvenliği ve gizliliği bizim için son derece önemlidir.
                     </p>
 
                     <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">1. Veri Sorumlusu</h2>
@@ -108,7 +124,6 @@ export default function PrivacyPolicyPage() {
                         <li><strong>Kimlik Bilgileri:</strong> Ad, soyad</li>
                         <li><strong>İletişim Bilgileri:</strong> E-posta adresi, telefon numarası, adres</li>
                         <li><strong>Sipariş Bilgileri:</strong> Ürün tercihleri, sipariş geçmişi, teslimat adresi</li>
-
                         <li><strong>Üyelik Bilgileri:</strong> Kullanıcı adı, şifre (şifrelenmiş olarak)</li>
                     </ul>
 
@@ -128,7 +143,7 @@ export default function PrivacyPolicyPage() {
 
                     <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">4. Verilerin Paylaşımı</h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                        Kişisel verileriniz, aşağıdaki durumlar dışında üçüncü kişilerle paylaşılmaz:
+                        {companyName}, müşterinin izni haricinde veya yasal bir zorunluluk olmadığı sürece müşterilerine ait bilgiyi herhangi bir üçüncü şahıs, kurum ve kuruluş ile paylaşmayacağını, bu bilgileri en yüksek güvenlik ve gizlilik standartlarında koruyacağını taahhüt eder. Veriler yalnızca aşağıdaki durumlarda paylaşılabilir:
                     </p>
                     <ul className="text-gray-600 dark:text-gray-400 list-disc pl-6 space-y-2">
                         <li>Yasal zorunluluk halinde yetkili kamu kurumlarıyla</li>
@@ -141,23 +156,42 @@ export default function PrivacyPolicyPage() {
                         Kişisel verilerinizin güvenliği için SSL şifreleme, güvenli sunucu altyapısı ve erişim kontrolü gibi teknik ve idari tedbirler uygulanmaktadır.
                     </p>
 
-                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">6. Haklarınız</h2>
+                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">6. Sorumluluk Reddi</h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                        KVKK kapsamında aşağıdaki haklara sahipsiniz:
+                        {companyName} web sitesinde bulunan tüm bilgi, içerik ve görüşler sadece bilgi vermek amaçlı olup hiçbir şekilde alış veya satış teklifi olarak değerlendirilemez. {companyName}, web sitesinde bulunan bilgi, içerik ve görüşlerin doğruluğu, tamlığı ve eksiksizliğini garanti etmemekle birlikte bu bilgilerdeki eksiklikler ve yanlışlıklardan dolayı hiçbir şekilde sorumlu bulunmamaktadır.
                     </p>
-                    <ul className="text-gray-600 dark:text-gray-400 list-disc pl-6 space-y-2">
-                        <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
-                        <li>İşlenmişse buna ilişkin bilgi talep etme</li>
-                        <li>Verilerin düzeltilmesini isteme</li>
-                        <li>Verilerin silinmesini veya yok edilmesini isteme</li>
-                        <li>Verilerin aktarıldığı üçüncü kişileri öğrenme</li>
-                    </ul>
 
-                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">7. İletişim</h2>
+                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">7. Dış Bağlantılar</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Gizlilik politikalarımızda yer alan taahhütlerimiz sadece web sitemiz için geçerlidir. {companyName} web sitesinden link verilen web sitelerini veya ziyaret edilen diğer web sitelerini kapsamamakta olup bu sitelerden uğranabilecek maddi/manevi zarar ve kayıplardan firmamız sorumlu tutulamaz.
+                    </p>
+
+                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">8. Değişiklik Hakkı</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        {companyName}, web sitesinde yer alan tüm bilgileri, ürün ve hizmetleri ile işbu gizlilik politikasını önceden bildirimde bulunmadan değiştirme hakkına sahiptir.
+                    </p>
+
+                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">9. Haklarınız</h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamındaki haklarınız için <a href="/kvkk" className="text-primary hover:underline">KVKK Aydınlatma Metnimizi</a> inceleyebilirsiniz.
+                    </p>
+
+                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">10. İletişim</h2>
                     <p className="text-gray-600 dark:text-gray-400">
                         Gizlilik politikamız hakkında sorularınız için:<br />
                         E-posta: {email}<br />
                         Telefon: {phone}
+                    </p>
+
+                    <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <strong>Kabul Beyanı:</strong> Müşterilerimiz, {companyName} web sitesine girerek ve web sitesinde yer alan bilgileri kullanarak, yukarıda belirtilen koşulları kabul ettiğini taahhüt etmiş olur.
+                        </p>
+                    </div>
+
+                    <p className="mt-6 text-gray-500 dark:text-gray-500 text-sm text-right">
+                        Saygılarımızla,<br />
+                        <strong>{companyName}</strong>
                     </p>
                 </div>
             </section>
