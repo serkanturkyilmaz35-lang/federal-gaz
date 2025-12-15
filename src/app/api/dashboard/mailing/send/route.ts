@@ -1,7 +1,7 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { MailingCampaign, User, connectToDatabase, MailingLog } from '@/lib/models';
+import { MailingCampaign, User, connectToDatabase, MailingLog, EmailTemplate } from '@/lib/models';
 import { sendEmail, getCampaignEmailTemplate } from '@/lib/email';
 
 interface SendResult {
@@ -108,14 +108,92 @@ export async function POST(req: Request) {
         let failedCount = 0;
         const errors: { email: string; error: string }[] = [];
 
+        // Fetch the template *once* to get visual settings (Campaign Box, etc.)
+        // Fetch the template *once* to get visual settings (Campaign Box, etc.)
+        let templateData: any = {};
+
+        // Define all visual overrides
+        let customLogoUrl = campaign.customLogoUrl;
+        let customProductImageUrl = campaign.customProductImageUrl;
+        let headerImage = '';
+        let footerImage = '';
+        let buttonText = '';
+        let buttonUrl = '';
+        let footerContact = '';
+        let headerHtml = '';
+        let footerHtml = '';
+
+        // Styling Overrides
+        let styling: any = {};
+
+        try {
+            const template = await EmailTemplate.findOne({ where: { slug: campaign.templateSlug } });
+            if (template) {
+                templateData = template.templateData || {};
+
+                // If campaign doesn't override these, use template's
+                if (!customLogoUrl) customLogoUrl = template.logoUrl;
+                if (!customProductImageUrl) customProductImageUrl = template.bannerImage;
+
+                // Map other visual assets
+                headerImage = template.headerImage;
+                footerImage = template.footerImage;
+                buttonText = template.buttonText;
+                footerContact = template.footerContact;
+                headerHtml = template.headerHtml;
+                footerHtml = template.footerHtml;
+
+                // Checks for buttonUrl in templateData or other fields if model has it
+                // Assuming buttonUrl might be in templateData if not in model
+                buttonUrl = templateData.buttonUrl;
+
+                // Collect colors
+                styling = {
+                    headerBgColor: template.headerBgColor,
+                    headerTextColor: template.headerTextColor,
+                    bodyBgColor: template.bodyBgColor,
+                    bodyTextColor: template.bodyTextColor,
+                    buttonColor: template.buttonColor,
+                    footerBgColor: template.footerBgColor,
+                    footerTextColor: template.footerTextColor
+                };
+            }
+        } catch (e) {
+            console.error('Failed to fetch template details for sending:', e);
+        }
+
         for (const recipient of recipients) {
             try {
                 // Using templateSlug instead of templateId
                 // Cast templateSlug to any or string to avoid type conflict if getCampaignEmailTemplate expects explicit union
+
+                // Fetch the template details (visual settings) from DB if not already available
+                // Optimization: We could fetch this ONCE outside the loop, but for now we do it per request or cached?
+                // Better: Fetch it once outside the loop.
                 const html = getCampaignEmailTemplate(campaign.templateSlug as any || 'modern', {
-                    subject: campaign.subject,
-                    content: campaign.content,
-                    recipientName: recipient.name,
+                    subject: campaign.subject || '',
+                    content: campaign.content || '',
+                    recipientName: recipient.name || '',
+                    // Pass mapped visual settings
+                    templateData: templateData,
+                    customLogoUrl: customLogoUrl || undefined,
+                    customProductImageUrl: customProductImageUrl || undefined,
+                    campaignTitle: campaign.campaignTitle || undefined,
+                    campaignHighlight: campaign.campaignHighlight || undefined,
+
+                    // Visual Assets
+                    headerImage: headerImage || undefined,
+                    footerImage: footerImage || undefined,
+                    buttonText: buttonText || undefined,
+                    buttonUrl: buttonUrl || undefined,
+                    footerContact: footerContact || undefined,
+
+                    // Advanced HTML
+                    headerHtml: headerHtml || undefined,
+                    footerHtml: footerHtml || undefined,
+
+                    // Styling
+                    ...styling
                 });
 
                 const result = await sendEmail({

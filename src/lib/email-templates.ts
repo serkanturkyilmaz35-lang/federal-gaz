@@ -26,6 +26,7 @@ export interface CampaignTemplateOptions {
     // New Fields
     footerContact?: string;
     buttonText?: string;
+    buttonUrl?: string; // New: Custom URL for the button
     templateData?: any; // Flexible data for specific templates
 }
 
@@ -123,12 +124,28 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         footerHtml,
         footerContact,
         buttonText,
+        buttonUrl, // New
         templateData
     } = options;
 
     const logoUrl = customLogoUrl || 'https://www.federalgaz.com/logo-clean.png';
     const websiteUrl = 'https://www.federalgaz.com';
+    const targetUrl = buttonUrl || websiteUrl; // Use custom URL if provided, else default
     const year = 2014;
+
+    // Sanitize URLs: Email clients often reject Base64 in background-images.
+    // We explicitly BLOCK Base64 here to force the use of the default hosted image.
+    const sanitizeUrl = (url: string | undefined) => {
+        if (!url) return '';
+        if (url.startsWith('data:')) {
+            return ''; // Discard Base64, force fallback
+        }
+        return url;
+    };
+
+    const cleanHeaderImage = sanitizeUrl(headerImage);
+    const cleanFooterImage = sanitizeUrl(footerImage);
+    const cleanCustomProductImage = sanitizeUrl(customProductImageUrl);
 
     // Use default content if provided content is empty
     const templateContent = content?.trim() || defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
@@ -137,7 +154,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     const productImages: any = {
         'modern': 'https://placehold.co/600x200/1a2744/ffffff?text=MODERN',
         'black-friday': 'https://placehold.co/600x200/000000/ff2d2d?text=EFSANE+CUMA',
-        'new-year': 'https://placehold.co/600x200/1e3a5f/ffd700?text=MUTLU+YILLAR',
+        'new-year': 'https://www.federalgaz.com/images/new-year-bg.jpg',
         'winter-campaign': 'https://placehold.co/600x200/74ebd5/1a2744?text=KIS+KAMPANYASI',
         'weekend-sale': 'https://placehold.co/600x200/667eea/ffffff?text=HAFTA+SONU',
         'ramazan-bayrami': 'https://placehold.co/600x200/1e3c72/ffd700?text=IYI+BAYRAMLAR',
@@ -150,7 +167,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         'azot': 'https://placehold.co/600x200/1e3c72/ffffff?text=AZOT',
         'asetilen': 'https://placehold.co/600x200/ffffff/000000?text=ASETILEN',
         'ataturkFlag': 'https://placehold.co/600x200/e30a17/ffffff?text=29+EKIM',
-        'christmasTree': 'https://placehold.co/600x200/1e3a5f/ffd700?text=MUTLU+YILLAR',
+        'christmasTree': 'https://www.federalgaz.com/images/new-year-bg.jpg',
         'ramazan': 'https://placehold.co/600x200/1e3c72/ffd700?text=IYI+BAYRAMLAR',
     };
 
@@ -163,9 +180,22 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
     else if (templateSlug === '29-ekim') defaultImageForTemplate = productImages.ataturkFlag;
     else if (templateSlug === 'ramazan-bayrami') defaultImageForTemplate = productImages.ramazan;
 
-    // Logic: customProductImageUrl > defaultImageForTemplate
+    // Logic: customProductImageUrl > campaignBoxText > defaultImageForTemplate
+    else if (templateSlug === 'ramazan-bayrami') defaultImageForTemplate = productImages.ramazan;
+
+    // Default Header Image Logic (Critical for New Year Ornaments)
+    let defaultHeaderImage = '';
+    if (templateSlug === 'new-year') defaultHeaderImage = productImages.christmasTree;
+    // Add other defaults if needed
+
+    // Logic: customProductImageUrl > campaignBoxText > defaultImageForTemplate
     // Note: If templateSlug is not in the list above, it defaults to productImages.hero
-    const mainProductImage = customProductImageUrl || defaultImageForTemplate;
+    const mainProductImage = cleanCustomProductImage || defaultImageForTemplate;
+
+    // Ensure headerImage falls back to default if empty
+    const finalHeaderImage = cleanHeaderImage || defaultHeaderImage;
+
+    const showCampaignBox = !cleanCustomProductImage && templateData?.campaignBoxText; // Show box only if no custom image AND text is provided
 
     // Use template colors from database or defaults
     // Use template colors from database or override defaults per template
@@ -212,9 +242,14 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
              ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${headerImage}'); background-size: cover; background-position: center; opacity: 0.4; z-index: 0;"></div>` : ''}
             <div style="position: relative; z-index: 1;">
                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 60px; margin-bottom: 20px;">
+                ${templateData?.headerHighlight ? `<p style="color: ${templateData.headerHighlightColor || '#ffd700'}; font-size: 16px; letter-spacing: 2px; margin: 0 0 10px 0; font-weight: bold;">${templateData.headerHighlight}</p>` : ''}
                 <h1 style="color: ${modernTheme.headerText}; margin: 0; font-size: 28px; font-weight: 600;">${campaignTitle || subject}</h1>
+                ${templateData?.headerSubtitle ? `<p style="color: ${templateData.headerSubtitleColor || '#ffd700'}; background: ${templateData.headerSubtitleBgColor || 'transparent'}; display: inline-block; padding: ${templateData.headerSubtitleBgColor && templateData.headerSubtitleBgColor !== 'transparent' ? '5px 15px' : '5px 0'}; border-radius: 4px; font-size: 18px; font-weight: 500; margin: 10px 0 0 0;">${templateData.headerSubtitle}</p>` : ''}
             </div>
         </div>
+        
+        <!-- Header Strip (New!) -->
+        ${templateData?.headerStripGradient && templateData.headerStripGradient !== 'transparent' ? `<div style="background: ${templateData.headerStripGradient}; height: 4px;"></div>` : ''}
         
         <!-- Product Image Banner -->
         <div style="background: linear-gradient(135deg, ${modernTheme.button} 0%, #8b1a12 100%); padding: 20px; text-align: center;">
@@ -224,20 +259,22 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Content -->
         <div style="padding: 40px 30px;">
             <p style="color: ${modernTheme.bodyText}; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                Merhaba <strong>${recipientName}</strong>,
+                Merhaba <strong style="color: ${templateData?.recipientNameColor || modernTheme.bodyText}; background: ${templateData?.recipientNameBgColor || 'transparent'}; padding: ${templateData?.recipientNameBgColor && templateData.recipientNameBgColor !== 'transparent' ? '2px 5px' : '0'}; border-radius: 3px;">${recipientName}</strong>,
             </p>
             <div style="color: #444; font-size: 15px; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid ${modernTheme.button};">
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
+            ${templateData?.bodyGreeting ? `<div style="color: ${templateData.bodyGreetingColor || '#333'}; background: ${templateData.bodyGreetingBgColor || '#f0f0f0'}; font-size: 16px; text-align: center; margin: 25px 0; padding: 10px; border-radius: 6px;">${templateData.bodyGreeting}</div>` : ''}
+            
             <div style="text-align: center; margin: 35px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${modernTheme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <a href="${targetUrl}" style="display: inline-block; background: ${modernTheme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                     🛒 ${buttonText || 'Sipariş Ver'}
                 </a>
             </div>
             
             <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                Saygılarımızla,<br><strong>Federal Gaz Ekibi</strong>
+                Saygılarımızla,<br><strong style="color: ${templateData?.signatureColor || '#333'};">${templateData?.signature || 'Federal Gaz Ekibi'}</strong>
             </p>
         </div>
         
@@ -283,13 +320,25 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${headerImage}'); background-size: cover; background-position: center; opacity: 0.4; z-index: 0;"></div>` : ''}
             <div style="position: relative; z-index: 1;">
                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
-                <div style="background: ${theme.button}; color: #ffffff; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
+                
+                ${templateData?.headerHighlight ? `<div style="background: ${theme.button}; color: ${templateData.headerHighlightColor || '#ffffff'}; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
+                    🔥 ${templateData.headerHighlight} 🔥
+                </div>` :
+                    `<div style="background: ${theme.button}; color: #ffffff; display: inline-block; padding: 8px 25px; border-radius: 4px; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px;">
                     🔥 ${campaignTitle || 'EFSANE CUMA'} 🔥
-                </div>
+                </div>`}
+                
                 <h1 style="color: ${theme.headerText}; margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 0 20px rgba(255,45,45,0.5);">${subject}</h1>
-                <p style="color: ${theme.button}; font-size: 48px; font-weight: 900; margin: 15px 0 0;">${campaignHighlight || '%50 İNDİRİM'}</p>
+                
+                 ${templateData?.headerSubtitle ?
+                    `<p style="color: ${templateData.headerSubtitleColor || '#ffd700'}; background: ${templateData.headerSubtitleBgColor || 'transparent'}; display: inline-block; padding: ${templateData.headerSubtitleBgColor && templateData.headerSubtitleBgColor !== 'transparent' ? '5px 15px' : '0'}; border-radius: 4px; font-size: 28px; font-weight: 900; margin: 15px 0 0;">${templateData.headerSubtitle}</p>`
+                    : `<p style="color: ${theme.button}; font-size: 48px; font-weight: 900; margin: 15px 0 0;">${campaignHighlight || '%50 İNDİRİM'}</p>`
+                }
             </div>
         </div>
+        
+        <!-- Header Strip -->
+        ${templateData?.headerStripGradient && templateData.headerStripGradient !== 'transparent' ? `<div style="background: ${templateData.headerStripGradient}; height: 4px;"></div>` : ''}
         
         <!-- Products Section -->
         <div style="background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); padding: 30px; text-align: center;">
@@ -303,17 +352,23 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Content -->
         <div style="padding: 30px; background: ${theme.bodyBg};">
             <p style="color: ${theme.bodyText}; font-size: 16px; line-height: 1.6;">
-                Merhaba <strong style="color: #ffffff;">${recipientName}</strong>,
+                Merhaba <strong style="color: ${templateData?.recipientNameColor || '#ffffff'}; background: ${templateData?.recipientNameBgColor || 'transparent'}; padding: ${templateData?.recipientNameBgColor && templateData.recipientNameBgColor !== 'transparent' ? '2px 5px' : '0'}; border-radius: 3px;">${recipientName}</strong>,
             </p>
             <div style="color: ${theme.bodyText}; opacity: 0.9; font-size: 15px; line-height: 1.8;">
                 ${templateContent.replace(/\n/g, '<br>')}
             </div>
             
+            ${templateData?.bodyGreeting ? `<div style="color: ${templateData.bodyGreetingColor || '#ffffff'}; background: ${templateData.bodyGreetingBgColor || 'rgba(255,255,255,0.1)'}; font-size: 16px; text-align: center; margin: 25px 0; padding: 15px; border-radius: 6px;">${templateData.bodyGreeting}</div>` : ''}
+            
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 15px 45px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">
+                <a href="${targetUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 15px 45px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">
                     ${buttonText || '🔥 FIRSATLARI İNCELE'}
                 </a>
             </div>
+            
+             <p style="color: #666; font-size: 14px; margin-top: 30px; text-align: center;">
+                Saygılarımızla,<br><strong style="color: ${templateData?.signatureColor || '#888'};">${templateData?.signature || 'Federal Gaz'}</strong>
+            </p>
         </div>
         
         <!-- Footer -->
@@ -353,8 +408,8 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: ${theme.bodyBg};">
     <div style="max-width: 600px; margin: 0 auto; background: ${theme.headerBg};">
         <!-- New Year Header -->
-        <div style="padding: 40px 30px; text-align: center; position: relative; background-size: cover; background-position: center; ${headerImage ? `background-image: url('${headerImage}');` : ''}">
-             ${headerImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 0;"></div>` : ''}
+        <div style="padding: 40px 30px; text-align: center; position: relative; background-size: cover; background-position: center; ${finalHeaderImage ? `background-image: url('${finalHeaderImage}');` : ''}">
+             ${finalHeaderImage ? `<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 0;"></div>` : ''}
             <div style="position: relative; z-index: 1;">
                 <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 20px;">
                 <p style="color: ${templateData?.headerHighlightColor || '#ffd700'}; font-size: 18px; letter-spacing: 3px; margin: 0;">✨ ${templateData?.headerHighlight || campaignHighlight || (year + 1)} ✨</p>
@@ -366,9 +421,22 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Decorative Banner -->
         <div style="background: ${templateData?.headerStripGradient || 'linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%)'}; height: 4px;"></div>
         
-        <!-- Celebration Image -->
+        <!-- Footer Image if exists -->
+        ${cleanFooterImage ?
+                    `<div style="margin-top: 30px; text-align: center;">
+                <img src="${cleanFooterImage}" style="max-width: 100%; border-radius: 8px;">
+            </div>` : ''
+                }
+        
+        <!-- Celebration Image or Campaign Box -->
         <div style="padding: 30px; text-align: center;">
-             <img src="${mainProductImage}" alt="Yeni Yıl" style="height: 180px; border-radius: 12px; box-shadow: 0 0 20px rgba(255,215,0,0.2);">
+             ${showCampaignBox ?
+                    `<div style="background: ${templateData.campaignBoxBgColor || '#1e3a5f'}; color: ${templateData.campaignBoxTextColor || '#ffd700'}; padding: 40px 20px; border-radius: 12px; font-size: 32px; font-weight: bold; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.1); letter-spacing: 1px;">
+                    ${templateData.campaignBoxText}
+                </div>`
+                    :
+                    `<img src="${mainProductImage}" alt="Yeni Yıl" style="height: 180px; width: auto; max-width: 100%; border-radius: 12px; box-shadow: 0 0 20px rgba(255,215,0,0.2);">`
+                }
         </div>
         
         <!-- Content -->
@@ -385,7 +453,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
+                <a href="${targetUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: 600;">
                     ${buttonText || '🎁 Yeni Yıl Fırsatları'}
                 </a>
             </div>
@@ -433,14 +501,18 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
         <!-- Winter Header -->
         <div style="background: ${theme.headerBg}; padding: 40px 30px; text-align: center; position: relative;">
             <img src="${logoUrl}" alt="Federal Gaz" style="height: 50px; margin-bottom: 15px;">
-            <p style="font-size: 40px; margin: 0;">❄️</p>
+            ${templateData?.headerHighlight ? `<p style="font-size: 40px; margin: 0; color: ${templateData.headerHighlightColor || '#2d4a7c'}">${templateData.headerHighlight}</p>` : '<p style="font-size: 40px; margin: 0;">❄️</p>'}
             <h1 style="color: ${theme.headerText}; margin: 15px 0; font-size: 28px; font-weight: 600;">${subject}</h1>
-            <p style="color: #2d4a7c; font-size: 16px; margin: 0;">Kışa hazır mısınız?</p>
+            ${templateData?.headerSubtitle ? `<p style="color: ${templateData.headerSubtitleColor || '#2d4a7c'}; background: ${templateData.headerSubtitleBgColor || 'transparent'}; display: inline-block; padding: ${templateData.headerSubtitleBgColor && templateData.headerSubtitleBgColor !== 'transparent' ? '5px 15px' : '0'}; border-radius: 4px; font-size: 16px; margin: 0;">${templateData.headerSubtitle}</p>` : '<p style="color: #2d4a7c; font-size: 16px; margin: 0;">Kışa hazır mısınız?</p>'}
         </div>
+        
+        <!-- Header Strip -->
+        ${templateData?.headerStripGradient && templateData.headerStripGradient !== 'transparent' ? `<div style="background: ${templateData.headerStripGradient}; height: 4px;"></div>` : ''}
+        
         <!-- Product Banner -->
         <div style="background: ${theme.button}; padding: 25px; text-align: center;">
             <img src="${mainProductImage}" alt="LPG Tüpü" style="height: 130px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
-            <p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">Kış boyunca kesintisiz ısınma!</p>
+            ${templateData?.sectionTitle ? `<p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">${templateData.sectionTitle}</p>` : '<p style="color: #ffffff; font-size: 18px; margin: 15px 0 0;">Kış boyunca kesintisiz ısınma!</p>'}
         </div>
         <!-- Content -->
         <div style="padding: 30px;">
@@ -458,7 +530,7 @@ export function getCampaignEmailTemplate(templateSlug: string, options: Campaign
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${websiteUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                <a href="${targetUrl}" style="display: inline-block; background: ${theme.button}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                     ${buttonText || '❄️ Hemen Sipariş Ver'}
                 </a>
             </div>

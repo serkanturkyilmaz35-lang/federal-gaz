@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
             formData.append('type', 'base64');
             formData.append('action', 'upload');
             formData.append('timestamp', Date.now().toString());
+            formData.append('key', '6d207e02198a847aa98d0a2a901485a5'); // Public API Key for FreeImage.host
             // No auth token needed for free upload
 
             const res = await fetch('https://freeimage.host/api/1/upload', {

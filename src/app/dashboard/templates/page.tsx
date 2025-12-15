@@ -123,10 +123,8 @@ export default function TemplatesPage() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        // First sync to seed any missing templates, then fetch
-        fetch('/api/dashboard/sync')
-            .then(() => fetchTemplates())
-            .catch(() => fetchTemplates()); // Fetch anyway if sync fails
+        // Only fetch templates, do NOT sync (speed optimization)
+        fetchTemplates();
     }, []);
 
     // ESC key to close modals
@@ -166,14 +164,14 @@ export default function TemplatesPage() {
                         footerBgColor: targetTemplate.footerBgColor,
                         footerTextColor: targetTemplate.footerTextColor,
                         footerImage: targetTemplate.footerImage,
-                        logoUrl: targetTemplate.logoUrl,
+                        customLogoUrl: targetTemplate.logoUrl,
                         // Extra content
                         headerHtml: targetTemplate.headerHtml,
                         footerHtml: targetTemplate.footerHtml,
                         footerContact: targetTemplate.footerContact,
                         buttonText: targetTemplate.buttonText,
-                        templateData: targetTemplate.templateData,
-                        customLogoUrl: targetTemplate.logoUrl
+                        buttonUrl: targetTemplate.templateData?.buttonUrl,
+                        templateData: targetTemplate.templateData
                     });
 
                     setPreviewHtml(html);
@@ -245,6 +243,11 @@ export default function TemplatesPage() {
             });
             const data = await res.json();
             if (res.ok && data.url) {
+                // Reject internal Base64 returns here too, to force real uploads
+                if (data.url.startsWith('data:')) {
+                    setErrorMessage('Görsel sunucuya yüklenemedi (Base64). Lütfen daha küçük bir dosya deneyin veya destek ile iletişime geçin.');
+                    return;
+                }
                 setEditingTemplate({ ...editingTemplate, [field]: data.url });
                 setSuccessMessage('Görsel yüklendi');
                 setTimeout(() => setSuccessMessage(''), 2000);
@@ -281,8 +284,8 @@ export default function TemplatesPage() {
                 setSuccessMessage(t.successSave); // Changed tObject to t
                 setTimeout(() => setSuccessMessage(''), 2000);
 
-                // Fetch in background to ensure consistency, but don't block UI
-                fetchTemplates().catch(console.error);
+                // Optimistic update is sufficient, no need to re-fetch immediately
+                // fetchTemplates().catch(console.error);
             } else {
                 const data = await res.json();
                 setErrorMessage(data.error || t.errorSave); // Changed tObject to t
@@ -332,14 +335,7 @@ export default function TemplatesPage() {
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">{t.pageDesc}</p>
                 </div>
                 <div>
-                    <button
-                        onClick={syncAndSeedTemplates}
-                        disabled={saving}
-                        className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors flex items-center gap-2 text-sm font-medium"
-                    >
-                        <span className={`material-symbols-outlined text-lg ${saving ? 'animate-spin' : ''}`}>sync</span>
-                        {saving ? 'Onarılıyor...' : 'Veritabanını Onar'}
-                    </button>
+
                 </div>
             </div>
 
@@ -445,7 +441,7 @@ export default function TemplatesPage() {
                                         onClick={() => {
                                             const tpl = { ...template };
 
-                                            // Global Defaults
+                                            // Global Defaults for Common Fields
                                             if (!tpl.buttonText || tpl.buttonText.trim() === '') {
                                                 tpl.buttonText = tpl.slug === 'new-year' ? '🎁 Yeni Yıl Fırsatları' : 'Fırsatı Yakala';
                                             }
@@ -453,24 +449,39 @@ export default function TemplatesPage() {
                                                 tpl.footerContact = '© 2014 Federal Gaz. Tüm hakları saklıdır. www.federalgaz.com';
                                             }
 
-                                            if (tpl.slug === 'new-year') {
-                                                tpl.templateData = {
-                                                    headerHighlight: (new Date().getFullYear() + 1).toString(),
-                                                    headerHighlightColor: '#ffd700',
-                                                    headerSubtitle: 'MUTLU YILLAR!',
-                                                    headerSubtitleColor: '#ffd700',
-                                                    headerSubtitleBgColor: '#1f2937', // Default dark blue box
-                                                    headerStripGradient: 'linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%)', // Default red-gold strip
-                                                    bodyGreeting: '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄',
-                                                    bodyGreetingColor: '#ffd700',
-                                                    bodyGreetingBgColor: 'rgba(255,255,255,0.05)',
-                                                    signature: 'Federal Gaz Ailesi',
-                                                    signatureColor: '#ffd700',
-                                                    recipientNameColor: '#ffd700',
-                                                    recipientNameBgColor: 'transparent',
-                                                    ...tpl.templateData
-                                                };
-                                            }
+                                            // Initialize templateData with New Year style defaults for EVERYONE
+                                            tpl.templateData = {
+                                                // Defaults
+                                                headerHighlight: tpl.templateData?.headerHighlight || (tpl.slug === 'new-year' ? (new Date().getFullYear() + 1).toString() : 'ÖZEL'),
+                                                headerHighlightColor: tpl.templateData?.headerHighlightColor || '#ffd700',
+
+                                                headerSubtitle: tpl.templateData?.headerSubtitle || (tpl.slug === 'new-year' ? 'MUTLU YILLAR!' : 'FIRSATLARI KAÇIRMAYIN'),
+                                                headerSubtitleColor: tpl.templateData?.headerSubtitleColor || '#ffd700',
+                                                // Make the box visible by default for EVERYONE (Dark Blue default), so they can edit it
+                                                headerSubtitleBgColor: tpl.templateData?.headerSubtitleBgColor || '#1f2937',
+
+                                                headerStripGradient: tpl.templateData?.headerStripGradient || (tpl.slug === 'new-year' ? 'linear-gradient(90deg, #c41e3a 0%, #ffd700 50%, #c41e3a 100%)' : 'transparent'),
+
+                                                bodyGreeting: tpl.templateData?.bodyGreeting || (tpl.slug === 'new-year' ? '🎄 Yeni yılda sağlık, mutluluk ve başarı dileriz! 🎄' : ''),
+                                                bodyGreetingColor: tpl.templateData?.bodyGreetingColor || '#ffd700',
+                                                bodyGreetingBgColor: tpl.templateData?.bodyGreetingBgColor || (tpl.slug === 'new-year' ? 'rgba(255,255,255,0.05)' : 'transparent'),
+
+                                                signature: tpl.templateData?.signature || 'Federal Gaz Ailesi',
+                                                signatureColor: tpl.templateData?.signatureColor || '#ffd700',
+
+                                                recipientNameColor: tpl.templateData?.recipientNameColor || '#ffd700',
+                                                recipientNameBgColor: tpl.templateData?.recipientNameBgColor || 'transparent',
+
+
+
+                                                // Campaign Box Defaults - Empty by default (Show Image)
+                                                campaignBoxText: tpl.templateData?.campaignBoxText || '',
+                                                campaignBoxTextColor: tpl.templateData?.campaignBoxTextColor || '#ffd700',
+                                                campaignBoxBgColor: tpl.templateData?.campaignBoxBgColor || '#1e3a5f',
+
+                                                ...tpl.templateData
+                                            };
+
                                             setEditingTemplate(tpl);
                                         }}
                                         className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#137fec]/10 text-[#137fec] rounded text-xs hover:bg-[#137fec]/20 transition-colors"
@@ -660,6 +671,23 @@ export default function TemplatesPage() {
                                     </div>
 
                                     <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">Buton Linki (URL)</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2 text-gray-400 material-symbols-outlined text-sm">link</span>
+                                            <input
+                                                type="text"
+                                                value={editingTemplate.templateData?.buttonUrl || ''}
+                                                onChange={(e) => setEditingTemplate({
+                                                    ...editingTemplate,
+                                                    templateData: { ...editingTemplate.templateData, buttonUrl: e.target.value }
+                                                })}
+                                                className="w-full pl-9 pr-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm"
+                                                placeholder="https://www.federalgaz.com/..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
                                         <label className="block text-xs font-medium text-gray-400 mb-1">İçerik Metni</label>
                                         <textarea
                                             value={editingTemplate.bodyContent || ''}
@@ -669,8 +697,8 @@ export default function TemplatesPage() {
                                     </div>
                                 </div>
 
-                                {/* === DYNAMIC FIELDS SECTION (NEW YEAR) === */}
-                                {editingTemplate.slug === 'new-year' && (
+                                {/* === DYNAMIC FIELDS SECTION (ALL TEMPLATES) === */}
+                                {true && (
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 pb-2 border-b border-[#3b4754]">
                                             <span className="material-symbols-outlined text-purple-400">tune</span>
@@ -711,9 +739,12 @@ export default function TemplatesPage() {
                                             </div>
 
                                             {/* Header Subtitle */}
-                                            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 p-3 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                                                <div className="col-span-3 pb-2">
+                                                    <span className="text-xs font-semibold text-blue-200 block">Renkli Kutu Mesajı (Orta)</span>
+                                                </div>
                                                 <div className="col-span-1">
-                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Header Alt Başlık (MUTLU YILLAR)</label>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Metin (MUTLU YILLAR)</label>
                                                     <input
                                                         type="text"
                                                         value={editingTemplate.templateData?.headerSubtitle || ''}
@@ -741,17 +772,69 @@ export default function TemplatesPage() {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Arka Plan</label>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Kutu Rengi</label>
                                                     <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
                                                         <input
                                                             type="color"
-                                                            value={editingTemplate.templateData?.headerSubtitleBgColor && editingTemplate.templateData.headerSubtitleBgColor !== 'transparent' ? editingTemplate.templateData.headerSubtitleBgColor : '#ffffff'}
+                                                            value={editingTemplate.templateData?.headerSubtitleBgColor && editingTemplate.templateData.headerSubtitleBgColor !== 'transparent' ? editingTemplate.templateData.headerSubtitleBgColor : '#1f2937'}
                                                             onChange={(e) => setEditingTemplate({
                                                                 ...editingTemplate,
                                                                 templateData: { ...editingTemplate.templateData, headerSubtitleBgColor: e.target.value }
                                                             })}
                                                             className="w-8 h-8 rounded cursor-pointer bg-transparent"
-                                                            title="Arka Plan Rengi"
+                                                            title="Kutu Arka Plan Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Campaign Box (Replaces Image) */}
+                                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 p-3 bg-indigo-900/20 rounded-lg border border-indigo-500/30">
+                                                <div className="col-span-3 pb-2 flex justify-between items-center">
+                                                    <span className="text-xs font-semibold text-indigo-200 block">Kampanya Mesaj Kutusu (Resim Yerine)</span>
+                                                    <span className="text-[10px] text-gray-500">Metin girilirse resim gizlenir</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Kutu Metni (Resim Yerine)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingTemplate.templateData?.campaignBoxText || ''}
+                                                        onChange={(e) => setEditingTemplate({
+                                                            ...editingTemplate,
+                                                            templateData: { ...editingTemplate.templateData, campaignBoxText: e.target.value }
+                                                        })}
+                                                        className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-white text-sm focus:border-[#137fec] outline-none transition-colors"
+                                                        placeholder="Varsayılan görseli gizler..."
+                                                    />
+                                                    <p className="text-[10px] text-gray-500 mt-1">* Varsayılan görseli (Süslemeler vb.) kullanmak için bu alanı boş bırakın.</p>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Yazı</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.campaignBoxTextColor || '#ffd700'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, campaignBoxTextColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="Yazı Rengi"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">Kutu</label>
+                                                    <div className="flex items-center h-[38px] bg-[#111418] border border-[#3b4754] rounded-lg px-2">
+                                                        <input
+                                                            type="color"
+                                                            value={editingTemplate.templateData?.campaignBoxBgColor || '#1e3a5f'}
+                                                            onChange={(e) => setEditingTemplate({
+                                                                ...editingTemplate,
+                                                                templateData: { ...editingTemplate.templateData, campaignBoxBgColor: e.target.value }
+                                                            })}
+                                                            className="w-8 h-8 rounded cursor-pointer bg-transparent"
+                                                            title="Kutu Rengi"
                                                         />
                                                     </div>
                                                 </div>

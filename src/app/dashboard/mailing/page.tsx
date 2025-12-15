@@ -319,6 +319,7 @@ export default function MailingPage() {
 
     // Error modal
     const [errorModalOpen, setErrorModalOpen] = useState(false);
+    const [templateCache, setTemplateCache] = useState<{ [slug: string]: any }>({}); // Cache for template content
     const [errorLog, setErrorLog] = useState<{ email: string; error: string }[]>([]);
 
     useEffect(() => {
@@ -569,11 +570,31 @@ export default function MailingPage() {
             campaignHighlight: settings.highlight
         }));
 
+        // Check cache
+        if (templateCache[slug]) {
+            const data = templateCache[slug];
+            setForm(prev => ({
+                ...prev,
+                templateSlug: slug,
+                name: data.name || prev.name || '',
+                subject: data.subject || prev.subject || '',
+                content: data.content || prev.content,
+                customLogoUrl: data.logoUrl || prev.customLogoUrl || '',
+                customProductImageUrl: data.bannerImage || prev.customProductImageUrl || '',
+                campaignTitle: data.templateData?.campaignBoxText ? '' : (settings.title || ''),
+                campaignHighlight: settings.highlight
+            }));
+            return;
+        }
+
         // Auto-fill content, subject, name, and visual settings from API
         try {
             const res = await fetch(`/api/dashboard/templates/content?slug=${slug}`);
             if (res.ok) {
                 const data = await res.json();
+                // Update cache
+                setTemplateCache(prev => ({ ...prev, [slug]: data }));
+
                 setForm(prev => ({
                     ...prev,
                     templateSlug: slug,
@@ -583,7 +604,8 @@ export default function MailingPage() {
                     content: data.content || prev.content,
                     customLogoUrl: data.logoUrl || prev.customLogoUrl || '',
                     customProductImageUrl: data.bannerImage || prev.customProductImageUrl || '',
-                    campaignTitle: settings.title,
+                    // Use template's saved campaign text if available, otherwise default
+                    campaignTitle: data.templateData?.campaignBoxText ? '' : (settings.title || ''),
                     campaignHighlight: settings.highlight
                 }));
             }

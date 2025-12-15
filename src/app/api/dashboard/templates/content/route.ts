@@ -195,8 +195,8 @@ export async function GET(req: Request) {
 
     if (templateSlug) {
         // Get default content
-        const content = defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
-        const subjectData = defaultTemplateSubjects[templateSlug] || defaultTemplateSubjects['modern'];
+        let content = defaultTemplateContent[templateSlug] || defaultTemplateContent['modern'];
+        let subjectData = defaultTemplateSubjects[templateSlug] || defaultTemplateSubjects['modern'];
 
         // Try to get template from DB for logo and banner
         let logoUrl = '';
@@ -206,8 +206,27 @@ export async function GET(req: Request) {
             await connectToDatabase();
             const template = await EmailTemplate.findOne({ where: { slug: templateSlug } });
             if (template) {
+                // Return DB content if available, otherwise fallback to defaults
                 logoUrl = template.logoUrl || '';
                 bannerImage = template.bannerImage || '';
+
+                // Override defaults with DB content
+                if (template.bodyContent) {
+                    content = template.bodyContent;
+                }
+                if (template.headerTitle) {
+                    subjectData = { subject: template.headerTitle, name: template.nameTR || subjectData.name };
+                }
+
+                // Also return templateData for detailed customization (e.g. campaign box)
+                return NextResponse.json({
+                    content,
+                    subject: subjectData.subject,
+                    name: subjectData.name,
+                    logoUrl,
+                    bannerImage,
+                    templateData: template.templateData || {}
+                });
             }
         } catch (e) {
             console.error('Failed to fetch template from DB:', e);

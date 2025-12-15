@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
 import { useSearchParams } from "next/navigation";
 import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
 import { filterByDate } from "@/lib/dateFilterUtils";
@@ -54,6 +55,27 @@ export default function MembersPage() {
     });
 
     const [successMessage, setSuccessMessage] = useState("");
+
+    // Add Member States
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [addFormData, setAddFormData] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        sendWelcomeEmail: false
+    });
+    const [addLoading, setAddLoading] = useState(false);
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [bulkLoading, setBulkLoading] = useState(false);
+    const [bulkSendWelcomeEmail, setBulkSendWelcomeEmail] = useState(false);
+    interface ImportResult {
+        success: number;
+        failed: number;
+        errors: { row: number; email: string; reason: string }[];
+        added: string[];
+    }
+    const [importResults, setImportResults] = useState<ImportResult | null>(null);
 
     // Search & Date Filter
     const searchParams = useSearchParams();
@@ -234,6 +256,96 @@ export default function MembersPage() {
         return colors[status] || 'text-gray-400';
     };
 
+    // Add Member Handlers
+    const handleAddMember = async () => {
+        if (!addFormData.name || !addFormData.email) {
+            setSuccessMessage("Ad ve e-posta zorunludur.");
+            setTimeout(() => setSuccessMessage(""), 3000);
+            return;
+        }
+
+        setAddLoading(true);
+        try {
+            const res = await fetch('/api/members/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(addFormData)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setSuccessMessage(data.message || "Üye başarıyla eklendi!");
+                setIsAddModalOpen(false);
+                setAddFormData({ name: "", email: "", phone: "", sendWelcomeEmail: false });
+                fetchMembers();
+            } else {
+                setSuccessMessage(data.error || "Üye eklenirken hata oluştu.");
+            }
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } catch (error) {
+            setSuccessMessage("Üye eklenirken hata oluştu.");
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } finally {
+            setAddLoading(false);
+        }
+    };
+
+    // Dropzone for bulk import
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+        if (acceptedFiles.length > 0) {
+            setUploadedFile(acceptedFiles[0]);
+            setImportResults(null);
+        }
+    }, []);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: {
+            'text/csv': ['.csv'],
+            'application/vnd.ms-excel': ['.xls'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+        },
+        maxFiles: 1
+    });
+
+    const handleBulkImport = async () => {
+        if (!uploadedFile) return;
+
+        setBulkLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+            formData.append('sendWelcomeEmail', bulkSendWelcomeEmail.toString());
+
+            const res = await fetch('/api/members/bulk', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setImportResults(data.result);
+                setSuccessMessage(data.message);
+                fetchMembers();
+            } else {
+                setSuccessMessage(data.error || "İçe aktarma başarısız.");
+            }
+            setTimeout(() => setSuccessMessage(""), 5000);
+        } catch (error) {
+            setSuccessMessage("İçe aktarma sırasında hata oluştu.");
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
+    const closeBulkModal = () => {
+        setIsBulkModalOpen(false);
+        setUploadedFile(null);
+        setImportResults(null);
+        setBulkSendWelcomeEmail(false);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -253,6 +365,22 @@ export default function MembersPage() {
                     <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
                         Web sitesine kayıtlı tüm müşterileri yönetin.
                     </p>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setIsBulkModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">upload_file</span>
+                        Toplu Üye Ekle
+                    </button>
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">person_add</span>
+                        Üye Ekle
+                    </button>
                 </div>
             </div>
 
@@ -564,6 +692,218 @@ export default function MembersPage() {
                             <button onClick={handleSave} className="flex items-center gap-2 px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 transition-colors">
                                 <span className="material-symbols-outlined text-sm">save</span> Kaydet
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Member Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-lg m-4 border border-[#3b4754]">
+                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#137fec]">person_add</span>
+                                Yeni Üye Ekle
+                            </h2>
+                            <button
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Ad Soyad *</label>
+                                <input
+                                    type="text"
+                                    value={addFormData.name}
+                                    onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })}
+                                    placeholder="Örn: Ahmet Yılmaz"
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec] focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">E-posta *</label>
+                                <input
+                                    type="email"
+                                    value={addFormData.email}
+                                    onChange={(e) => setAddFormData({ ...addFormData, email: e.target.value })}
+                                    placeholder="ornek@sirket.com"
+                                    className="w-full px-4 py-2.5 bg-[#111418] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec] focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Telefon</label>
+                                <input
+                                    type="tel"
+                                    value={addFormData.phone}
+                                    onChange={(e) => setAddFormData({ ...addFormData, phone: e.target.value })}
+                                    placeholder="05XX XXX XX XX"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-[#3b4754] flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
+                            >
+                                İptal
+                            </button>
+                            <button
+                                onClick={handleAddMember}
+                                disabled={addLoading}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 transition-colors disabled:opacity-50"
+                            >
+                                {addLoading ? (
+                                    <>
+                                        <span className="material-symbols-outlined text-sm animate-spin">hourglass_empty</span>
+                                        Ekleniyor...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-sm">add</span>
+                                        Ekle
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Import Modal */}
+            {isBulkModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="bg-[#1c2127] rounded-xl shadow-xl w-full max-w-2xl m-4 border border-[#3b4754] max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b border-[#3b4754] flex items-center justify-between shrink-0">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#137fec]">upload_file</span>
+                                Toplu Üye Yükleme
+                            </h2>
+                            <button
+                                onClick={closeBulkModal}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+                            {/* Instructions */}
+                            <div className="bg-[#111418] rounded-lg p-4 border border-[#3b4754]">
+                                <h4 className="text-sm font-medium text-white mb-2">Dosya Formatı</h4>
+                                <p className="text-xs text-gray-400 mb-2">
+                                    CSV, XLS veya XLSX formatında dosya yükleyin. Aşağıdaki sütunlar desteklenmektedir:
+                                </p>
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                    <span className="px-2 py-1 bg-[#137fec]/10 text-[#137fec] rounded">Ad Soyad *</span>
+                                    <span className="px-2 py-1 bg-[#137fec]/10 text-[#137fec] rounded">E-posta *</span>
+                                    <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded">Telefon</span>
+                                </div>
+                            </div>
+
+                            {/* Dropzone */}
+                            <div
+                                {...getRootProps()}
+                                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive
+                                    ? 'border-[#137fec] bg-[#137fec]/5'
+                                    : 'border-[#3b4754] hover:border-[#137fec]/50'
+                                    }`}
+                            >
+                                <input {...getInputProps()} />
+                                <span className="material-symbols-outlined text-4xl text-gray-500 mb-2">cloud_upload</span>
+                                {uploadedFile ? (
+                                    <div>
+                                        <p className="text-white font-medium">{uploadedFile.name}</p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            {(uploadedFile.size / 1024).toFixed(1)} KB
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-gray-300">
+                                            {isDragActive
+                                                ? 'Dosyayı buraya bırakın...'
+                                                : 'Dosyayı sürükleyip bırakın veya tıklayarak seçin'
+                                            }
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">CSV, XLS, XLSX</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Import Results */}
+                            {importResults && (
+                                <div className="bg-[#111418] rounded-lg p-4 border border-[#3b4754]">
+                                    <h4 className="text-sm font-medium text-white mb-3">İçe Aktarma Sonuçları</h4>
+                                    <div className="flex gap-4 mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-green-400">check_circle</span>
+                                            <span className="text-green-400 font-medium">{importResults.success} başarılı</span>
+                                        </div>
+                                        {importResults.failed > 0 && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-red-400">error</span>
+                                                <span className="text-red-400 font-medium">{importResults.failed} başarısız</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {importResults.errors.length > 0 && (
+                                        <div className="max-h-32 overflow-y-auto">
+                                            <table className="w-full text-xs">
+                                                <thead className="text-gray-400">
+                                                    <tr>
+                                                        <th className="text-left py-1">Satır</th>
+                                                        <th className="text-left py-1">E-posta</th>
+                                                        <th className="text-left py-1">Hata</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-gray-300">
+                                                    {importResults.errors.map((err, idx) => (
+                                                        <tr key={idx} className="border-t border-[#3b4754]">
+                                                            <td className="py-1">{err.row}</td>
+                                                            <td className="py-1">{err.email}</td>
+                                                            <td className="py-1 text-red-400">{err.reason}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-[#3b4754] flex justify-end gap-3 shrink-0">
+                            <button
+                                onClick={closeBulkModal}
+                                className="px-6 py-2.5 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
+                            >
+                                {importResults ? 'Kapat' : 'İptal'}
+                            </button>
+                            {!importResults && (
+                                <button
+                                    onClick={handleBulkImport}
+                                    disabled={!uploadedFile || bulkLoading}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-[#137fec] text-white font-medium rounded-lg hover:bg-[#137fec]/90 transition-colors disabled:opacity-50"
+                                >
+                                    {bulkLoading ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-sm animate-spin">hourglass_empty</span>
+                                            İçe Aktarılıyor...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-sm">upload</span>
+                                            Yükle ve İşle
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
