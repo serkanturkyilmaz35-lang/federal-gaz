@@ -157,11 +157,6 @@ export default function KVKKPage() {
                         Başvurularınız, talebin niteliğine göre en kısa sürede sonuçlandırılacaktır.
                     </p>
 
-                    <h2 className="mt-8 text-2xl font-bold text-secondary dark:text-white">7. Değişiklikler</h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                        Zaman içerisinde Kanun&apos;da olabilecek değişikliklere bağlı olarak, bu aydınlatma metninde de gerekli güncellemeler yapılacaktır. Güncel metin her zaman web sitemizde yayınlanacaktır.
-                    </p>
-
                     <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                             <strong>İletişim Bilgileri:</strong><br />
