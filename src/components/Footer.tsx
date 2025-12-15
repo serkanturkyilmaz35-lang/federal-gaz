@@ -42,8 +42,9 @@ export default function Footer() {
     return (
         <footer className="bg-secondary text-white/80 dark:bg-secondary">
             <div className="mx-auto max-w-7xl px-4 py-12">
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-                    <div className="md:col-span-1">
+                <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
+                    {/* Federal Gaz */}
+                    <div className="col-span-2 sm:col-span-1">
                         <Link href="/" title={language === 'TR' ? 'Federal Gaz Ana Sayfa' : 'Federal Gaz Home'} className="inline-block">
                             <h3 className="mb-4 text-lg font-bold text-white hover:text-primary transition-colors">
                                 {settings.site_name || "Federal Gaz"}
@@ -53,6 +54,8 @@ export default function Footer() {
                             {language === 'TR' ? (settings.site_slogan || t.footerSlogan) : t.footerSlogan}
                         </p>
                     </div>
+
+                    {/* İletişim */}
                     <div>
                         <h4 className="mb-4 font-semibold text-white">{t.footerContact}</h4>
                         <ul className="space-y-2 text-sm">
@@ -93,6 +96,8 @@ export default function Footer() {
                             )}
                         </ul>
                     </div>
+
+                    {/* Hızlı Erişim */}
                     <div>
                         <h4 className="mb-4 font-semibold text-white">{t.footerQuickLinks}</h4>
                         <ul className="space-y-2 text-sm">
@@ -103,14 +108,18 @@ export default function Footer() {
                             <li><Link href="/iletisim" title={language === 'TR' ? 'Federal Gaz İletişim' : 'Contact Federal Gaz'} className="transition-colors hover:text-primary">{t.contact}</Link></li>
                         </ul>
                     </div>
+
+                    {/* Yasal */}
                     <div>
                         <h4 className="mb-4 font-semibold text-white">{language === 'TR' ? 'Yasal' : 'Legal'}</h4>
                         <ul className="space-y-2 text-sm">
                             <li><Link href="/cerez-politikasi" className="transition-colors hover:text-primary">{language === 'TR' ? 'Çerez Politikası' : 'Cookie Policy'}</Link></li>
                             <li><Link href="/gizlilik-politikasi" className="transition-colors hover:text-primary">{language === 'TR' ? 'Gizlilik Politikası' : 'Privacy Policy'}</Link></li>
-                            <li><Link href="/kvkk" className="transition-colors hover:text-primary">{language === 'TR' ? 'KVKK Aydınlatma' : 'KVKK Notice'}</Link></li>
+                            <li><Link href="/kvkk" className="transition-colors hover:text-primary">{language === 'TR' ? 'KVKK Aydınlatma Metni' : 'KVKK Notice'}</Link></li>
                         </ul>
                     </div>
+
+                    {/* Sosyal Medya */}
                     <div>
                         <h4 className="mb-4 font-semibold text-white">{t.footerSocial}</h4>
                         <div className="flex space-x-4">
@@ -121,7 +130,6 @@ export default function Footer() {
                                     </svg>
                                 </a>
                             )}
-                            {/* Render other social icons similarly if needed, or stick to just Instagram if that's the only one provided */}
                         </div>
                     </div>
                 </div>
