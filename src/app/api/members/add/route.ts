@@ -7,22 +7,32 @@ export async function POST(req: Request) {
     try {
         await connectToDatabase();
 
-        const { name, email, phone, sendWelcomeEmail } = await req.json();
+        const { name, email, phone } = await req.json();
 
-        // Validation
-        if (!name || !email) {
+        // Validation - all fields required
+        if (!name || !email || !phone) {
             return NextResponse.json({
                 success: false,
-                error: 'Ad ve e-posta adresi zorunludur.'
+                error: 'Tüm alanlar zorunludur (Ad, E-posta, Telefon).'
             }, { status: 400 });
         }
 
-        // Email format validation
+        // Email format validation (must have @ and domain with .)
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return NextResponse.json({
                 success: false,
-                error: 'Geçersiz e-posta adresi formatı.'
+                error: 'Geçerli bir e-posta adresi girin (örn: ad@domain.com)'
+            }, { status: 400 });
+        }
+
+        // Phone validation (Turkish format)
+        const phoneClean = phone.replace(/\s/g, '');
+        const phoneRegex = /^(\+90|0)?5[0-9]{9}$/;
+        if (!phoneRegex.test(phoneClean)) {
+            return NextResponse.json({
+                success: false,
+                error: 'Geçerli bir telefon numarası girin (05XX XXX XX XX)'
             }, { status: 400 });
         }
 
@@ -44,27 +54,9 @@ export async function POST(req: Request) {
             name: name.trim(),
             email: email.toLowerCase().trim(),
             password_hash: randomPassword, // Hook will hash this
-            phone: phone?.trim() || null,
+            phone: phone.trim(),
             role: 'user'
         });
-
-        // Optionally send welcome email with password reset link
-        if (sendWelcomeEmail) {
-            try {
-                // Trigger password reset flow to send welcome email
-                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                    (process.env.NODE_ENV === 'production' ? 'https://www.federalgaz.com' : 'http://localhost:3000');
-
-                await fetch(`${baseUrl}/api/auth/reset-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email.toLowerCase(), language: 'TR' })
-                });
-            } catch (emailError) {
-                console.error('Welcome email failed:', emailError);
-                // Don't fail the whole request if email fails
-            }
-        }
 
         // Return success without password hash
         const { password_hash, ...memberData } = newMember.toJSON();
@@ -72,9 +64,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             success: true,
             member: memberData,
-            message: sendWelcomeEmail
-                ? 'Üye başarıyla eklendi ve hoş geldiniz e-postası gönderildi.'
-                : 'Üye başarıyla eklendi.'
+            message: 'Üye başarıyla eklendi.'
         });
 
     } catch (error) {
