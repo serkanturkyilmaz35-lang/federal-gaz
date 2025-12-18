@@ -55,13 +55,33 @@ export async function POST(req: Request) {
                 }));
                 recipients = [...recipients, ...externals];
             }
-        } else if ((campaign.recipientType as string) === 'external' && externalRecipients && externalRecipients.length > 0) {
+        } else if ((campaign.recipientType as string) === 'external') {
             // External recipients from Excel/CSV - no database ID
-            recipients = externalRecipients.map((r: { name: string; email: string }) => ({
-                id: undefined,
-                name: r.name,
-                email: r.email
-            }));
+            // First check request body, then check campaign's stored external recipients
+            let externals = externalRecipients;
+
+            // If not in request, try to get from campaign's stored data
+            if (!externals || externals.length === 0) {
+                if (campaign.externalRecipients) {
+                    try {
+                        externals = typeof campaign.externalRecipients === 'string'
+                            ? JSON.parse(campaign.externalRecipients)
+                            : campaign.externalRecipients;
+                    } catch (e) {
+                        console.error('Failed to parse externalRecipients:', e);
+                    }
+                }
+            }
+
+            if (externals && externals.length > 0) {
+                recipients = externals.map((r: { name: string; email: string }) => ({
+                    id: undefined,
+                    name: r.name || 'Alıcı',
+                    email: r.email
+                }));
+            } else {
+                return NextResponse.json({ error: 'No external recipients found' }, { status: 400 });
+            }
         } else if (campaign.recipientType === 'custom') {
             // Custom selection - get specific users
             if (campaign.recipientIds) {
