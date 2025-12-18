@@ -1,6 +1,11 @@
 import { Sequelize } from 'sequelize';
 import mysql2 from 'mysql2'; // Needed for dialect
 
+// Build-time check: Skip database initialization during build
+const isBuildTime = () => {
+  return !process.env.DB_HOST && !process.env.JWT_SECRET;
+};
+
 // Optimization: Prevent DNS lookup delay for localhost by forcing 127.0.0.1
 // If DB_HOST is missing or 'localhost', use '127.0.0.1' to avoid IPv6 timeout (5s delay)
 const getHost = (host?: string) => {
@@ -25,18 +30,22 @@ declare global {
 
 let sequelize: Sequelize | null = global.sequelizeGlobal || null;
 
-// Debug logging to verify env vars are loaded (masking password)
-console.log('🔌 Initializing Database Connection...');
-console.log(`Debug Config: Host=${dbConfig.host ? 'Set' : 'Missing'}, User=${dbConfig.user}, DB=${dbConfig.database}, Port=${dbConfig.port}, SSL=False`);
+// Only log during runtime, not build time
+if (!isBuildTime()) {
+  console.log('🔌 Initializing Database Connection...');
+  console.log(`Debug Config: Host=${dbConfig.host ? 'Set' : 'Missing'}, User=${dbConfig.user}, DB=${dbConfig.database}, Port=${dbConfig.port}, SSL=False`);
+}
 
-export const getDb = (): Sequelize => {
+export const getDb = (): Sequelize | null => {
+  // During build time, return null to avoid database connection attempts
+  if (isBuildTime()) {
+    console.warn('⚠️ Build time detected, skipping database initialization.');
+    return null;
+  }
+
   if (!process.env.DB_HOST) {
-    console.error('❌ FATAL: DB_HOST is missing in environment variables! Falling back to SQLite Memory (Data will be lost).');
-    if (!sequelize) {
-      sequelize = new Sequelize('sqlite::memory:', { logging: false });
-      global.sequelizeGlobal = sequelize;
-    }
-    return sequelize!;
+    console.error('❌ FATAL: DB_HOST is missing in environment variables!');
+    return null;
   }
 
   const isLocal = dbConfig.host === '127.0.0.1' || dbConfig.host === 'localhost';
@@ -67,7 +76,7 @@ export const getDb = (): Sequelize => {
       global.sequelizeGlobal = sequelize;
     } catch (err) {
       console.error('❌ Error creating Sequelize instance:', err);
-      throw err;
+      return null;
     }
   }
   return sequelize;

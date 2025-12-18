@@ -1,19 +1,31 @@
 import jwt from 'jsonwebtoken';
 
 // SECURITY: JWT_SECRET must be set in environment variables
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-    throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Authentication is disabled.');
-}
+// Build-time friendly: Don't throw during module evaluation
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        console.warn('WARNING: JWT_SECRET environment variable is not set.');
+        return 'build-time-placeholder-secret';
+    }
+    return secret;
+};
 
 export const signToken = (payload: object) => {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+    const secret = getJwtSecret();
+    if (secret === 'build-time-placeholder-secret') {
+        throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Cannot sign tokens.');
+    }
+    return jwt.sign(payload, secret, { expiresIn: '7d' });
 };
 
 export const verifyToken = (token: string) => {
     try {
-        return jwt.verify(token, JWT_SECRET);
+        const secret = getJwtSecret();
+        if (secret === 'build-time-placeholder-secret') {
+            return null;
+        }
+        return jwt.verify(token, secret);
     } catch (error) {
         return null;
     }
