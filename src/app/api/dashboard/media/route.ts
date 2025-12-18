@@ -2,7 +2,20 @@
 
 import { NextResponse } from 'next/server';
 import { MediaFile, connectToDatabase } from '@/lib/models';
-import { put, del } from '@vercel/blob';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+
+// Initialize S3 client for Cloudflare R2
+const s3Client = new S3Client({
+    region: 'auto',
+    endpoint: process.env.R2_ENDPOINT || '',
+    credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    },
+});
+
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'federal-gaz-media';
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || '';
 
 // GET - List all media files
 export async function GET() {
@@ -46,11 +59,22 @@ export async function POST(req: Request) {
         const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
         const filename = `${timestamp}-${safeName}`;
 
-        // Upload to Vercel Blob
-        const blob = await put(filename, file, {
-            access: 'public',
-            addRandomSuffix: false,
+        // Convert file to buffer
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        // Upload to Cloudflare R2
+        const uploadCommand = new PutObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: filename,
+            Body: buffer,
+            ContentType: file.type,
         });
+
+        await s3Client.send(uploadCommand);
+
+        // Construct public URL
+        const fileUrl = `${R2_PUBLIC_URL}/${filename}`;
 
         await connectToDatabase();
 
@@ -60,7 +84,7 @@ export async function POST(req: Request) {
             originalName: file.name,
             mimeType: file.type,
             size: file.size,
-            url: blob.url,
+            url: fileUrl,
         });
 
         return NextResponse.json({
@@ -91,12 +115,17 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: 'Media file not found' }, { status: 404 });
         }
 
-        // Delete from Vercel Blob
+        // Extract filename from URL and delete from R2
         try {
-            await del(mediaFile.url);
-        } catch (blobError) {
-            console.error('Blob delete error:', blobError);
-            // Continue even if blob delete fails
+            const filename = mediaFile.filename;
+            const deleteCommand = new DeleteObjectCommand({
+                Bucket: R2_BUCKET_NAME,
+                Key: filename,
+            });
+            await s3Client.send(deleteCommand);
+        } catch (r2Error) {
+            console.error('R2 delete error:', r2Error);
+            // Continue even if R2 delete fails
         }
 
         // Delete from database

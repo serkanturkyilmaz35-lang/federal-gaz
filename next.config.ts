@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: any = {
+const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
@@ -11,7 +11,11 @@ const nextConfig: any = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
-  /* config options here */
+
+  // Cloudflare Pages compatibility
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
