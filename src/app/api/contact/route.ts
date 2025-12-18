@@ -28,20 +28,20 @@ export async function POST(req: Request) {
             status: 'new'
         });
 
-        // 2. Send Email (if configured)
-        if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+        // 2. Send Email via Brevo SMTP
+        if (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS) {
             const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: parseInt(process.env.SMTP_PORT || '587'),
+                host: 'smtp-relay.brevo.com',
+                port: 587,
                 secure: false,
                 auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASSWORD,
+                    user: process.env.BREVO_SMTP_USER,
+                    pass: process.env.BREVO_SMTP_PASS,
                 },
             });
 
             await transporter.sendMail({
-                from: process.env.SMTP_FROM || process.env.SMTP_USER,
+                from: process.env.EMAIL_FROM || 'bilgi@federalgaz.com',
                 to: 'federal.gaz@hotmail.com',
                 replyTo: email,
                 subject: `İletişim Formu: ${name}`,
