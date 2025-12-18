@@ -1,20 +1,9 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
     "name": "federal-gaz",
-    "main": ".open-next/worker.js",
+    "pages_build_output_dir": ".open-next",
     "compatibility_date": "2024-12-18",
     "compatibility_flags": [
-        "nodejs_compat",
-        "global_fetch_strictly_public"
-    ],
-    "assets": {
-        "directory": ".open-next/assets",
-        "binding": "ASSETS"
-    },
-    "services": [
-        {
-            "binding": "WORKER_SELF_REFERENCE",
-            "service": "federal-gaz"
-        }
+        "nodejs_compat"
     ]
 }
