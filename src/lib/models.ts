@@ -1,24 +1,79 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 import { getDb, connectToDatabase } from './db';
 import bcrypt from 'bcrypt';
 
 export { connectToDatabase };
 
-const sequelize = getDb();
+// ===== LAZY INITIALIZATION PATTERN =====
+// Cloudflare Pages uyumluluğu için modeller runtime'da initialize edilir
+// Build sırasında getDb() null döner, bu durumda modeller initialize edilmez
 
-// HMR Fix: In development, clear models to prevent "Model already defined" error on reload
-if (process.env.NODE_ENV !== 'production' && sequelize) {
-    try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (sequelize as any).modelManager.models = [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (sequelize as any).models = {};
-    } catch (e) {
-        console.error("HMR maintenance error:", e);
+// Global state for lazy initialization
+let modelsInitialized = false;
+let sequelizeInstance: Sequelize | null = null;
+
+// ===== BUILD-TIME CHECK =====
+const isBuildTime = () => {
+    return !process.env.DB_HOST && !process.env.JWT_SECRET;
+};
+
+// ===== LAZY MODEL INITIALIZATION =====
+const initializeModels = () => {
+    if (modelsInitialized) return;
+
+    const sequelize = getDb();
+    if (!sequelize) {
+        console.warn('⚠️ Database not available, skipping model initialization.');
+        return;
     }
-}
 
-// --- User Model ---
+    sequelizeInstance = sequelize;
+
+    // HMR Fix: In development, clear models to prevent "Model already defined" error on reload
+    if (process.env.NODE_ENV !== 'production') {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (sequelize as any).modelManager.models = [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (sequelize as any).models = {};
+        } catch (e) {
+            console.error("HMR maintenance error:", e);
+        }
+    }
+
+    // Initialize all models
+    initUserModel(sequelize);
+    initAddressModel(sequelize);
+    initOrderModel(sequelize);
+    initAdminUserModel(sequelize);
+    initOTPTokenModel(sequelize);
+    initMediaFileModel(sequelize);
+    initContentPageModel(sequelize);
+    initMailingCampaignModel(sequelize);
+    initMailingLogModel(sequelize);
+    initEmailTemplateModel(sequelize);
+    initContactRequestModel(sequelize);
+    initSiteAnalyticsModel(sequelize);
+    initNotificationReadModel(sequelize);
+    initSiteSettingsModel(sequelize);
+    initProductModel(sequelize);
+    initServiceModel(sequelize);
+    initCookieConsentModel(sequelize);
+    initPageModel(sequelize);
+
+    // Initialize associations
+    initAssociations();
+
+    // Dev sync
+    if (process.env.NODE_ENV !== 'production') {
+        sequelize.sync({ alter: true }).catch(err => console.error('Sync Error:', err));
+    }
+
+    modelsInitialized = true;
+    console.log('✅ All models initialized successfully.');
+};
+
+// ===== USER MODEL =====
 interface UserAttributes {
     id: number;
     name: string;
@@ -26,7 +81,7 @@ interface UserAttributes {
     password_hash: string;
     phone?: string;
     role?: 'user' | 'admin' | 'editor';
-    sessionToken?: string; // For single session management
+    sessionToken?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -40,73 +95,47 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     declare phone: string | undefined;
     declare role: 'user' | 'admin' | 'editor';
     declare sessionToken: string | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 
-    // Method to check password
     public async comparePassword(password: string): Promise<boolean> {
         return bcrypt.compare(password, this.password_hash);
     }
 }
 
-User.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initUserModel = (sequelize: Sequelize) => {
+    User.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            name: { type: DataTypes.STRING, allowNull: false },
+            email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
+            password_hash: { type: DataTypes.STRING, allowNull: false },
+            phone: { type: DataTypes.STRING, allowNull: true },
+            role: { type: DataTypes.ENUM('user', 'admin', 'editor'), defaultValue: 'user' },
+            sessionToken: { type: DataTypes.STRING, allowNull: true },
         },
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        email: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-            validate: {
-                isEmail: true,
+        {
+            sequelize,
+            tableName: 'users',
+            hooks: {
+                beforeCreate: async (user) => {
+                    if (user.password_hash) {
+                        const salt = await bcrypt.genSalt(10);
+                        user.password_hash = await bcrypt.hash(user.password_hash, salt);
+                    }
+                },
+                beforeUpdate: async (user) => {
+                    if (user.changed('password_hash')) {
+                        const salt = await bcrypt.genSalt(10);
+                        user.password_hash = await bcrypt.hash(user.password_hash, salt);
+                    }
+                },
             },
-        },
-        password_hash: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        phone: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        role: {
-            type: DataTypes.ENUM('user', 'admin', 'editor'),
-            defaultValue: 'user',
-        },
-        sessionToken: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'users',
-        hooks: {
-            beforeCreate: async (user) => {
-                if (user.password_hash) {
-                    const salt = await bcrypt.genSalt(10);
-                    user.password_hash = await bcrypt.hash(user.password_hash, salt);
-                }
-            },
-            beforeUpdate: async (user) => {
-                if (user.changed('password_hash')) {
-                    const salt = await bcrypt.genSalt(10);
-                    user.password_hash = await bcrypt.hash(user.password_hash, salt);
-                }
-            },
-        },
-    }
-);
+        }
+    );
+};
 
-// --- Address Model ---
+// ===== ADDRESS MODEL =====
 interface AddressAttributes {
     id: number;
     userId: number;
@@ -126,43 +155,26 @@ export class Address extends Model<AddressAttributes, AddressCreationAttributes>
     public isDefault!: boolean;
 }
 
-Address.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initAddressModel = (sequelize: Sequelize) => {
+    Address.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            userId: { type: DataTypes.INTEGER, allowNull: false },
+            title: { type: DataTypes.STRING, allowNull: false },
+            address: { type: DataTypes.TEXT, allowNull: false },
+            isDefault: { type: DataTypes.BOOLEAN, defaultValue: false },
         },
-        userId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        title: {
-            type: DataTypes.STRING, // e.g., "Ev", "İş", "Depo"
-            allowNull: false,
-        },
-        address: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        isDefault: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'addresses',
-    }
-);
+        { sequelize, tableName: 'addresses' }
+    );
+};
 
-// --- Order Model ---
+// ===== ORDER MODEL =====
 interface OrderAttributes {
     id: number;
     userId: number | null;
-    details: string; // JSON string or text description of items
+    details: string;
     status: 'PENDING' | 'PREPARING' | 'DELIVERED' | 'CANCELLED';
-    trackingNumber?: string; // Kargo takip numarası
+    trackingNumber?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -174,47 +186,23 @@ export class Order extends Model<OrderAttributes, OrderCreationAttributes> imple
     declare details: string;
     declare status: 'PENDING' | 'PREPARING' | 'DELIVERED' | 'CANCELLED';
     declare trackingNumber: string | undefined;
-
     declare readonly createdAt: Date;
 }
 
-Order.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initOrderModel = (sequelize: Sequelize) => {
+    Order.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            userId: { type: DataTypes.INTEGER, allowNull: true },
+            details: { type: DataTypes.TEXT, allowNull: false },
+            status: { type: DataTypes.ENUM('PENDING', 'PREPARING', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED'), defaultValue: 'PENDING' },
+            trackingNumber: { type: DataTypes.STRING, allowNull: true },
         },
-        userId: {
-            type: DataTypes.INTEGER,
-            allowNull: true, // Allow null for guest orders
-        },
-        details: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        status: {
-            // Updated ENUM to include SHIPPING and COMPLETED
-            type: DataTypes.ENUM('PENDING', 'PREPARING', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED'),
-            defaultValue: 'PENDING',
-        },
-        trackingNumber: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'orders',
-    }
-);
+        { sequelize, tableName: 'orders' }
+    );
+};
 
-// Force Sync in Dev to update ENUM (Temporary Fix Logic)
-if (process.env.NODE_ENV !== 'production') {
-    sequelize.sync({ alter: true }).catch(err => console.error('Sync Error:', err));
-}
-
-// --- AdminUser Model (Dashboard Yöneticileri) ---
+// ===== ADMINUSER MODEL =====
 interface AdminUserAttributes {
     id: number;
     name: string;
@@ -233,48 +221,25 @@ export class AdminUser extends Model<AdminUserAttributes, AdminUserCreationAttri
     declare role: 'super_admin' | 'admin' | 'editor';
     declare isActive: boolean;
     declare lastLoginAt: Date | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-AdminUser.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initAdminUserModel = (sequelize: Sequelize) => {
+    AdminUser.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            name: { type: DataTypes.STRING, allowNull: false },
+            email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
+            role: { type: DataTypes.ENUM('super_admin', 'admin', 'editor'), defaultValue: 'editor' },
+            isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+            lastLoginAt: { type: DataTypes.DATE, allowNull: true },
         },
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        email: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-            validate: { isEmail: true },
-        },
-        role: {
-            type: DataTypes.ENUM('super_admin', 'admin', 'editor'),
-            defaultValue: 'editor',
-        },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
-        lastLoginAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'admin_users',
-    }
-);
+        { sequelize, tableName: 'admin_users' }
+    );
+};
 
-// --- OTPToken Model (Dashboard Giriş Kodları) ---
+// ===== OTPTOKEN MODEL =====
 interface OTPTokenAttributes {
     id: number;
     email: string;
@@ -291,41 +256,23 @@ export class OTPToken extends Model<OTPTokenAttributes, OTPTokenCreationAttribut
     declare token: string;
     declare expiresAt: Date;
     declare isUsed: boolean;
-
     declare readonly createdAt: Date;
 }
 
-OTPToken.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initOTPTokenModel = (sequelize: Sequelize) => {
+    OTPToken.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            email: { type: DataTypes.STRING, allowNull: false },
+            token: { type: DataTypes.STRING(6), allowNull: false },
+            expiresAt: { type: DataTypes.DATE, allowNull: false },
+            isUsed: { type: DataTypes.BOOLEAN, defaultValue: false },
         },
-        email: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        token: {
-            type: DataTypes.STRING(6),
-            allowNull: false,
-        },
-        expiresAt: {
-            type: DataTypes.DATE,
-            allowNull: false,
-        },
-        isUsed: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'otp_tokens',
-    }
-);
+        { sequelize, tableName: 'otp_tokens' }
+    );
+};
 
-// --- MediaFile Model (Medya Yönetimi) ---
+// ===== MEDIAFILE MODEL =====
 interface MediaFileAttributes {
     id: number;
     filename: string;
@@ -346,50 +293,26 @@ export class MediaFile extends Model<MediaFileAttributes, MediaFileCreationAttri
     declare size: number;
     declare url: string;
     declare uploadedBy: number | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-MediaFile.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initMediaFileModel = (sequelize: Sequelize) => {
+    MediaFile.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            filename: { type: DataTypes.STRING, allowNull: false },
+            originalName: { type: DataTypes.STRING, allowNull: false },
+            mimeType: { type: DataTypes.STRING, allowNull: false },
+            size: { type: DataTypes.INTEGER, allowNull: false },
+            url: { type: DataTypes.TEXT, allowNull: false },
+            uploadedBy: { type: DataTypes.INTEGER, allowNull: true },
         },
-        filename: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        originalName: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        mimeType: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        size: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        url: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        uploadedBy: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'media_files',
-    }
-);
+        { sequelize, tableName: 'media_files' }
+    );
+};
 
-// --- ContentPage Model (İçerik Yönetimi) ---
+// ===== CONTENTPAGE MODEL =====
 interface ContentPageAttributes {
     id: number;
     slug: string;
@@ -412,68 +335,40 @@ export class ContentPage extends Model<ContentPageAttributes, ContentPageCreatio
     declare isPublished: boolean;
     declare publishedAt: Date | undefined;
     declare updatedBy: number | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-ContentPage.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initContentPageModel = (sequelize: Sequelize) => {
+    ContentPage.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            slug: { type: DataTypes.STRING, allowNull: false, unique: true },
+            title: { type: DataTypes.STRING, allowNull: false },
+            content: { type: DataTypes.TEXT('long'), allowNull: false },
+            metaDescription: { type: DataTypes.TEXT, allowNull: true },
+            isPublished: { type: DataTypes.BOOLEAN, defaultValue: false },
+            publishedAt: { type: DataTypes.DATE, allowNull: true },
+            updatedBy: { type: DataTypes.INTEGER, allowNull: true },
         },
-        slug: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        content: {
-            type: DataTypes.TEXT('long'),
-            allowNull: false,
-        },
-        metaDescription: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        isPublished: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        publishedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        updatedBy: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'content_pages',
-    }
-);
+        { sequelize, tableName: 'content_pages' }
+    );
+};
 
-// --- MailingCampaign Model (E-posta Kampanyaları) ---
+// ===== MAILINGCAMPAIGN MODEL =====
 interface MailingCampaignAttributes {
     id: number;
     name: string;
     subject: string;
     content: string;
-    templateSlug: string; // Changed from templateId to templateSlug to reference EmailTemplate
+    templateSlug: string;
     recipientType: 'all' | 'members' | 'guests' | 'custom' | 'external';
-    recipientIds?: string; // JSON array of user IDs for custom selection
-    externalRecipients?: string; // JSON array of {name, email} for external recipients
-    customLogoUrl?: string; // Custom logo override
-    customProductImageUrl?: string; // Custom product image override
-    campaignTitle?: string; // Banner title override (e.g. "YAZ FIRSATI")
-    campaignHighlight?: string; // Highlight text (e.g. "%50 İNDİRİM")
+    recipientIds?: string;
+    externalRecipients?: string;
+    customLogoUrl?: string;
+    customProductImageUrl?: string;
+    campaignTitle?: string;
+    campaignHighlight?: string;
     status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
     scheduledAt?: Date;
     sentAt?: Date;
@@ -482,7 +377,7 @@ interface MailingCampaignAttributes {
     failedCount: number;
     openCount: number;
     clickCount: number;
-    errorLog?: string; // JSON array of failed emails with error messages
+    errorLog?: string;
 }
 
 interface MailingCampaignCreationAttributes extends Optional<MailingCampaignAttributes, 'id' | 'status' | 'templateSlug' | 'recipientType' | 'scheduledAt' | 'sentAt' | 'recipientCount' | 'sentCount' | 'failedCount' | 'openCount' | 'clickCount' | 'recipientIds' | 'externalRecipients' | 'customLogoUrl' | 'customProductImageUrl' | 'campaignTitle' | 'campaignHighlight' | 'errorLog'> { }
@@ -509,107 +404,40 @@ export class MailingCampaign extends Model<MailingCampaignAttributes, MailingCam
     declare openCount: number;
     declare clickCount: number;
     declare errorLog: string | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-MailingCampaign.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initMailingCampaignModel = (sequelize: Sequelize) => {
+    MailingCampaign.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            name: { type: DataTypes.STRING, allowNull: false },
+            subject: { type: DataTypes.STRING, allowNull: false },
+            content: { type: DataTypes.TEXT('long'), allowNull: false },
+            templateSlug: { type: DataTypes.STRING, allowNull: false, defaultValue: 'modern' },
+            recipientType: { type: DataTypes.ENUM('all', 'members', 'guests', 'custom', 'external'), defaultValue: 'all' },
+            recipientIds: { type: DataTypes.TEXT, allowNull: true },
+            externalRecipients: { type: DataTypes.TEXT('long'), allowNull: true },
+            customLogoUrl: { type: DataTypes.STRING, allowNull: true },
+            customProductImageUrl: { type: DataTypes.STRING, allowNull: true },
+            campaignTitle: { type: DataTypes.STRING, allowNull: true },
+            campaignHighlight: { type: DataTypes.STRING, allowNull: true },
+            status: { type: DataTypes.ENUM('draft', 'scheduled', 'sending', 'sent', 'failed', 'cancelled'), defaultValue: 'draft' },
+            scheduledAt: { type: DataTypes.DATE, allowNull: true },
+            sentAt: { type: DataTypes.DATE, allowNull: true },
+            recipientCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+            sentCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+            failedCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+            openCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+            clickCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+            errorLog: { type: DataTypes.TEXT('long'), allowNull: true },
         },
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        subject: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        content: {
-            type: DataTypes.TEXT('long'),
-            allowNull: false,
-        },
-        templateSlug: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: 'modern',
-        },
-        recipientType: {
-            type: DataTypes.ENUM('all', 'members', 'guests', 'custom', 'external'),
-            defaultValue: 'all',
-        },
-        recipientIds: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        externalRecipients: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        customLogoUrl: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        customProductImageUrl: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        campaignTitle: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        campaignHighlight: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        status: {
-            type: DataTypes.ENUM('draft', 'scheduled', 'sending', 'sent', 'failed', 'cancelled'),
-            defaultValue: 'draft',
-        },
-        scheduledAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        sentAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        recipientCount: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        sentCount: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        failedCount: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        openCount: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        clickCount: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        errorLog: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'mailing_campaigns',
-    }
-);
+        { sequelize, tableName: 'mailing_campaigns' }
+    );
+};
 
-// --- MailingLog Model (E-posta Gönderim Kayıtları) ---
+// ===== MAILINGLOG MODEL =====
 interface MailingLogAttributes {
     id: number;
     campaignId: number;
@@ -634,67 +462,31 @@ export class MailingLog extends Model<MailingLogAttributes, MailingLogCreationAt
     declare sentAt: Date;
     declare openedAt: Date | undefined;
     declare clickedAt: Date | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-MailingLog.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initMailingLogModel = (sequelize: Sequelize) => {
+    MailingLog.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            campaignId: { type: DataTypes.INTEGER, allowNull: false },
+            userEmail: { type: DataTypes.STRING, allowNull: false },
+            userId: { type: DataTypes.INTEGER, allowNull: true },
+            status: { type: DataTypes.ENUM('sent', 'failed', 'opened', 'clicked'), defaultValue: 'sent' },
+            errorMessage: { type: DataTypes.TEXT, allowNull: true },
+            sentAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+            openedAt: { type: DataTypes.DATE, allowNull: true },
+            clickedAt: { type: DataTypes.DATE, allowNull: true },
         },
-        campaignId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        userEmail: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        userId: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        status: {
-            type: DataTypes.ENUM('sent', 'failed', 'opened', 'clicked'),
-            defaultValue: 'sent',
-        },
-        errorMessage: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        sentAt: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW,
-        },
-        openedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        clickedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'mailing_logs',
-        // Indexes removed to prevent "Too many keys specified" error during sync
-        // indexes: [
-        //     { fields: ['campaignId'] },
-        //     { fields: ['userEmail'] },
-        // ]
-    }
-);
+        { sequelize, tableName: 'mailing_logs' }
+    );
+};
 
-// --- EmailTemplate Model (E-posta Şablonları) ---
+// ===== EMAILTEMPLATE MODEL =====
 interface EmailTemplateAttributes {
     id: number;
-    slug: string; // unique identifier: 'modern', 'classic', 'new-year', etc.
+    slug: string;
     nameTR: string;
     nameEN: string;
     category: 'general' | 'holiday' | 'promotion';
@@ -709,13 +501,13 @@ interface EmailTemplateAttributes {
     footerImage?: string;
     bannerImage?: string;
     logoUrl?: string;
-    headerTitle?: string;      // Plain text email title
-    bodyContent?: string;      // Plain text body content
-    footerContact?: string;    // Plain text footer contact info
-    buttonText?: string;       // Custom button text
-    templateData?: any;        // JSON for extra template fields
-    headerHtml: string; // Custom header HTML
-    footerHtml: string; // Custom footer HTML
+    headerTitle?: string;
+    bodyContent?: string;
+    footerContact?: string;
+    buttonText?: string;
+    templateData?: any;
+    headerHtml: string;
+    footerHtml: string;
     isActive: boolean;
     sortOrder: number;
 }
@@ -748,130 +540,44 @@ export class EmailTemplate extends Model<EmailTemplateAttributes, EmailTemplateC
     declare footerHtml: string;
     declare isActive: boolean;
     declare sortOrder: number;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-EmailTemplate.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initEmailTemplateModel = (sequelize: Sequelize) => {
+    EmailTemplate.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            slug: { type: DataTypes.STRING, allowNull: false, unique: true },
+            nameTR: { type: DataTypes.STRING, allowNull: false },
+            nameEN: { type: DataTypes.STRING, allowNull: false },
+            category: { type: DataTypes.ENUM('general', 'holiday', 'promotion'), defaultValue: 'general' },
+            headerBgColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#1a2744' },
+            headerTextColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#ffffff' },
+            headerImage: { type: DataTypes.TEXT('long'), allowNull: true },
+            bodyBgColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#ffffff' },
+            bodyTextColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#333333' },
+            buttonColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#b13329' },
+            buttonText: { type: DataTypes.STRING, allowNull: true },
+            templateData: { type: DataTypes.JSON, allowNull: true },
+            footerBgColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#1a2744' },
+            footerTextColor: { type: DataTypes.STRING, allowNull: false, defaultValue: '#888888' },
+            footerImage: { type: DataTypes.TEXT('long'), allowNull: true },
+            bannerImage: { type: DataTypes.TEXT('long'), allowNull: true },
+            logoUrl: { type: DataTypes.TEXT('long'), allowNull: true },
+            headerTitle: { type: DataTypes.STRING, allowNull: true },
+            bodyContent: { type: DataTypes.TEXT('long'), allowNull: true },
+            footerContact: { type: DataTypes.STRING, allowNull: true },
+            headerHtml: { type: DataTypes.TEXT('long'), allowNull: false },
+            footerHtml: { type: DataTypes.TEXT('long'), allowNull: false },
+            isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+            sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
         },
-        slug: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        nameTR: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        nameEN: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        category: {
-            type: DataTypes.ENUM('general', 'holiday', 'promotion'),
-            defaultValue: 'general',
-        },
-        headerBgColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#1a2744',
-        },
-        headerTextColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#ffffff',
-        },
-        headerImage: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        bodyBgColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#ffffff',
-        },
-        bodyTextColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#333333',
-        },
-        buttonColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#b13329',
-        },
-        buttonText: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        templateData: {
-            type: DataTypes.JSON,
-            allowNull: true,
-        },
-        footerBgColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#1a2744',
-        },
-        footerTextColor: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: '#888888',
-        },
-        footerImage: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        bannerImage: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        logoUrl: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        headerTitle: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        bodyContent: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        footerContact: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        headerHtml: {
-            type: DataTypes.TEXT('long'),
-            allowNull: false,
-        },
-        footerHtml: {
-            type: DataTypes.TEXT('long'),
-            allowNull: false,
-        },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
-        sortOrder: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'email_templates',
-    }
-);
+        { sequelize, tableName: 'email_templates' }
+    );
+};
 
-// --- ContactRequest Model (İletişim Talepleri) ---
+// ===== CONTACTREQUEST MODEL =====
 interface ContactRequestAttributes {
     id: number;
     name: string;
@@ -894,54 +600,27 @@ export class ContactRequest extends Model<ContactRequestAttributes, ContactReque
     declare message: string;
     declare status: 'new' | 'read' | 'replied' | 'archived';
     declare repliedAt: Date | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-ContactRequest.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initContactRequestModel = (sequelize: Sequelize) => {
+    ContactRequest.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            name: { type: DataTypes.STRING, allowNull: false },
+            email: { type: DataTypes.STRING, allowNull: false },
+            phone: { type: DataTypes.STRING, allowNull: true },
+            company: { type: DataTypes.STRING, allowNull: true },
+            message: { type: DataTypes.TEXT, allowNull: false },
+            status: { type: DataTypes.ENUM('new', 'read', 'replied', 'archived'), defaultValue: 'new' },
+            repliedAt: { type: DataTypes.DATE, allowNull: true },
         },
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        email: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        phone: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        company: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        message: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        status: {
-            type: DataTypes.ENUM('new', 'read', 'replied', 'archived'),
-            defaultValue: 'new',
-        },
-        repliedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'contact_requests',
-    }
-);
+        { sequelize, tableName: 'contact_requests' }
+    );
+};
 
-// --- SiteAnalytics Model (Ziyaret İstatistikleri) ---
+// ===== SITEANALYTICS MODEL =====
 interface SiteAnalyticsAttributes {
     id: number;
     date: Date;
@@ -962,58 +641,35 @@ export class SiteAnalytics extends Model<SiteAnalyticsAttributes, SiteAnalyticsC
     declare uniqueVisitors: number;
     declare bounceRate: number | undefined;
     declare avgSessionDuration: number | undefined;
-
     declare readonly createdAt: Date;
 }
 
-SiteAnalytics.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initSiteAnalyticsModel = (sequelize: Sequelize) => {
+    SiteAnalytics.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            date: { type: DataTypes.DATEONLY, allowNull: false },
+            pageUrl: { type: DataTypes.STRING, allowNull: false },
+            pageViews: { type: DataTypes.INTEGER, defaultValue: 0 },
+            uniqueVisitors: { type: DataTypes.INTEGER, defaultValue: 0 },
+            bounceRate: { type: DataTypes.FLOAT, allowNull: true },
+            avgSessionDuration: { type: DataTypes.INTEGER, allowNull: true },
         },
-        date: {
-            type: DataTypes.DATEONLY,
-            allowNull: false,
-        },
-        pageUrl: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        pageViews: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        uniqueVisitors: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        bounceRate: {
-            type: DataTypes.FLOAT,
-            allowNull: true,
-        },
-        avgSessionDuration: {
-            type: DataTypes.INTEGER, // seconds
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'site_analytics',
-        indexes: [
-            { fields: ['date', 'pageUrl'], unique: true },
-        ],
-    }
-);
+        {
+            sequelize,
+            tableName: 'site_analytics',
+            indexes: [{ fields: ['date', 'pageUrl'], unique: true }]
+        }
+    );
+};
 
-// --- NotificationRead Model (Bildirim Okunma/Silme Durumu) ---
+// ===== NOTIFICATIONREAD MODEL =====
 interface NotificationReadAttributes {
     id: number;
     userId: number;
-    notificationId: string; // "order-123", "contact-456"
+    notificationId: string;
     readAt: Date;
-    deletedAt: Date | null; // null = not deleted, Date = deleted by this user
+    deletedAt: Date | null;
 }
 
 interface NotificationReadCreationAttributes extends Optional<NotificationReadAttributes, 'id' | 'readAt' | 'deletedAt'> { }
@@ -1024,48 +680,30 @@ export class NotificationRead extends Model<NotificationReadAttributes, Notifica
     declare notificationId: string;
     declare readAt: Date;
     declare deletedAt: Date | null;
-
     declare readonly createdAt: Date;
 }
 
-NotificationRead.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initNotificationReadModel = (sequelize: Sequelize) => {
+    NotificationRead.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            userId: { type: DataTypes.INTEGER, allowNull: false },
+            notificationId: { type: DataTypes.STRING, allowNull: false },
+            readAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+            deletedAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
         },
-        userId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        notificationId: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        readAt: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW,
-        },
-        deletedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-            defaultValue: null,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'notification_reads',
-        indexes: [
-            { fields: ['userId', 'notificationId'], unique: true },
-        ],
-    }
-);
+        {
+            sequelize,
+            tableName: 'notification_reads',
+            indexes: [{ fields: ['userId', 'notificationId'], unique: true }]
+        }
+    );
+};
 
-// --- SiteSettings Model (Site Ayarları) ---
+// ===== SITESETTINGS MODEL =====
 interface SiteSettingsAttributes {
     id: number;
-    key: string; // e.g., 'site_name', 'contact_phone', 'instagram_url'
+    key: string;
     value: string;
     category: 'general' | 'contact' | 'social' | 'seo';
     description?: string;
@@ -1079,43 +717,24 @@ export class SiteSettings extends Model<SiteSettingsAttributes, SiteSettingsCrea
     declare value: string;
     declare category: 'general' | 'contact' | 'social' | 'seo';
     declare description: string | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-SiteSettings.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initSiteSettingsModel = (sequelize: Sequelize) => {
+    SiteSettings.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            key: { type: DataTypes.STRING, allowNull: false, unique: true },
+            value: { type: DataTypes.TEXT, allowNull: false },
+            category: { type: DataTypes.ENUM('general', 'contact', 'social', 'seo'), allowNull: false },
+            description: { type: DataTypes.STRING, allowNull: true },
         },
-        key: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        value: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        category: {
-            type: DataTypes.ENUM('general', 'contact', 'social', 'seo'),
-            allowNull: false,
-        },
-        description: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'site_settings',
-    }
-);
+        { sequelize, tableName: 'site_settings' }
+    );
+};
 
-// --- Product Model (Ürün Kategorileri) ---
+// ===== PRODUCT MODEL =====
 interface ProductAttributes {
     id: number;
     slug: string;
@@ -1124,7 +743,7 @@ interface ProductAttributes {
     titleEN: string;
     descTR: string;
     descEN: string;
-    contentTR: string; // Detaylı açıklama
+    contentTR: string;
     contentEN: string;
     image: string;
     sortOrder: number;
@@ -1146,72 +765,31 @@ export class Product extends Model<ProductAttributes, ProductCreationAttributes>
     declare image: string;
     declare sortOrder: number;
     declare isActive: boolean;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-Product.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initProductModel = (sequelize: Sequelize) => {
+    Product.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            slug: { type: DataTypes.STRING, allowNull: false, unique: true },
+            slugEN: { type: DataTypes.STRING, allowNull: false, unique: true },
+            titleTR: { type: DataTypes.STRING, allowNull: false },
+            titleEN: { type: DataTypes.STRING, allowNull: false },
+            descTR: { type: DataTypes.TEXT, allowNull: false },
+            descEN: { type: DataTypes.TEXT, allowNull: false },
+            contentTR: { type: DataTypes.TEXT('long'), allowNull: true },
+            contentEN: { type: DataTypes.TEXT('long'), allowNull: true },
+            image: { type: DataTypes.STRING, allowNull: false },
+            sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
+            isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
         },
-        slug: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        slugEN: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        titleTR: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        titleEN: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        descTR: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        descEN: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        contentTR: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        contentEN: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        image: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        sortOrder: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'products',
-    }
-);
+        { sequelize, tableName: 'products' }
+    );
+};
 
-// --- Service Model (Hizmetler) ---
+// ===== SERVICE MODEL =====
 interface ServiceAttributes {
     id: number;
     slug: string;
@@ -1240,114 +818,35 @@ export class Service extends Model<ServiceAttributes, ServiceCreationAttributes>
     declare contentEN: string;
     declare sortOrder: number;
     declare isActive: boolean;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-Service.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initServiceModel = (sequelize: Sequelize) => {
+    Service.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            slug: { type: DataTypes.STRING, allowNull: false, unique: true },
+            icon: { type: DataTypes.STRING, allowNull: false, defaultValue: 'build' },
+            titleTR: { type: DataTypes.STRING, allowNull: false },
+            titleEN: { type: DataTypes.STRING, allowNull: false },
+            descTR: { type: DataTypes.TEXT, allowNull: false },
+            descEN: { type: DataTypes.TEXT, allowNull: false },
+            contentTR: { type: DataTypes.TEXT('long'), allowNull: true },
+            contentEN: { type: DataTypes.TEXT('long'), allowNull: true },
+            sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
+            isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
         },
-        slug: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        icon: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            defaultValue: 'build',
-        },
-        titleTR: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        titleEN: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        descTR: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        descEN: {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        },
-        contentTR: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        contentEN: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        sortOrder: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-        },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'services',
-    }
-);
-
-// Relationships - Initialize safely
-const initAssociations = () => {
-    try {
-        // Ensure models are initialized
-        if (User && Address) {
-            User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
-            Address.belongsTo(User, { foreignKey: 'userId' });
-        }
-
-        if (User && Order) {
-            User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
-            Order.belongsTo(User, { foreignKey: 'userId' });
-        }
-
-        if (AdminUser && MediaFile) {
-            AdminUser.hasMany(MediaFile, { foreignKey: 'uploadedBy', as: 'uploadedFiles' });
-            MediaFile.belongsTo(AdminUser, { foreignKey: 'uploadedBy' });
-        }
-
-        if (AdminUser && ContentPage) {
-            AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
-            ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
-        }
-
-        if (MailingCampaign && MailingLog) {
-            MailingCampaign.hasMany(MailingLog, { foreignKey: 'campaignId', as: 'logs' });
-            MailingLog.belongsTo(MailingCampaign, { foreignKey: 'campaignId' });
-        }
-
-        if (EmailTemplate && MailingCampaign) {
-            EmailTemplate.hasMany(MailingCampaign, { sourceKey: 'slug', foreignKey: 'templateSlug', as: 'campaigns' });
-            MailingCampaign.belongsTo(EmailTemplate, { targetKey: 'slug', foreignKey: 'templateSlug', as: 'template' });
-        }
-
-        console.log('✅ Model associations initialized.');
-    } catch (error) {
-        // Log but don't crash - allows app to run even if relations fail (e.g. during build)
-        console.error('⚠️ Warning: Error initializing model associations (non-critical):', error);
-    }
+        { sequelize, tableName: 'services' }
+    );
 };
 
-// --- CookieConsent Model (Çerez İzin Kayıtları) ---
+// ===== COOKIECONSENT MODEL =====
 interface CookieConsentAttributes {
     id: number;
-    visitorId: string; // UUID stored in cookie
-    userId?: number; // If user is logged in
-    necessary: boolean; // Always true
+    visitorId: string;
+    userId?: number;
+    necessary: boolean;
     analytics: boolean;
     marketing: boolean;
     functional: boolean;
@@ -1367,59 +866,28 @@ export class CookieConsent extends Model<CookieConsentAttributes, CookieConsentC
     declare functional: boolean;
     declare ipAddress: string | undefined;
     declare userAgent: string | undefined;
-
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
 
-CookieConsent.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initCookieConsentModel = (sequelize: Sequelize) => {
+    CookieConsent.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            visitorId: { type: DataTypes.STRING(36), allowNull: false, unique: true },
+            userId: { type: DataTypes.INTEGER, allowNull: true },
+            necessary: { type: DataTypes.BOOLEAN, defaultValue: true },
+            analytics: { type: DataTypes.BOOLEAN, defaultValue: false },
+            marketing: { type: DataTypes.BOOLEAN, defaultValue: false },
+            functional: { type: DataTypes.BOOLEAN, defaultValue: false },
+            ipAddress: { type: DataTypes.STRING(45), allowNull: true },
+            userAgent: { type: DataTypes.TEXT, allowNull: true },
         },
-        visitorId: {
-            type: DataTypes.STRING(36),
-            allowNull: false,
-            unique: true,
-        },
-        userId: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        necessary: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
-        analytics: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        marketing: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        functional: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        ipAddress: {
-            type: DataTypes.STRING(45),
-            allowNull: true,
-        },
-        userAgent: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'cookie_consents',
-    }
-);
+        { sequelize, tableName: 'cookie_consents' }
+    );
+};
 
-// --- Page Model (Sayfa Yönetimi) ---
+// ===== PAGE MODEL =====
 interface PageAttributes {
     id: number;
     slug: string;
@@ -1453,60 +921,64 @@ export class Page extends Model<PageAttributes, PageCreationAttributes> implemen
     declare readonly updatedAt: Date;
 }
 
-Page.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+const initPageModel = (sequelize: Sequelize) => {
+    Page.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            slug: { type: DataTypes.STRING, allowNull: false, unique: true },
+            title: { type: DataTypes.STRING, allowNull: false },
+            titleEn: { type: DataTypes.STRING, allowNull: true },
+            content: { type: DataTypes.TEXT('long'), allowNull: false },
+            contentEn: { type: DataTypes.TEXT('long'), allowNull: true },
+            status: { type: DataTypes.ENUM('published', 'draft'), defaultValue: 'published' },
+            type: { type: DataTypes.ENUM('legal', 'static', 'dynamic'), defaultValue: 'static' },
+            metaTitle: { type: DataTypes.STRING, allowNull: true },
+            metaDescription: { type: DataTypes.TEXT, allowNull: true },
+            isSystemPage: { type: DataTypes.BOOLEAN, defaultValue: false },
         },
-        slug: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        titleEn: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        content: {
-            type: DataTypes.TEXT('long'),
-            allowNull: false,
-        },
-        contentEn: {
-            type: DataTypes.TEXT('long'),
-            allowNull: true,
-        },
-        status: {
-            type: DataTypes.ENUM('published', 'draft'),
-            defaultValue: 'published',
-        },
-        type: {
-            type: DataTypes.ENUM('legal', 'static', 'dynamic'),
-            defaultValue: 'static',
-        },
-        metaTitle: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        metaDescription: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        isSystemPage: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-    },
-    {
-        sequelize,
-        tableName: 'pages',
-    }
-);
+        { sequelize, tableName: 'pages' }
+    );
+};
 
-// Call association init
-initAssociations();
+// ===== ASSOCIATIONS =====
+const initAssociations = () => {
+    try {
+        User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
+        Address.belongsTo(User, { foreignKey: 'userId' });
+
+        User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
+        Order.belongsTo(User, { foreignKey: 'userId' });
+
+        AdminUser.hasMany(MediaFile, { foreignKey: 'uploadedBy', as: 'uploadedFiles' });
+        MediaFile.belongsTo(AdminUser, { foreignKey: 'uploadedBy' });
+
+        AdminUser.hasMany(ContentPage, { foreignKey: 'updatedBy', as: 'editedPages' });
+        ContentPage.belongsTo(AdminUser, { foreignKey: 'updatedBy' });
+
+        MailingCampaign.hasMany(MailingLog, { foreignKey: 'campaignId', as: 'logs' });
+        MailingLog.belongsTo(MailingCampaign, { foreignKey: 'campaignId' });
+
+        EmailTemplate.hasMany(MailingCampaign, { sourceKey: 'slug', foreignKey: 'templateSlug', as: 'campaigns' });
+        MailingCampaign.belongsTo(EmailTemplate, { targetKey: 'slug', foreignKey: 'templateSlug', as: 'template' });
+
+        console.log('✅ Model associations initialized.');
+    } catch (error) {
+        console.error('⚠️ Warning: Error initializing model associations:', error);
+    }
+};
+
+// ===== ENSURE MODELS ARE INITIALIZED =====
+// This function should be called before any database operation
+export const ensureModels = () => {
+    if (!modelsInitialized) {
+        initializeModels();
+    }
+    return modelsInitialized;
+};
+
+// Build-time safe: Only initialize if not in build mode
+if (!isBuildTime()) {
+    initializeModels();
+} else {
+    console.log('⚠️ Build-time detected, deferring model initialization to runtime.');
+}
