@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { User, connectToDatabase } from '@/lib/models';
 import crypto from 'crypto';
-import * as XLSX from 'xlsx';
+
+// Lazy load xlsx - heavy dependency (~2.5MB)
+// Only loaded when this specific route is called
+const loadXLSX = async () => {
+    const XLSX = await import('xlsx');
+    return XLSX;
+};
 
 interface MemberRow {
     name: string;
@@ -40,6 +46,9 @@ export async function POST(req: Request) {
                 error: 'Desteklenmeyen dosya formatı. Lütfen CSV, XLS veya XLSX dosyası yükleyin.'
             }, { status: 400 });
         }
+
+        // Lazy load xlsx only when needed
+        const XLSX = await loadXLSX();
 
         // Read file content
         const arrayBuffer = await file.arrayBuffer();

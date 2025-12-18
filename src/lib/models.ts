@@ -1,6 +1,12 @@
 import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 import { getDb, connectToDatabase } from './db';
-import bcrypt from 'bcrypt';
+
+// Lazy load bcrypt to reduce serverless bundle size
+// bcrypt is only needed for password operations
+const getBcrypt = async () => {
+    const bcrypt = await import('bcrypt');
+    return bcrypt.default;
+};
 
 export { connectToDatabase };
 
@@ -99,6 +105,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     declare readonly updatedAt: Date;
 
     public async comparePassword(password: string): Promise<boolean> {
+        const bcrypt = await getBcrypt();
         return bcrypt.compare(password, this.password_hash);
     }
 }
@@ -120,12 +127,14 @@ const initUserModel = (sequelize: Sequelize) => {
             hooks: {
                 beforeCreate: async (user) => {
                     if (user.password_hash) {
+                        const bcrypt = await getBcrypt();
                         const salt = await bcrypt.genSalt(10);
                         user.password_hash = await bcrypt.hash(user.password_hash, salt);
                     }
                 },
                 beforeUpdate: async (user) => {
                     if (user.changed('password_hash')) {
+                        const bcrypt = await getBcrypt();
                         const salt = await bcrypt.genSalt(10);
                         user.password_hash = await bcrypt.hash(user.password_hash, salt);
                     }
