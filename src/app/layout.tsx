@@ -22,6 +22,8 @@ export const metadata: Metadata = {
     keywords: [
         "federal gaz",
         "endüstriyel gaz",
+        "ankara gaz",
+        "ankara gaz tedarik",
         "oksijen",
         "argon",
         "azot",
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
         "gaz tedarik",
         "gaz satış",
         "sanayi gazları",
-        "istanbul gaz",
+        "ankara gaz tüpü",
         "türkiye gaz",
     ],
     authors: [{ name: "Federal Gaz" }],
@@ -72,6 +74,8 @@ export const metadata: Metadata = {
         description: 'Oksijen, argon, azot ve medikal gaz çözümleri. Türkiye\'nin güvenilir gaz tedarikçisi.',
         images: ['/logo-clean.png'],
     },
+    // Canonical URL is now defined per-page for proper Google indexing
+    // Home page canonical is set here
     alternates: {
         canonical: 'https://federalgaz.com',
     },
