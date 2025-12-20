@@ -293,7 +293,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
                         </button>
                     </div>
                     <a
-                        href={`http://localhost:3000${page.slug === '/' ? '' : page.slug}`}
+                        href={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.federalgaz.com'}${page.slug === '/' ? '' : page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-[#3b4754] hover:bg-gray-50 dark:hover:bg-[#283039]"

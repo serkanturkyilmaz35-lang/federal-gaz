@@ -284,7 +284,7 @@ export default function ContentPagesPage() {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
                                         <a
-                                            href={`http://localhost:3000${page.slug === '/' ? '' : page.slug}`}
+                                            href={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.federalgaz.com'}${page.slug === '/' ? '' : page.slug}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-[#94847c] hover:text-blue-500"
