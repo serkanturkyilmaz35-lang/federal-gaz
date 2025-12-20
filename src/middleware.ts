@@ -38,8 +38,8 @@ export function middleware(request: NextRequest) {
         // Remove /dashboard prefix check - subdomain IS the dashboard
         // const pathname = url.pathname; // (Already declared above)
 
-        // If path doesn't start with /dashboard, add it for internal routing
-        if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
+        // If path doesn't start with /dashboard, add it for internal routing, but exclude static files (with extensions)
+        if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/_next') && !pathname.startsWith('/api') && !pathname.includes('.')) {
             // Rewrite /login to /dashboard/login, / to /dashboard, etc.
             if (pathname === '/') {
                 url.pathname = '/dashboard';

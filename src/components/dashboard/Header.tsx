@@ -26,7 +26,12 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     const isAnalyticsPage = pathname === "/dashboard/analytics";
     const isMailingPage = pathname === "/dashboard/mailing";
     const isTemplatesPage = pathname === "/dashboard/templates";
-    const hideSearchBar = isDashboardOverview || isAnalyticsPage || isMailingPage || isTemplatesPage;
+    const isContentPage = pathname === "/dashboard/content" || pathname.startsWith("/dashboard/content/");
+    const isProductsPage = pathname === "/dashboard/products" || pathname.startsWith("/dashboard/products/");
+    const isServicesPage = pathname === "/dashboard/services" || pathname.startsWith("/dashboard/services/");
+    const isSettingsPage = pathname === "/dashboard/settings";
+    const isMediaPage = pathname === "/dashboard/media";
+    const hideSearchBar = isDashboardOverview || isAnalyticsPage || isMailingPage || isTemplatesPage || isContentPage || isProductsPage || isServicesPage || isSettingsPage || isMediaPage;
 
     // Update URL on search change (Debounced to avoid too many refreshes)
     useEffect(() => {

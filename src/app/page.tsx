@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSettings } from "@/context/SettingsContext";
+import { usePageContent, getSectionValue } from "@/hooks/usePageContent";
 
 const translations = {
     TR: {
@@ -35,56 +36,56 @@ const translations = {
 };
 
 // Ürün listesi - Profesyonel gaz tüpü görselleri
-const products = [
-    { title: "Medikal Oksijen", image: "/products/medikal-oksijen.png" },
-    { title: "Endüstriyel Oksijen", image: "/products/endustriyel-oksijen.png" },
-    { title: "Azot (N₂)", image: "/products/azot.png" },
-    { title: "Argon (Ar)", image: "/products/argon.png" },
-    { title: "Karbondioksit (CO₂)", image: "/products/karbondioksit.png" },
-    { title: "Asetilen", image: "/products/asetilen.png" },
-    { title: "Propan", image: "/products/propan.png" },
-    { title: "Helyum (He)", image: "/products/helyum.png" },
+const defaultProducts = [
+    { title: "Medikal Oksijen", image: "/gallery/medikal-oksijen.png" },
+    { title: "Endüstriyel Oksijen", image: "/gallery/endustriyel-oksijen.png" },
+    { title: "Azot (N₂)", image: "/gallery/azot.png" },
+    { title: "Argon (Ar)", image: "/gallery/argon.png" },
+    { title: "Karbondioksit (CO₂)", image: "/gallery/karbondioksit.png" },
+    { title: "Asetilen", image: "/gallery/asetilen.png" },
+    { title: "Propan", image: "/gallery/propan.png" },
+    { title: "Helyum (He)", image: "/gallery/helyum.png" },
 ];
 
 // Hizmetler
-const services = {
+const defaultServices = {
     TR: [
         {
             title: "Medikal Gazlar",
-            desc: "Hastaneler ve sağlık kuruluşları için yüksek saflıkta medikal oksijen, azot protoksit ve özel gaz karışımları.",
-            image: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&h=300&fit=crop",
+            description: "Hastaneler ve sağlık kuruluşları için yüksek saflıkta medikal oksijen, azot protoksit ve özel gaz karışımları.",
+            image: "/products/medikal-gazlar-custom.jpg",
             link: "/hizmetler/medikal-gazlar"
         },
         {
             title: "Kaynak Gazları",
-            desc: "Metal işleme ve kaynak uygulamaları için asetilen, argon ve özel karışım gazlar.",
+            description: "Metal işleme ve kaynak uygulamaları için asetilen, argon ve özel karışım gazlar.",
             image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=300&fit=crop",
             link: "/hizmetler/kaynak-gazlari"
         },
         {
             title: "Gıda Gazları",
-            desc: "Yiyecek ve içecek sektörü için CO₂, azot ve MAP gazları ile güvenli çözümler.",
-            image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=300&fit=crop",
+            description: "Yiyecek ve içecek sektörü için CO₂, azot ve MAP gazları ile güvenli çözümler.",
+            image: "/products/gida-gazlari-custom.jpg",
             link: "/hizmetler/gida-gazlari"
         }
     ],
     EN: [
         {
             title: "Medical Gases",
-            desc: "High-purity medical oxygen, nitrous oxide and special gas mixtures for hospitals and healthcare facilities.",
-            image: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&h=300&fit=crop",
+            description: "High-purity medical oxygen, nitrous oxide and special gas mixtures for hospitals and healthcare facilities.",
+            image: "/products/medikal-gazlar-custom.jpg",
             link: "/hizmetler/medikal-gazlar"
         },
         {
             title: "Welding Gases",
-            desc: "Acetylene, argon and special mixture gases for metal processing and welding applications.",
+            description: "Acetylene, argon and special mixture gases for metal processing and welding applications.",
             image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=300&fit=crop",
             link: "/hizmetler/kaynak-gazlari"
         },
         {
             title: "Food Gases",
-            desc: "Safe solutions with CO₂, nitrogen and MAP gases for the food and beverage sector.",
-            image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=300&fit=crop",
+            description: "Safe solutions with CO₂, nitrogen and MAP gases for the food and beverage sector.",
+            image: "/products/gida-gazlari-custom.jpg",
             link: "/hizmetler/gida-gazlari"
         }
     ]
@@ -95,20 +96,37 @@ export default function HomePage() {
     const { settings } = useSettings();
     const [currentSlide, setCurrentSlide] = useState(0);
     const t = translations[language];
-    const currentServices = services[language];
 
-    // Use dynamic marquee text from settings, fallback to translation
-    // When EN, always use translation. When TR, use settings or fallback.
-    const marqueeText = language === 'EN' ? t.announcement : (settings.homepage_marquee_text || t.announcement);
+    // CMS content integration
+    const { content: cmsContent, loading: cmsLoading } = usePageContent('/', language);
 
-    // Hero görselleri - Endüstriyel gaz ve tüp görselleri (5 adet)
-    const heroImages = [
-        "/hero/industrial-cylinders-1.png", // Çoklu tüp depolama (YENİ)
-        "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1920&h=1080&fit=crop", // Sanayi Kaynak İşçisi (Worker Welding)
-        "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?w=1920&h=1080&fit=crop", // Gaz tüpleri
-        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&h=1080&fit=crop", // Gaz tüpleri
-        "/hero/industrial-cylinders-2.png", // Çoklu tüp depolama (YENİ)
-    ];
+    // Get CMS content with fallbacks to hardcoded translations
+    const heroTitle = getSectionValue(cmsContent, 'hero', 'title', t.heroTitle) as string;
+    const heroDesc = getSectionValue(cmsContent, 'hero', 'description', t.heroDesc) as string;
+    const heroButtonText = getSectionValue(cmsContent, 'hero', 'buttonText', t.orderBtn) as string;
+    const heroImages = getSectionValue(cmsContent, 'hero', 'images', [
+        "/hero/industrial-cylinders-1.png",
+        "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1920&h=1080&fit=crop",
+        "https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?w=1920&h=1080&fit=crop",
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&h=1080&fit=crop",
+        "/hero/industrial-cylinders-2.png",
+    ]) as string[];
+
+    const marqueeText = getSectionValue(cmsContent, 'marquee', 'text',
+        language === 'EN' ? t.announcement : (settings.homepage_marquee_text || t.announcement)
+    ) as string;
+
+    const aboutTitle = getSectionValue(cmsContent, 'about', 'title', t.aboutTitle) as string;
+    const aboutDesc = getSectionValue(cmsContent, 'about', 'description', t.aboutDesc) as string;
+    const aboutLinkText = getSectionValue(cmsContent, 'about', 'linkText', t.moreInfo) as string;
+
+    const productsTitle = getSectionValue(cmsContent, 'products', 'title', t.bestSellers) as string;
+    const products = getSectionValue(cmsContent, 'products', 'items', defaultProducts) as Array<{ title: string; image: string }>;
+
+    const servicesTitle = getSectionValue(cmsContent, 'services', 'title', t.featuredServices) as string;
+    const servicesDesc = getSectionValue(cmsContent, 'services', 'description', t.servicesDesc) as string;
+    const servicesButtonText = getSectionValue(cmsContent, 'services', 'buttonText', t.allServices) as string;
+    const servicesItems = getSectionValue(cmsContent, 'services', 'items', defaultServices[language]) as Array<{ title: string; description: string; image: string; link: string }>;
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -155,12 +173,12 @@ export default function HomePage() {
 
                     <div className="relative z-10 flex min-h-[560px] flex-col items-center justify-center gap-6 p-4 text-center">
                         <div className="flex max-w-3xl flex-col gap-4">
-                            <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-white md:text-6xl">{t.heroTitle}</h1>
-                            <h2 className="text-base font-normal leading-normal text-white md:text-lg">{t.heroDesc}</h2>
+                            <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-white md:text-6xl">{heroTitle}</h1>
+                            <h2 className="text-base font-normal leading-normal text-white md:text-lg">{heroDesc}</h2>
                         </div>
                         <div className="mt-4 flex flex-wrap justify-center gap-4">
                             <Link href="/siparis" className="flex h-12 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-6 text-base font-bold leading-normal tracking-[0.015em] text-white transition-transform hover:scale-105 hover:bg-primary/90">
-                                <span className="truncate">{t.orderBtn}</span>
+                                <span className="truncate">{heroButtonText}</span>
                             </Link>
                         </div>
                     </div>
@@ -200,10 +218,10 @@ export default function HomePage() {
             <section className="bg-background-light py-16 dark:bg-background-dark sm:py-24">
                 <div className="mx-auto max-w-7xl px-4">
                     <div className="mx-auto max-w-3xl text-center">
-                        <h2 className="text-3xl font-bold leading-tight tracking-[-0.015em] text-secondary dark:text-white sm:text-4xl">{t.aboutTitle}</h2>
-                        <p className="mt-6 text-lg font-normal leading-relaxed text-secondary/80 dark:text-white/70">{t.aboutDesc}</p>
+                        <h2 className="text-3xl font-bold leading-tight tracking-[-0.015em] text-secondary dark:text-white sm:text-4xl">{aboutTitle}</h2>
+                        <p className="mt-6 text-lg font-normal leading-relaxed text-secondary/80 dark:text-white/70">{aboutDesc}</p>
                         <div className="mt-8">
-                            <Link href="/hakkimizda" className="font-bold text-primary hover:underline">{t.moreInfo}</Link>
+                            <Link href="/hakkimizda" className="font-bold text-primary hover:underline">{aboutLinkText}</Link>
                         </div>
                     </div>
                 </div>
@@ -212,7 +230,7 @@ export default function HomePage() {
             {/* Ürün Yelpazemiz - Slider */}
             <section className="py-16 dark:bg-background-dark" style={{ backgroundColor: '#ece6e4' }}>
                 <div className="mx-auto max-w-7xl px-4">
-                    <h2 className="mb-8 text-center text-3xl font-bold text-secondary dark:text-white">{t.bestSellers}</h2>
+                    <h2 className="mb-8 text-center text-3xl font-bold text-secondary dark:text-white">{productsTitle}</h2>
                     <div className="relative overflow-hidden">
                         <div className="flex animate-slide-infinite gap-8">
                             {[...products, ...products].map((product, index) => (
@@ -238,30 +256,30 @@ export default function HomePage() {
             <section className="bg-secondary/5 py-16 dark:bg-white/5 sm:py-24">
                 <div className="mx-auto max-w-7xl px-4">
                     <div className="mx-auto mb-12 max-w-3xl text-center">
-                        <h2 className="text-3xl font-bold leading-tight tracking-[-0.015em] text-secondary dark:text-white sm:text-4xl">{t.featuredServices}</h2>
-                        <p className="mt-4 text-lg font-normal leading-relaxed text-secondary/80 dark:text-white/70">{t.servicesDesc}</p>
+                        <h2 className="text-3xl font-bold leading-tight tracking-[-0.015em] text-secondary dark:text-white sm:text-4xl">{servicesTitle}</h2>
+                        <p className="mt-4 text-lg font-normal leading-relaxed text-secondary/80 dark:text-white/70">{servicesDesc}</p>
                     </div>
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        {currentServices.map((service, index) => (
+                        {servicesItems.map((service, index) => (
                             <Link key={index} href={service.link} className="flex flex-col overflow-hidden rounded-xl bg-background-light shadow-md transition-transform hover:scale-105 dark:bg-background-dark">
                                 <img src={service.image} alt={service.title} className="h-48 w-full object-cover" />
                                 <div className="p-6 text-center">
                                     <h3 className="mb-2 text-xl font-bold text-secondary dark:text-white">{service.title}</h3>
-                                    <p className="text-secondary/70 dark:text-white/60">{service.desc}</p>
+                                    <p className="text-secondary/70 dark:text-white/60">{service.description}</p>
                                 </div>
                             </Link>
                         ))}
                     </div>
                     <div className="mt-8 text-center">
                         <Link href="/hizmetler" className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90">
-                            <span>{t.allServices}</span>
+                            <span>{servicesButtonText}</span>
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                         </Link>
                     </div>
                 </div>
-            </section>
+            </section >
         </>
     );
 }

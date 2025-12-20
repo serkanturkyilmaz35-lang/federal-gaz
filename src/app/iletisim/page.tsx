@@ -6,6 +6,7 @@ import { useSettings } from "@/context/SettingsContext";
 import { useEncryption } from "@/context/EncryptionContext";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
 import SuccessModal from "@/components/SuccessModal";
+import { parseIcon } from "@/utils/iconUtils";
 
 const translations = {
     TR: {
@@ -126,7 +127,10 @@ export default function IletisimPage() {
                                 {/* Address */}
                                 <div className="flex gap-4">
                                     <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                        <span className="material-symbols-outlined text-2xl text-primary">location_on</span>
+                                        {(() => {
+                                            const { name, color } = parseIcon(settings.contact_icon_address || 'location_on');
+                                            return <span className="material-symbols-outlined text-2xl" style={{ color: color || undefined }}>{name}</span>
+                                        })()}
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-secondary dark:text-white">{t.addressTitle}</h3>
@@ -140,7 +144,10 @@ export default function IletisimPage() {
                                 {settings.contact_phone && (
                                     <div className="flex gap-4">
                                         <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                            <span className="material-symbols-outlined text-2xl text-primary">phone</span>
+                                            {(() => {
+                                                const { name, color } = parseIcon(settings.contact_icon_phone || 'phone');
+                                                return <span className="material-symbols-outlined text-2xl" style={{ color: color || undefined }}>{name}</span>
+                                            })()}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary dark:text-white">{t.phoneTitle}</h3>
@@ -160,7 +167,10 @@ export default function IletisimPage() {
                                 {(settings.contact_phone_2 || settings.contact_phone_3) && (
                                     <div className="flex gap-4">
                                         <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                            <span className="material-symbols-outlined text-2xl text-primary">smartphone</span>
+                                            {(() => {
+                                                const { name, color } = parseIcon(settings.contact_icon_gsm || 'smartphone');
+                                                return <span className="material-symbols-outlined text-2xl" style={{ color: color || undefined }}>{name}</span>
+                                            })()}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary dark:text-white">{t.gsmTitle}</h3>
@@ -195,7 +205,10 @@ export default function IletisimPage() {
                                 {settings.contact_email && (
                                     <div className="flex gap-4">
                                         <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                                            <span className="material-symbols-outlined text-2xl text-primary">mail</span>
+                                            {(() => {
+                                                const { name, color } = parseIcon(settings.contact_icon_email || 'mail');
+                                                return <span className="material-symbols-outlined text-2xl" style={{ color: color || undefined }}>{name}</span>
+                                            })()}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-secondary dark:text-white">{t.emailTitle}</h3>
@@ -227,7 +240,10 @@ export default function IletisimPage() {
                                     rel="noopener noreferrer"
                                     className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90"
                                 >
-                                    <span className="material-symbols-outlined">directions</span>
+                                    {(() => {
+                                        const { name, color } = parseIcon(settings.contact_icon_directions || 'directions');
+                                        return <span className="material-symbols-outlined" style={{ color: color || undefined }}>{name}</span>
+                                    })()}
                                     <span>{t.getDirections}</span>
                                 </a>
                             </div>

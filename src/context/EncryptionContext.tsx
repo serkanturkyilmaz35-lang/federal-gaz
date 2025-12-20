@@ -25,12 +25,14 @@ export const EncryptionProvider = ({ children }: { children: React.ReactNode }) 
     const [isReady, setIsReady] = useState(false);
     const [aesKey, setAesKey] = useState<string | null>(null);
 
-    // Initial Handshake
+    // Initial Handshake with retry
     useEffect(() => {
         performHandshake();
     }, []);
 
-    const performHandshake = async () => {
+    const performHandshake = async (retryCount = 0) => {
+        const maxRetries = 3;
+
         try {
             // 1. Generate AES Key (32 bytes = 256 bit)
             const keyBytes = forge.random.getBytesSync(32);
@@ -43,13 +45,14 @@ export const EncryptionProvider = ({ children }: { children: React.ReactNode }) 
             const keyRes = await fetch('/api/auth/keys', { signal: controller.signal });
             clearTimeout(timeoutId);
 
-            if (!keyRes.ok) throw new Error("Failed to get public key");
+            if (!keyRes.ok) {
+                console.warn("Failed to get public key, proceeding without E2EE");
+                setIsReady(true);
+                return;
+            }
             const { publicKey } = await keyRes.json();
 
             // 3. Encrypt AES Key with RSA Public Key
-            // We use 'jsencrypt' or 'node-forge' on client.
-            // Since we installed 'jsencrypt' earlier, let's use it for RSA if 'node-forge' is heavy?
-            // Actually we are importing 'node-forge' here so let's use it properly.
             const rsaPublicKey = forge.pki.publicKeyFromPem(publicKey);
             const encryptedKey = rsaPublicKey.encrypt(keyHex, 'RSA-OAEP', {
                 md: forge.md.sha256.create(),
@@ -66,7 +69,17 @@ export const EncryptionProvider = ({ children }: { children: React.ReactNode }) 
                 body: JSON.stringify({ encryptedSessionKey: encryptedKeyBase64 })
             });
 
-            if (!shakeRes.ok) throw new Error("Handshake failed");
+            if (!shakeRes.ok) {
+                // Retry with fresh key fetch if handshake fails
+                if (retryCount < maxRetries) {
+                    console.warn(`Handshake failed, retrying (${retryCount + 1}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    return performHandshake(retryCount + 1);
+                }
+                console.warn("Handshake failed after retries, proceeding without E2EE");
+                setIsReady(true);
+                return;
+            }
 
             setAesKey(keyHex);
             setIsReady(true);
@@ -135,8 +148,15 @@ export const EncryptionProvider = ({ children }: { children: React.ReactNode }) 
     };
 
     const secureFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-        if (!isReady || !aesKey) {
+        // Graceful degradation: if E2EE not available, use regular fetch
+        if (!isReady) {
             throw new Error("Encryption Session not ready");
+        }
+
+        if (!aesKey) {
+            // E2EE not available, use regular fetch
+            console.warn("E2EE not available, using unencrypted fetch");
+            return fetch(url, options);
         }
 
         let body = options.body;

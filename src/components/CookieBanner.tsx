@@ -37,7 +37,8 @@ interface CookiePreferences {
     functional: boolean;
 }
 
-const translations = {
+// Default translations
+const defaultTranslations = {
     TR: {
         title: 'Çerez Tercihleriniz',
         description: 'Web sitemiz, deneyiminizi geliştirmek ve site trafiğini analiz etmek için çerezler kullanmaktadır.',
@@ -79,7 +80,29 @@ const translations = {
 export default function CookieBanner() {
     const { language } = useLanguage();
     const { settings } = useSettings();
-    const t = translations[language];
+
+    // Get translations from settings with fallback to defaults
+    const settingsAny = settings as unknown as Record<string, string>;
+    const defaults = defaultTranslations[language];
+
+    const t = {
+        title: settingsAny['cookie_modal_title'] || defaults.title,
+        description: settingsAny['cookie_banner_description'] || defaults.description,
+        acceptAll: settingsAny['cookie_banner_accept_all'] || defaults.acceptAll,
+        rejectAll: settingsAny['cookie_banner_reject_all'] || defaults.rejectAll,
+        customize: settingsAny['cookie_banner_customize'] || defaults.customize,
+        save: settingsAny['cookie_modal_save'] || defaults.save,
+        necessary: settingsAny['cookie_necessary_title'] || defaults.necessary,
+        necessaryDesc: settingsAny['cookie_necessary_desc'] || defaults.necessaryDesc,
+        analytics: settingsAny['cookie_analytics_title'] || defaults.analytics,
+        analyticsDesc: settingsAny['cookie_analytics_desc'] || defaults.analyticsDesc,
+        marketing: settingsAny['cookie_marketing_title'] || defaults.marketing,
+        marketingDesc: settingsAny['cookie_marketing_desc'] || defaults.marketingDesc,
+        functional: settingsAny['cookie_functional_title'] || defaults.functional,
+        functionalDesc: settingsAny['cookie_functional_desc'] || defaults.functionalDesc,
+        learnMore: defaults.learnMore,  // Keep as-is for now
+        close: defaults.close
+    };
 
     const [showBanner, setShowBanner] = useState(false);
     const [showDetails, setShowDetails] = useState(false);

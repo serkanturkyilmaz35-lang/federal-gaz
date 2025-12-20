@@ -16,6 +16,13 @@ export default function ContentPage() {
 
     const contentSections: ContentSection[] = [
         {
+            id: 'pages',
+            title: 'Sayfa Düzenleyici',
+            description: 'Ana sayfa, Hakkımızda ve diğer sayfaların içeriklerini düzenleyin',
+            icon: 'edit_document',
+            link: '/dashboard/content/pages',
+        },
+        {
             id: 'products',
             title: 'Ürünler',
             description: 'Web sitesindeki ürün kategorilerini yönetin',
@@ -30,34 +37,6 @@ export default function ContentPage() {
             icon: 'build',
             link: '/dashboard/services',
             count: 5
-        },
-        {
-            id: 'hero',
-            title: 'Hero / Banner',
-            description: 'Ana sayfa hero bölümünü düzenleyin',
-            icon: 'view_carousel',
-            link: '/dashboard/content/hero',
-        },
-        {
-            id: 'about',
-            title: 'Hakkımızda',
-            description: 'Şirket hakkında bilgileri düzenleyin',
-            icon: 'info',
-            link: '/dashboard/content/about',
-        },
-        {
-            id: 'footer',
-            title: 'Footer',
-            description: 'Alt bilgi bölümünü düzenleyin',
-            icon: 'view_agenda',
-            link: '/dashboard/content/footer',
-        },
-        {
-            id: 'pages',
-            title: 'Sayfalar',
-            description: 'Statik sayfaları yönetin',
-            icon: 'article',
-            link: '/dashboard/content/pages',
         },
     ];
 
@@ -120,22 +99,18 @@ export default function ContentPage() {
             {/* Quick Stats */}
             <div className="mt-6 bg-[#111418] rounded-xl p-6 border border-[#3b4754]">
                 <h3 className="text-lg font-bold text-white mb-4">Hızlı İstatistikler</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                        <p className="text-3xl font-bold text-[#137fec]">6</p>
-                        <p className="text-sm text-gray-400">Ürün</p>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-3xl font-bold text-green-400">5</p>
-                        <p className="text-sm text-gray-400">Hizmet</p>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-3xl font-bold text-purple-400">7</p>
+                        <p className="text-3xl font-bold text-[#137fec]">12</p>
                         <p className="text-sm text-gray-400">Sayfa</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-3xl font-bold text-yellow-400">1</p>
-                        <p className="text-sm text-gray-400">Banner</p>
+                        <p className="text-3xl font-bold text-green-400">6</p>
+                        <p className="text-sm text-gray-400">Ürün</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-3xl font-bold text-purple-400">5</p>
+                        <p className="text-sm text-gray-400">Hizmet</p>
                     </div>
                 </div>
             </div>

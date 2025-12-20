@@ -256,10 +256,12 @@ export default function QuotesPage() {
                     <button
                         onClick={handleExportExcel}
                         disabled={exporting}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#137fec] text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 no-print"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors no-print"
                     >
-                        <span className="material-symbols-outlined">download</span>
-                        {exporting ? 'İndiriliyor...' : 'Excel İndir'}
+                        <span className="material-symbols-outlined text-base">
+                            {exporting ? "hourglass_empty" : "file_download"}
+                        </span>
+                        {exporting ? "İndiriliyor..." : "Dışarı Aktar"}
                     </button>
 
                     <button

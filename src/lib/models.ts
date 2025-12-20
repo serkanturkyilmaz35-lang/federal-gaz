@@ -65,6 +65,7 @@ const initializeModels = () => {
     initProductModel(sequelize);
     initServiceModel(sequelize);
     initCookieConsentModel(sequelize);
+    initPageContentModel(sequelize);
     initPageModel(sequelize);
 
     // Initialize associations
@@ -290,9 +291,15 @@ interface MediaFileAttributes {
     size: number;
     url: string;
     uploadedBy?: number;
+    originalPath?: string;
+    width?: number;
+    height?: number;
+    format?: string;
+    altText?: string;
+    deletedAt?: Date | null;
 }
 
-interface MediaFileCreationAttributes extends Optional<MediaFileAttributes, 'id' | 'uploadedBy'> { }
+interface MediaFileCreationAttributes extends Optional<MediaFileAttributes, 'id' | 'uploadedBy' | 'originalPath' | 'width' | 'height' | 'format' | 'altText' | 'deletedAt'> { }
 
 export class MediaFile extends Model<MediaFileAttributes, MediaFileCreationAttributes> implements MediaFileAttributes {
     declare id: number;
@@ -301,7 +308,13 @@ export class MediaFile extends Model<MediaFileAttributes, MediaFileCreationAttri
     declare mimeType: string;
     declare size: number;
     declare url: string;
+    declare originalPath: string | undefined;
     declare uploadedBy: number | undefined;
+    declare width: number | undefined;
+    declare height: number | undefined;
+    declare format: string | undefined;
+    declare altText: string | undefined;
+    declare deletedAt: Date | null;
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
@@ -315,9 +328,15 @@ const initMediaFileModel = (sequelize: Sequelize) => {
             mimeType: { type: DataTypes.STRING, allowNull: false },
             size: { type: DataTypes.INTEGER, allowNull: false },
             url: { type: DataTypes.TEXT, allowNull: false },
+            originalPath: { type: DataTypes.TEXT, allowNull: true },
             uploadedBy: { type: DataTypes.INTEGER, allowNull: true },
+            width: { type: DataTypes.INTEGER, allowNull: true },
+            height: { type: DataTypes.INTEGER, allowNull: true },
+            format: { type: DataTypes.STRING(20), allowNull: true },
+            altText: { type: DataTypes.STRING(500), allowNull: true },
+            deletedAt: { type: DataTypes.DATE, allowNull: true },
         },
-        { sequelize, tableName: 'media_files' }
+        { sequelize, tableName: 'media_files', paranoid: false } // We handle soft delete manually by moving files
     );
 };
 
@@ -752,14 +771,21 @@ interface ProductAttributes {
     titleEN: string;
     descTR: string;
     descEN: string;
-    contentTR: string;
+    contentTR: string;  // Long description
     contentEN: string;
     image: string;
+    heroImage: string;  // Large image for detail page hero
+    featuresTR: string; // Comma or newline separated features
+    featuresEN: string;
+    specsTR: string;    // JSON string: [{label, value}]
+    specsEN: string;
     sortOrder: number;
     isActive: boolean;
+    listIcon: string;
+    ctaIcon: string;
 }
 
-interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'sortOrder' | 'isActive' | 'contentTR' | 'contentEN'> { }
+interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'sortOrder' | 'isActive' | 'contentTR' | 'contentEN' | 'heroImage' | 'featuresTR' | 'featuresEN' | 'specsTR' | 'specsEN' | 'listIcon' | 'ctaIcon'> { }
 
 export class Product extends Model<ProductAttributes, ProductCreationAttributes> implements ProductAttributes {
     declare id: number;
@@ -772,8 +798,15 @@ export class Product extends Model<ProductAttributes, ProductCreationAttributes>
     declare contentTR: string;
     declare contentEN: string;
     declare image: string;
+    declare heroImage: string;
+    declare featuresTR: string;
+    declare featuresEN: string;
+    declare specsTR: string;
+    declare specsEN: string;
     declare sortOrder: number;
     declare isActive: boolean;
+    declare listIcon: string;
+    declare ctaIcon: string;
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
@@ -791,8 +824,15 @@ const initProductModel = (sequelize: Sequelize) => {
             contentTR: { type: DataTypes.TEXT('long'), allowNull: true },
             contentEN: { type: DataTypes.TEXT('long'), allowNull: true },
             image: { type: DataTypes.STRING, allowNull: false },
+            heroImage: { type: DataTypes.STRING(500), allowNull: true },
+            featuresTR: { type: DataTypes.TEXT, allowNull: true },
+            featuresEN: { type: DataTypes.TEXT, allowNull: true },
+            specsTR: { type: DataTypes.TEXT, allowNull: true },
+            specsEN: { type: DataTypes.TEXT, allowNull: true },
             sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
             isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+            listIcon: { type: DataTypes.STRING, defaultValue: 'check' },
+            ctaIcon: { type: DataTypes.STRING, defaultValue: 'contact_support' },
         },
         { sequelize, tableName: 'products' }
     );
@@ -809,11 +849,29 @@ interface ServiceAttributes {
     descEN: string;
     contentTR: string;
     contentEN: string;
+    subtitleTR: string;
+    subtitleEN: string;
+    image: string;
+    detailsTitleTR: string;
+    detailsTitleEN: string;
+    detailsTR: string;
+    detailsEN: string;
+    listTitleTR: string;
+    listTitleEN: string;
+    listItemsTR: string;
+    listItemsEN: string;
+    featuresTitleTR: string;
+    featuresTitleEN: string;
+    featureItemsTR: string;
+    featureItemsEN: string;
+    ctaButtonTextTR: string;
+    ctaButtonTextEN: string;
+    ctaButtonLink: string;
     sortOrder: number;
     isActive: boolean;
 }
 
-interface ServiceCreationAttributes extends Optional<ServiceAttributes, 'id' | 'sortOrder' | 'isActive' | 'contentTR' | 'contentEN'> { }
+interface ServiceCreationAttributes extends Optional<ServiceAttributes, 'id' | 'sortOrder' | 'isActive' | 'contentTR' | 'contentEN' | 'subtitleTR' | 'subtitleEN' | 'image' | 'detailsTitleTR' | 'detailsTitleEN' | 'detailsTR' | 'detailsEN' | 'listTitleTR' | 'listTitleEN' | 'listItemsTR' | 'listItemsEN' | 'featuresTitleTR' | 'featuresTitleEN' | 'featureItemsTR' | 'featureItemsEN' | 'ctaButtonTextTR' | 'ctaButtonTextEN' | 'ctaButtonLink'> { }
 
 export class Service extends Model<ServiceAttributes, ServiceCreationAttributes> implements ServiceAttributes {
     declare id: number;
@@ -825,6 +883,24 @@ export class Service extends Model<ServiceAttributes, ServiceCreationAttributes>
     declare descEN: string;
     declare contentTR: string;
     declare contentEN: string;
+    declare subtitleTR: string;
+    declare subtitleEN: string;
+    declare image: string;
+    declare detailsTitleTR: string;
+    declare detailsTitleEN: string;
+    declare detailsTR: string;
+    declare detailsEN: string;
+    declare listTitleTR: string;
+    declare listTitleEN: string;
+    declare listItemsTR: string;
+    declare listItemsEN: string;
+    declare featuresTitleTR: string;
+    declare featuresTitleEN: string;
+    declare featureItemsTR: string;
+    declare featureItemsEN: string;
+    declare ctaButtonTextTR: string;
+    declare ctaButtonTextEN: string;
+    declare ctaButtonLink: string;
     declare sortOrder: number;
     declare isActive: boolean;
     declare readonly createdAt: Date;
@@ -841,6 +917,24 @@ const initServiceModel = (sequelize: Sequelize) => {
             titleEN: { type: DataTypes.STRING, allowNull: false },
             descTR: { type: DataTypes.TEXT, allowNull: false },
             descEN: { type: DataTypes.TEXT, allowNull: false },
+            subtitleTR: { type: DataTypes.STRING, allowNull: true },
+            subtitleEN: { type: DataTypes.STRING, allowNull: true },
+            image: { type: DataTypes.STRING, allowNull: true },
+            detailsTitleTR: { type: DataTypes.STRING, allowNull: true },
+            detailsTitleEN: { type: DataTypes.STRING, allowNull: true },
+            detailsTR: { type: DataTypes.TEXT, allowNull: true },
+            detailsEN: { type: DataTypes.TEXT, allowNull: true },
+            listTitleTR: { type: DataTypes.STRING, allowNull: true },
+            listTitleEN: { type: DataTypes.STRING, allowNull: true },
+            listItemsTR: { type: DataTypes.TEXT, allowNull: true },
+            listItemsEN: { type: DataTypes.TEXT, allowNull: true },
+            featuresTitleTR: { type: DataTypes.STRING, allowNull: true },
+            featuresTitleEN: { type: DataTypes.STRING, allowNull: true },
+            featureItemsTR: { type: DataTypes.TEXT, allowNull: true },
+            featureItemsEN: { type: DataTypes.TEXT, allowNull: true },
+            ctaButtonTextTR: { type: DataTypes.STRING, allowNull: true },
+            ctaButtonTextEN: { type: DataTypes.STRING, allowNull: true },
+            ctaButtonLink: { type: DataTypes.STRING, allowNull: true },
             contentTR: { type: DataTypes.TEXT('long'), allowNull: true },
             contentEN: { type: DataTypes.TEXT('long'), allowNull: true },
             sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
@@ -893,6 +987,49 @@ const initCookieConsentModel = (sequelize: Sequelize) => {
             userAgent: { type: DataTypes.TEXT, allowNull: true },
         },
         { sequelize, tableName: 'cookie_consents' }
+    );
+};
+
+// ===== PAGECONTENT MODEL (CMS) =====
+interface PageContentAttributes {
+    id: number;
+    pageSlug: string;        // '/', '/hakkimizda', '/iletisim'
+    sectionKey: string;      // 'hero', 'about', 'services', 'products'
+    contentJson: string;     // JSON formatted content
+    language: 'TR' | 'EN';
+    isActive: boolean;
+}
+
+interface PageContentCreationAttributes extends Optional<PageContentAttributes, 'id' | 'isActive'> { }
+
+export class PageContent extends Model<PageContentAttributes, PageContentCreationAttributes> implements PageContentAttributes {
+    declare id: number;
+    declare pageSlug: string;
+    declare sectionKey: string;
+    declare contentJson: string;
+    declare language: 'TR' | 'EN';
+    declare isActive: boolean;
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
+
+const initPageContentModel = (sequelize: Sequelize) => {
+    PageContent.init(
+        {
+            id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+            pageSlug: { type: DataTypes.STRING, allowNull: false },
+            sectionKey: { type: DataTypes.STRING, allowNull: false },
+            contentJson: { type: DataTypes.TEXT('long'), allowNull: false },
+            language: { type: DataTypes.ENUM('TR', 'EN'), defaultValue: 'TR' },
+            isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+        },
+        {
+            sequelize,
+            tableName: 'page_contents',
+            indexes: [
+                { fields: ['pageSlug', 'sectionKey', 'language'], unique: true }
+            ]
+        }
     );
 };
 

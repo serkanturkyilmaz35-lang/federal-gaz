@@ -2,17 +2,38 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 
 import { useEncryption } from "@/context/EncryptionContext";
+import { useSettings } from "@/context/SettingsContext";
+import { parseIcon } from "@/utils/iconUtils";
+
+interface CMSContent {
+    tabs?: { info?: string; addresses?: string; orders?: string };
+    infoLabels?: { name?: string; email?: string; phone?: string; changeInfo?: string };
+    addressLabels?: {
+        addButton?: string;
+        titlePlaceholder?: string;
+        addressPlaceholder?: string;
+        deleteButton?: string;
+        defaultLabel?: string;
+        setDefault?: string;
+        editButton?: string;
+        saveButton?: string;
+        cancelButton?: string;
+    };
+    buttons?: { logout?: string };
+}
 
 export default function ProfilePage() {
-    const { user, logout, loading, refreshUser } = useAuth();
+    const { user, logout, loading } = useAuth();
     const { language } = useLanguage();
+    const { settings } = useSettings();
     const { secureFetch } = useEncryption();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'info' | 'addresses' | 'orders'>('info');
+    const [cmsContent, setCmsContent] = useState<CMSContent>({});
 
     interface Address {
         id: number;
@@ -73,6 +94,26 @@ export default function ProfilePage() {
             console.error("Failed to fetch orders", e);
         }
     };
+
+    // Fetch CMS content
+    useEffect(() => {
+        const fetchCMSContent = async () => {
+            try {
+                const res = await fetch(`/api/dashboard/page-content?slug=/profil&language=${language}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const contentObj: CMSContent = {};
+                    data.sections?.forEach((section: { key: string; content: object }) => {
+                        contentObj[section.key as keyof CMSContent] = section.content as CMSContent[keyof CMSContent];
+                    });
+                    setCmsContent(contentObj);
+                }
+            } catch (err) {
+                console.error('Error fetching CMS content:', err);
+            }
+        };
+        fetchCMSContent();
+    }, [language]);
 
     useEffect(() => {
         if (user) {
@@ -149,24 +190,31 @@ export default function ProfilePage() {
 
     if (loading || !user) return <div className="p-10 text-center">Yükleniyor...</div>;
 
+    // Merge CMS content with defaults
+    const cms = cmsContent;
     const t = {
-        logout: language === 'TR' ? 'Çıkış Yap' : 'Logout',
+        logout: cms.buttons?.logout || (language === 'TR' ? 'Çıkış Yap' : 'Logout'),
         tabs: {
-            info: language === 'TR' ? 'Kişisel Bilgilerim' : 'My Personal Info',
-            addresses: language === 'TR' ? 'Adreslerim' : 'My Addresses',
-            orders: language === 'TR' ? 'Siparişlerim' : 'My Orders'
+            info: cms.tabs?.info || (language === 'TR' ? 'Kişisel Bilgilerim' : 'My Personal Info'),
+            addresses: cms.tabs?.addresses || (language === 'TR' ? 'Adreslerim' : 'My Addresses'),
+            orders: cms.tabs?.orders || (language === 'TR' ? 'Siparişlerim' : 'My Orders')
         },
         info: {
-            name: language === 'TR' ? 'Ad Soyad' : 'Name',
-            email: language === 'TR' ? 'E-posta' : 'Email',
-            phone: language === 'TR' ? 'Telefon' : 'Phone'
+            name: cms.infoLabels?.name || (language === 'TR' ? 'Ad Soyad' : 'Name'),
+            email: cms.infoLabels?.email || (language === 'TR' ? 'E-posta' : 'Email'),
+            phone: cms.infoLabels?.phone || (language === 'TR' ? 'Telefon' : 'Phone'),
+            changeInfo: cms.infoLabels?.changeInfo || (language === 'TR' ? 'Bilgilerinizi değiştirmek için lütfen bizimle iletişime geçin.' : 'Please contact us to change your information.')
         },
         address: {
-            add: language === 'TR' ? 'Adres Ekle' : 'Add Address',
-            title: language === 'TR' ? 'Adres Başlığı (Ev, İş vb.)' : 'Address Title',
-            text: language === 'TR' ? 'Açık Adres' : 'Full Address',
-            delete: language === 'TR' ? 'Sil' : 'Delete',
-            default: language === 'TR' ? 'Varsayılan' : 'Default'
+            add: cms.addressLabels?.addButton || (language === 'TR' ? 'Adres Ekle' : 'Add Address'),
+            title: cms.addressLabels?.titlePlaceholder || (language === 'TR' ? 'Adres Başlığı (Ev, İş vb.)' : 'Address Title'),
+            text: cms.addressLabels?.addressPlaceholder || (language === 'TR' ? 'Açık Adres' : 'Full Address'),
+            delete: cms.addressLabels?.deleteButton || (language === 'TR' ? 'Sil' : 'Delete'),
+            default: cms.addressLabels?.defaultLabel || (language === 'TR' ? 'Varsayılan' : 'Default'),
+            setDefault: cms.addressLabels?.setDefault || (language === 'TR' ? '✓ Varsayılan Yap' : '✓ Set as Default'),
+            edit: cms.addressLabels?.editButton || (language === 'TR' ? 'Düzenle' : 'Edit'),
+            save: cms.addressLabels?.saveButton || (language === 'TR' ? 'Kaydet' : 'Save'),
+            cancel: cms.addressLabels?.cancelButton || (language === 'TR' ? 'İptal' : 'Cancel')
         },
         order: {
             create: language === 'TR' ? 'Sipariş Ver' : 'Place Order',
@@ -184,9 +232,17 @@ export default function ProfilePage() {
                 <div className="w-full md:w-1/4">
                     <div className="bg-white dark:bg-secondary rounded-lg shadow-lg p-6">
                         <div className="text-center mb-6">
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold text-primary">
-                                {user.name.charAt(0)}
-                            </div>
+                            {settings?.auth_icon_profile ? (
+                                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: parseIcon(settings.auth_icon_profile).color ? `${parseIcon(settings.auth_icon_profile).color}20` : undefined }}>
+                                    <span className="material-symbols-outlined text-4xl text-primary" style={{ color: parseIcon(settings.auth_icon_profile).color }}>
+                                        {parseIcon(settings.auth_icon_profile).name}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold text-primary">
+                                    {user.name.charAt(0)}
+                                </div>
+                            )}
                             <h2 className="font-bold text-lg">{user.name}</h2>
                             <p className="text-sm text-gray-500">{user.email}</p>
                         </div>
@@ -334,7 +390,7 @@ export default function ProfilePage() {
                                                                 </button>
                                                             )}
                                                             <button
-                                                                onClick={() => setEditingAddress({ id: addr.id, title: addr.title, address: addr.address })}
+                                                                onClick={() => setEditingAddress({ id: addr.id, title: addr.title, address: addr.address, isDefault: addr.isDefault })}
                                                                 className="text-blue-500 hover:text-blue-700 text-sm font-medium"
                                                             >
                                                                 Düzenle

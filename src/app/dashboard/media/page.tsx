@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import { useLanguage } from "@/context/LanguageContext";
+import UploadWidget from "@/components/dashboard/media/UploadWidget";
+import MediaGrid from "@/components/dashboard/media/MediaGrid";
+import ConfirmationModal from "@/components/dashboard/ConfirmationModal";
+import ImagePreviewModal from "@/components/dashboard/media/ImagePreviewModal";
+import ImageEditorModal from "@/components/dashboard/media/ImageEditorModal";
+
+// Define MediaSidebar locally if not imported? 
+// The current `page.tsx` doesn't import MediaSidebar, it implements the UI inline usually?
+// Step 3191 lines 212-215 show Sidebar is inline `UploadWidget` etc. 
+// Step 3150 tried to use `<MediaSidebar ... />` but Step 3191 shows the file reverted/kept the inline sidebar logic?
+// Ah, allow me to check if MediaSidebar exists. Step 3105 summary said "Created MediaSidebar.tsx". 
+// But `page.tsx` in Step 3191 doesn't seem to use it.
+// I will stick to the existing structure in Step 3191 and just add the missing logic.
 
 interface MediaFile {
     id: number;
@@ -12,452 +23,592 @@ interface MediaFile {
     size: number;
     url: string;
     createdAt: string;
+    width?: number;
+    height?: number;
+    format?: string;
+    altText?: string;
 }
 
-const translations = {
-    TR: {
-        pageTitle: "Medya Kütüphanesi",
-        pageDesc: "Görselleri ve dosyaları yönetin",
-        filter: "Filtrele",
-        uploadFile: "Dosya Yükle",
-        files: "dosya",
-        selected: "seçili",
-        dragAndDrop: "Dosyaları buraya sürükleyin",
-        orSelect: "veya bilgisayarınızdan seçin",
-        selectFile: "Dosya Seç",
-        supportedFormats: "Desteklenen formatlar: JPG, PNG, GIF, WEBP, SVG, PDF (Max: 10MB)",
-        uploading: "Yükleniyor...",
-        deleteSelected: "Seçilenleri Sil",
-        confirmDelete: "Seçili dosyaları silmek istediğinizden emin misiniz?",
-        confirmDeleteSingle: "Bu dosyayı silmek istediğinizden emin misiniz?",
-        fileDeleted: "Dosya silindi!",
-        filesDeleted: "dosya silindi!",
-        fileUploaded: "Dosya yüklendi!",
-        copyUrl: "URL Kopyala",
-        urlCopied: "URL kopyalandı!",
-        noFiles: "Henüz dosya yüklenmemiş",
-        noFilesDesc: "Dosya yüklemek için yukarıdaki alana sürükleyin veya butona tıklayın.",
-        delete: "Sil",
-        view: "Görüntüle",
-    },
-    EN: {
-        pageTitle: "Media Library",
-        pageDesc: "Manage images and files",
-        filter: "Filter",
-        uploadFile: "Upload File",
-        files: "files",
-        selected: "selected",
-        dragAndDrop: "Drag and drop files here",
-        orSelect: "or select from your computer",
-        selectFile: "Select File",
-        supportedFormats: "Supported formats: JPG, PNG, GIF, WEBP, SVG, PDF (Max: 10MB)",
-        uploading: "Uploading...",
-        deleteSelected: "Delete Selected",
-        confirmDelete: "Are you sure you want to delete the selected files?",
-        confirmDeleteSingle: "Are you sure you want to delete this file?",
-        fileDeleted: "File deleted!",
-        filesDeleted: "files deleted!",
-        fileUploaded: "File uploaded!",
-        copyUrl: "Copy URL",
-        urlCopied: "URL copied!",
-        noFiles: "No files uploaded yet",
-        noFilesDesc: "Drag files above or click the button to upload.",
-        delete: "Delete",
-        view: "View",
-    }
-};
-
 export default function MediaLibraryPage() {
-    const { language } = useLanguage();
-    const t = translations[language];
-
     const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
     const [uploading, setUploading] = useState(false);
-    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-    const [selectedFiles, setSelectedFiles] = useState<number[]>([]);
+    const [syncing, setSyncing] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [previewFile, setPreviewFile] = useState<MediaFile | null>(null);
+    const [cropFile, setCropFile] = useState<MediaFile | null>(null);
 
-    useEffect(() => {
-        fetchMedia();
-    }, []);
+    // Categories
+    const [activeCategory, setActiveCategory] = useState("hero");
+    const categories = [
+        { id: 'hero', label: 'Hero / Slider' },
+        { id: 'products', label: 'Ürünler' },
+        { id: 'gallery', label: 'Galeri' },
+        { id: 'services', label: 'Hizmetler' },
+        { id: 'templates', label: 'Mail Şablonları' },
+        { id: 'icons', label: 'İkon & Logo' },
 
-    const fetchMedia = async () => {
+        { id: 'others', label: 'Diğer' },
+        { id: 'trash', label: 'Çöp Kutusu', icon: '🗑️' }
+    ];
+
+    // Modal State
+    const [modalConfig, setModalConfig] = useState<{
+        isOpen: boolean;
+        type: 'soft_delete' | 'permanent_delete' | 'restore' | 'bulk_delete' | 'empty_trash' | 'restore_all' | null;
+        itemId: number | null;
+        itemIds?: number[];
+        title: string;
+        message: string;
+        confirmText?: string;
+        isDanger: boolean;
+    }>({
+        isOpen: false,
+        type: null,
+        itemId: null,
+        itemIds: [],
+        title: '',
+        message: '',
+        confirmText: 'Evet, Sil',
+        isDanger: false
+    });
+
+    const fetchMedia = useCallback(async (isTrash = false) => {
+        setLoading(true);
+        setErrorMessage(null);
         try {
-            const res = await fetch('/api/dashboard/media');
+            const res = await fetch(`/api/dashboard/media?trash=${isTrash}`);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
             const data = await res.json();
             setMediaFiles(data.mediaFiles || []);
         } catch (error) {
             console.error('Failed to fetch media:', error);
+            setErrorMessage('Medya dosyaları yüklenirken hata oluştu.');
         } finally {
             setLoading(false);
         }
+    }, []);
+
+    useEffect(() => {
+        if (activeCategory === 'trash') {
+            fetchMedia(true);
+        } else {
+            fetchMedia(false);
+        }
+    }, [activeCategory, fetchMedia]);
+
+    const handleSync = async () => {
+        setSyncing(true);
+        setErrorMessage(null);
+        try {
+            const res = await fetch('/api/dashboard/media/sync', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                setSuccessMessage(`Senk: ${data.result.added} yeni, ${data.result.removed || 0} silinen.`);
+                fetchMedia(activeCategory === 'trash');
+            } else {
+                setErrorMessage(data.message || "Senkronizasyon başarısız oldu.");
+            }
+        } catch (error) {
+            console.error("Sync failed:", error);
+            setErrorMessage("Senkronizasyon sırasında bir hata oluştu.");
+        } finally {
+            setSyncing(false);
+            setTimeout(() => setSuccessMessage(""), 3000);
+        }
     };
 
-    const onDrop = useCallback(async (acceptedFiles: File[]) => {
-        if (acceptedFiles.length === 0) return;
-
+    const handleUpload = async (files: File[], folder: string) => {
+        if (files.length === 0) return;
         setUploading(true);
 
-        for (const file of acceptedFiles) {
+        for (const file of files) {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-
-                const res = await fetch('/api/dashboard/media', {
-                    method: 'POST',
-                    body: formData,
-                });
-
+                formData.append('folder', folder);
+                const res = await fetch('/api/dashboard/media', { method: 'POST', body: formData });
                 if (res.ok) {
-                    setSuccessMessage(t.fileUploaded);
+                    setSuccessMessage("Dosya yüklendi.");
                     setTimeout(() => setSuccessMessage(""), 3000);
                 }
             } catch (error) {
-                console.error('Upload failed:', error);
+                console.error('Upload error:', error);
             }
         }
-
-        fetchMedia();
+        await fetchMedia(activeCategory === 'trash');
         setUploading(false);
-    }, [t.fileUploaded]);
-
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop,
-        accept: {
-            'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp', '.svg'],
-            'application/pdf': ['.pdf'],
-        },
-        maxSize: 10 * 1024 * 1024, // 10MB
-    });
-
-    const handleFileSelect = (id: number) => {
-        setSelectedFiles((prev) =>
-            prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
-        );
-    };
-
-    const handleDelete = async (id: number) => {
-        if (!confirm(t.confirmDeleteSingle)) return;
-
-        try {
-            const res = await fetch(`/api/dashboard/media?id=${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setSuccessMessage(t.fileDeleted);
-                fetchMedia();
-                setSelectedFiles(prev => prev.filter(fid => fid !== id));
-                setTimeout(() => setSuccessMessage(""), 3000);
-            }
-        } catch (error) {
-            console.error('Delete failed:', error);
-        }
-    };
-
-    const handleDeleteSelected = async () => {
-        if (selectedFiles.length === 0) return;
-        if (!confirm(t.confirmDelete)) return;
-
-        for (const id of selectedFiles) {
-            try {
-                await fetch(`/api/dashboard/media?id=${id}`, { method: 'DELETE' });
-            } catch (error) {
-                console.error('Delete failed:', error);
-            }
-        }
-
-        setSuccessMessage(`${selectedFiles.length} ${t.filesDeleted}`);
-        setSelectedFiles([]);
-        fetchMedia();
+        if (activeCategory !== 'trash') setActiveCategory(folder);
         setTimeout(() => setSuccessMessage(""), 3000);
     };
 
-    const copyUrl = (url: string) => {
-        navigator.clipboard.writeText(url);
-        setSuccessMessage(t.urlCopied);
-        setTimeout(() => setSuccessMessage(""), 2000);
+    const handleAction = (type: 'soft_delete' | 'permanent_delete' | 'restore', id: number) => {
+        let title = '';
+        let message = '';
+        let confirmText = 'Evet, Sil';
+        let isDanger = false;
+
+        if (type === 'soft_delete') {
+            title = 'Görseli Sil';
+            message = 'Bu görseli silmek istediğinizden emin misiniz? Silinen görsel çöp kutusuna taşınacaktır.';
+            isDanger = true;
+        } else if (type === 'permanent_delete') {
+            title = 'Kalıcı Olarak Sil';
+            message = 'Bu işlem geri alınamaz! Görsel sunucudan tamamen silinecektir.';
+            isDanger = true;
+        } else if (type === 'restore') {
+            title = 'Geri Yükle';
+            message = 'Bu görseli orijinal konumuna geri yüklemek istiyor musunuz?';
+            confirmText = 'Geri Yükle';
+            isDanger = false;
+        }
+
+        setModalConfig({
+            isOpen: true,
+            type,
+            itemId: id,
+            title,
+            message,
+            confirmText,
+            isDanger
+        });
     };
 
-    const formatFileSize = (bytes: number) => {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    const confirmAction = async () => {
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+
+        try {
+            let res;
+            const { type, itemId, itemIds } = modalConfig;
+
+            if (type === 'soft_delete' && itemId) {
+                res = await fetch(`/api/dashboard/media?id=${itemId}`, { method: 'DELETE' });
+            } else if (type === 'permanent_delete' && itemId) {
+                res = await fetch(`/api/dashboard/media?id=${itemId}&force=true`, { method: 'DELETE' });
+            } else if (type === 'restore' && itemId) {
+                res = await fetch(`/api/dashboard/media/restore?id=${itemId}`, { method: 'POST' });
+            } else if (type === 'bulk_delete' && itemIds && itemIds.length > 0) {
+                // Bulk delete (soft or permanent based on current category)
+                const isTrash = activeCategory === 'trash';
+                res = await fetch(`/api/dashboard/media/bulk`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: itemIds, force: isTrash })
+                });
+            } else if (type === 'empty_trash') {
+                res = await fetch(`/api/dashboard/media/empty-trash`, { method: 'DELETE' });
+            } else if (type === 'restore_all') {
+                res = await fetch(`/api/dashboard/media/restore-all`, { method: 'POST' });
+            }
+
+            if (res) {
+                const data = await res.json();
+                if (data.success) {
+                    setSuccessMessage(data.message || 'İşlem başarılı');
+                    setTimeout(() => setSuccessMessage(""), 3000);
+                    setSelectedIds(new Set()); // Clear selection
+                    fetchMedia(activeCategory === 'trash');
+                } else {
+                    setErrorMessage(data.error || 'İşlem başarısız oldu.');
+                    setTimeout(() => setErrorMessage(null), 3000);
+                }
+            }
+        } catch (error) {
+            console.error('Action Failed:', error);
+            setErrorMessage('İşlem sırasında bir hata oluştu.');
+        }
     };
 
-    const isImage = (mimeType: string) => mimeType.startsWith('image/');
+    const handleBulkDelete = () => {
+        if (selectedIds.size === 0) return;
+        const isTrash = activeCategory === 'trash';
+        setModalConfig({
+            isOpen: true,
+            type: 'bulk_delete',
+            itemId: null,
+            itemIds: Array.from(selectedIds),
+            title: isTrash ? 'Seçilenleri Kalıcı Sil' : 'Seçilenleri Sil',
+            message: isTrash
+                ? `${selectedIds.size} dosyayı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`
+                : `${selectedIds.size} dosyayı çöp kutusuna taşımak istediğinizden emin misiniz?`,
+            confirmText: 'Evet, Sil',
+            isDanger: true
+        });
+    };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#137fec]"></div>
-            </div>
-        );
-    }
+    const handleEmptyTrash = () => {
+        const trashCount = mediaFiles.length; // Already filtered for trash in fetch
+        if (trashCount === 0) {
+            setSuccessMessage('Çöp kutusu zaten boş.');
+            setTimeout(() => setSuccessMessage(""), 3000);
+            return;
+        }
+        setModalConfig({
+            isOpen: true,
+            type: 'empty_trash',
+            itemId: null,
+            itemIds: [],
+            title: 'Çöp Kutusunu Temizle',
+            message: `Çöp kutusundaki tüm dosyaları (${trashCount} adet) kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`,
+            confirmText: 'Evet, Tümünü Sil',
+            isDanger: true
+        });
+    };
+
+    const handleRestoreAll = () => {
+        const trashCount = mediaFiles.length;
+        if (trashCount === 0) {
+            setSuccessMessage('Çöp kutusu zaten boş.');
+            setTimeout(() => setSuccessMessage(""), 3000);
+            return;
+        }
+        setModalConfig({
+            isOpen: true,
+            type: 'restore_all',
+            itemId: null,
+            itemIds: [],
+            title: 'Tümünü Geri Yükle',
+            message: `Çöp kutusundaki tüm dosyaları (${trashCount} adet) geri yüklemek istediğinizden emin misiniz?`,
+            confirmText: 'Evet, Geri Yükle',
+            isDanger: false
+        });
+    };
+
+    const getFilteredFiles = () => {
+        let filtered = mediaFiles;
+
+        // 1. Search
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            filtered = filtered.filter(f =>
+                f.filename.toLowerCase().includes(q) ||
+                f.originalName.toLowerCase().includes(q)
+            );
+        }
+
+        // 2. Strict Category Logic
+        switch (activeCategory) {
+            case 'hero':
+                filtered = filtered.filter(f => {
+                    const isBanner = f.filename.toLowerCase().includes('dashboard-banner');
+                    if (isBanner) return false;
+                    return f.url.includes('/hero/') || f.filename.toLowerCase().startsWith('hero-');
+                });
+                break;
+            case 'products':
+                filtered = filtered.filter(f => f.url.includes('/products/'));
+                break;
+            case 'gallery':
+                filtered = filtered.filter(f =>
+                    f.url.includes('/gallery/') ||
+                    f.url.includes('/galeri/')
+                );
+                break;
+            case 'services':
+                filtered = filtered.filter(f =>
+                    f.url.includes('/services/') ||
+                    f.url.includes('/hizmetler/')
+                );
+                break;
+            case 'templates':
+                filtered = filtered.filter(f =>
+                    f.url.includes('/templates/') ||
+                    (f.filename.toLowerCase().includes('sablon') || f.filename.toLowerCase().includes('template'))
+                );
+                break;
+            case 'icons':
+                filtered = filtered.filter(f =>
+                    f.filename.toLowerCase().includes('logo') ||
+                    f.filename.toLowerCase().includes('icon') ||
+                    f.filename.toLowerCase().includes('favicon') ||
+                    f.mimeType === 'image/svg+xml'
+                );
+                break;
+            case 'uploads':
+                filtered = filtered.filter(f => f.url.includes('/uploads/'));
+                break;
+            case 'others':
+                filtered = filtered.filter(f => {
+                    const isHero = (f.url.includes('/hero/') || f.filename.toLowerCase().startsWith('hero-')) && !f.filename.toLowerCase().includes('dashboard-banner');
+                    const isProduct = f.url.includes('/products/');
+                    const isGallery = f.url.includes('/gallery/') || f.url.includes('/galeri/');
+                    const isService = f.url.includes('/services/') || f.url.includes('/hizmetler/');
+                    const isTemplate = f.url.includes('/templates/') || (f.filename.toLowerCase().includes('sablon') || f.filename.toLowerCase().includes('template'));
+                    const isIcon = f.filename.toLowerCase().includes('logo') || f.filename.toLowerCase().includes('icon') || f.filename.toLowerCase().includes('favicon') || f.mimeType === 'image/svg+xml';
+                    const isUpload = f.url.includes('/uploads/');
+                    return !isHero && !isProduct && !isGallery && !isService && !isTemplate && !isIcon && !isUpload;
+                });
+                break;
+        }
+
+        // 3. Sort
+        return filtered.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+    };
+
+    const filteredFiles = getFilteredFiles();
 
     return (
-        <div className="h-full flex flex-col">
-            {/* Page Header */}
-            <div className="mb-4 lg:mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-2 lg:gap-4">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl lg:text-3xl font-bold leading-tight tracking-tight text-white">
-                        {t.pageTitle}
-                    </h1>
-                    <p className="text-sm lg:text-base font-normal leading-normal text-gray-400">
-                        {t.pageDesc}
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    {selectedFiles.length > 0 && (
-                        <button
-                            onClick={handleDeleteSelected}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                        >
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                            {t.deleteSelected} ({selectedFiles.length})
-                        </button>
-                    )}
-                </div>
-            </div>
+        <div className="h-full overflow-hidden flex flex-col lg:flex-row gap-4">
 
-            {/* Success Message */}
-            {successMessage && (
-                <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg flex items-center gap-2">
-                    <span className="material-symbols-outlined">check_circle</span>
-                    {successMessage}
-                </div>
-            )}
+            {/* Left Sidebar (Upload & Settings) */}
+            <aside className="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <UploadWidget onDrop={handleUpload} uploading={uploading} selectedCategory={activeCategory} />
 
-            {/* View Toggle & Stats */}
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-[#111418] border border-[#3b4754] p-4">
-                <div className="flex items-center gap-4">
-                    <p className="text-sm text-gray-400">
-                        <span className="font-bold text-white">{mediaFiles.length}</span> {t.files}
-                    </p>
-                    {selectedFiles.length > 0 && (
-                        <p className="text-sm text-gray-400">
-                            <span className="font-bold text-[#137fec]">{selectedFiles.length}</span> {t.selected}
-                        </p>
-                    )}
+                {/* Auto Optimization Info */}
+                <div className="bg-[#111418] border border-[#3b4754] rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-green-400">auto_awesome</span>
+                        <span className="text-white font-medium text-sm">Otomatik Optimizasyon</span>
+                    </div>
+                    <div className="space-y-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                            <span>WebP formatına otomatik dönüşüm</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                            <span>%80 kalite sıkıştırma</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                            <span>Maks 1920px genişlik</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setViewMode("grid")}
-                        className={`flex h-8 w-8 items-center justify-center rounded ${viewMode === "grid"
-                            ? "bg-[#137fec] text-white"
-                            : "bg-[#1c2127] text-gray-400 hover:bg-[#283039]"
-                            }`}
-                    >
-                        <span className="material-symbols-outlined text-lg">grid_view</span>
-                    </button>
-                    <button
-                        onClick={() => setViewMode("list")}
-                        className={`flex h-8 w-8 items-center justify-center rounded ${viewMode === "list"
-                            ? "bg-[#137fec] text-white"
-                            : "bg-[#1c2127] text-gray-400 hover:bg-[#283039]"
-                            }`}
-                    >
-                        <span className="material-symbols-outlined text-lg">view_list</span>
-                    </button>
-                </div>
-            </div>
+            </aside>
 
-            {/* Upload Area */}
-            <div
-                {...getRootProps()}
-                className={`mb-6 rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-all ${isDragActive
-                        ? 'border-[#137fec] bg-[#137fec]/10'
-                        : 'border-[#3b4754] bg-[#111418] hover:border-[#137fec]/50'
-                    }`}
-            >
-                <input {...getInputProps()} />
-                <span className="material-symbols-outlined mb-4 text-5xl text-gray-500">
-                    {uploading ? 'sync' : 'cloud_upload'}
-                </span>
-                <h3 className="mb-2 text-lg font-bold text-white">
-                    {uploading ? t.uploading : t.dragAndDrop}
-                </h3>
-                <p className="mb-4 text-sm text-gray-400">{t.orSelect}</p>
-                <button
-                    className="rounded-lg bg-[#137fec] px-6 py-2 text-sm font-medium text-white hover:bg-[#137fec]/90"
-                    disabled={uploading}
-                >
-                    {t.selectFile}
-                </button>
-                <p className="mt-4 text-xs text-gray-500">{t.supportedFormats}</p>
-            </div>
+            {/* Main Content (Grid) */}
+            <main className="flex-1 flex flex-col min-w-0 bg-[#111418] border border-[#3b4754] rounded-2xl overflow-hidden shadow-2xl">
 
-            {/* Media Grid/List */}
-            {mediaFiles.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-[#111418] rounded-xl border border-[#3b4754] p-12">
-                    <span className="material-symbols-outlined text-6xl mb-4">folder_open</span>
-                    <p className="text-lg font-medium text-gray-300">{t.noFiles}</p>
-                    <p className="text-sm">{t.noFilesDesc}</p>
-                </div>
-            ) : viewMode === "grid" ? (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                    {mediaFiles.map((file) => (
-                        <div
-                            key={file.id}
-                            className={`group relative cursor-pointer overflow-hidden rounded-lg border transition-all ${selectedFiles.includes(file.id)
-                                ? "border-[#137fec] ring-2 ring-[#137fec]/20"
-                                : "border-[#3b4754] hover:border-[#137fec]/50"
-                                }`}
-                            onClick={() => handleFileSelect(file.id)}
-                        >
-                            <div className="aspect-square bg-[#1c2127]">
-                                {isImage(file.mimeType) ? (
-                                    <img
-                                        src={file.url}
-                                        alt={file.originalName}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex h-full items-center justify-center">
-                                        <span className="material-symbols-outlined text-6xl text-gray-500">
-                                            description
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="bg-[#111418] p-3">
-                                <p className="truncate text-sm font-medium text-white">{file.originalName}</p>
-                                <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
-                            </div>
-                            {/* Actions Overlay */}
-                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); copyUrl(file.url); }}
-                                    className="p-1.5 bg-black/60 rounded text-white hover:bg-black/80"
-                                    title={t.copyUrl}
-                                >
-                                    <span className="material-symbols-outlined text-sm">content_copy</span>
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); window.open(file.url, '_blank'); }}
-                                    className="p-1.5 bg-black/60 rounded text-white hover:bg-black/80"
-                                    title={t.view}
-                                >
-                                    <span className="material-symbols-outlined text-sm">open_in_new</span>
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(file.id); }}
-                                    className="p-1.5 bg-red-600/80 rounded text-white hover:bg-red-600"
-                                    title={t.delete}
-                                >
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                </button>
-                            </div>
-                            {/* Checkbox */}
-                            <div className="absolute left-2 top-2">
+                {/* Header Area */}
+                <div className="p-4 border-b border-[#3b4754] bg-[#111418]">
+
+                    {/* Top Row: Title, Search, Sync, Sort */}
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
+
+                        {/* Title & Count */}
+                        <div className="flex-shrink-0">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                Medya Kütüphanesi
+                                <span className="text-xs font-medium text-gray-400 bg-[#1c2127] px-2 py-0.5 rounded-full border border-[#3b4754]">
+                                    {filteredFiles.length}
+                                </span>
+                            </h2>
+                            <p className="text-xs text-gray-400 mt-1">Web sitesi görsellerini yönetin</p>
+                        </div>
+
+                        {/* Actions: Search, Sort, Sync */}
+                        <div className="flex flex-col sm:flex-row gap-3 flex-1 xl:justify-end">
+                            {/* Search (Expanded) */}
+                            <div className="relative flex-1 sm:max-w-md">
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
                                 <input
-                                    type="checkbox"
-                                    checked={selectedFiles.includes(file.id)}
-                                    onChange={() => handleFileSelect(file.id)}
-                                    className="h-5 w-5 rounded border-gray-300 text-[#137fec] focus:ring-[#137fec]"
-                                    onClick={(e) => e.stopPropagation()}
+                                    type="text"
+                                    placeholder="Ara..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-[#0d1014] border border-[#3b4754] text-white text-sm rounded-lg pl-9 pr-4 py-2 focus:border-[#137fec] outline-none placeholder:text-gray-600"
                                 />
                             </div>
+
+                            {/* Sort Button */}
+                            <button
+                                onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                                className="flex items-center justify-center gap-2 bg-[#0d1014] border border-[#3b4754] text-gray-300 text-sm font-medium rounded-lg px-3 py-2 hover:bg-[#1c2127] transition-colors whitespace-nowrap"
+                            >
+                                <span className="material-symbols-outlined text-lg">
+                                    {sortOrder === 'desc' ? 'sort' : 'swap_vert'}
+                                </span>
+                                {sortOrder === 'desc' ? 'En Yeni' : 'En Eski'}
+                            </button>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="overflow-hidden rounded-lg border border-[#3b4754] bg-[#111418]">
-                    <table className="w-full">
-                        <thead className="bg-[#1c2127]">
-                            <tr>
-                                <th className="w-12 px-4 py-3">
-                                    <input
-                                        type="checkbox"
-                                        className="h-4 w-4 rounded border-gray-300 text-[#137fec]"
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setSelectedFiles(mediaFiles.map(f => f.id));
-                                            } else {
-                                                setSelectedFiles([]);
-                                            }
-                                        }}
-                                        checked={selectedFiles.length === mediaFiles.length && mediaFiles.length > 0}
-                                    />
-                                </th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">
-                                    {language === 'TR' ? 'Dosya Adı' : 'File Name'}
-                                </th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">
-                                    {language === 'TR' ? 'Boyut' : 'Size'}
-                                </th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">
-                                    {language === 'TR' ? 'Tür' : 'Type'}
-                                </th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">
-                                    {language === 'TR' ? 'Tarih' : 'Date'}
-                                </th>
-                                <th className="w-32 px-4 py-3"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#3b4754]">
-                            {mediaFiles.map((file) => (
-                                <tr key={file.id} className="hover:bg-white/5">
-                                    <td className="px-4 py-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedFiles.includes(file.id)}
-                                            onChange={() => handleFileSelect(file.id)}
-                                            className="h-4 w-4 rounded border-gray-300 text-[#137fec]"
-                                        />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded bg-[#1c2127] overflow-hidden">
-                                                {isImage(file.mimeType) ? (
-                                                    <img src={file.url} alt="" className="h-full w-full object-cover" />
-                                                ) : (
-                                                    <span className="material-symbols-outlined text-gray-500">description</span>
-                                                )}
-                                            </div>
-                                            <span className="text-sm font-medium text-white truncate max-w-[200px]">
-                                                {file.originalName}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-400">
-                                        {formatFileSize(file.size)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-400">
-                                        {file.mimeType.split('/')[1].toUpperCase()}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-400">
-                                        {new Date(file.createdAt).toLocaleDateString(language === 'TR' ? 'tr-TR' : 'en-US')}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex gap-1 justify-end">
-                                            <button
-                                                onClick={() => copyUrl(file.url)}
-                                                className="p-1.5 text-gray-400 hover:text-[#137fec]"
-                                                title={t.copyUrl}
-                                            >
-                                                <span className="material-symbols-outlined text-lg">content_copy</span>
-                                            </button>
-                                            <button
-                                                onClick={() => window.open(file.url, '_blank')}
-                                                className="p-1.5 text-gray-400 hover:text-[#137fec]"
-                                                title={t.view}
-                                            >
-                                                <span className="material-symbols-outlined text-lg">open_in_new</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(file.id)}
-                                                className="p-1.5 text-gray-400 hover:text-red-400"
-                                                title={t.delete}
-                                            >
-                                                <span className="material-symbols-outlined text-lg">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                    </div>
+
+                    {/* Bottom Row: Categories (Scrollable, Single Line) */}
+                    <div className="flex items-center bg-[#0d1014] p-1.5 rounded-lg border border-[#3b4754] w-full overflow-hidden">
+                        <div className="flex overflow-x-auto gap-2 w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            {categories.filter(c => c.id !== 'uploads').map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => { setActiveCategory(cat.id); setSelectedIds(new Set()); }}
+                                    className={`flex-none px-5 py-2.5 rounded-md text-base whitespace-nowrap font-medium transition-all ${activeCategory === cat.id
+                                        ? 'bg-[#137fec] text-white shadow-lg'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {cat.label}
+                                </button>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center gap-3 mt-3">
+                        {/* Select All / Deselect All Button */}
+                        {filteredFiles.length > 0 && (
+                            <button
+                                onClick={() => {
+                                    if (selectedIds.size === filteredFiles.length) {
+                                        setSelectedIds(new Set());
+                                    } else {
+                                        setSelectedIds(new Set(filteredFiles.map(f => f.id)));
+                                    }
+                                }}
+                                className="flex items-center gap-2 bg-[#1c2127] border border-[#3b4754] text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#252b33] transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-lg">
+                                    {selectedIds.size === filteredFiles.length ? 'deselect' : 'select_all'}
+                                </span>
+                                {selectedIds.size === filteredFiles.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                            </button>
+                        )}
+
+                        {/* Bulk Delete Button */}
+                        {selectedIds.size > 0 && (
+                            <button
+                                onClick={handleBulkDelete}
+                                className="flex items-center gap-2 bg-red-600/20 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-lg">delete</span>
+                                Seçilenleri Sil ({selectedIds.size})
+                            </button>
+                        )}
+
+                        {/* Empty Trash Button - Only in trash category */}
+                        {activeCategory === 'trash' && filteredFiles.length > 0 && (
+                            <button
+                                onClick={handleEmptyTrash}
+                                className="flex items-center gap-2 bg-red-600/20 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-lg">delete_forever</span>
+                                Çöp Kutusunu Temizle
+                            </button>
+                        )}
+
+                        {/* Restore All Button - Only in trash category */}
+                        {activeCategory === 'trash' && filteredFiles.length > 0 && (
+                            <button
+                                onClick={handleRestoreAll}
+                                className="flex items-center gap-2 bg-green-600/20 border border-green-500/50 text-green-400 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600/30 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-lg">restore</span>
+                                Tümünü Geri Yükle
+                            </button>
+                        )}
+                    </div>
                 </div>
-            )}
+
+                {/* Content */}
+                <div className="relative flex-1 overflow-hidden bg-[#111418]">
+                    {/* Success Toast */}
+                    {successMessage && (
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-[#1c2127] border border-[#137fec]/30 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+                            <span className="material-symbols-outlined text-[#137fec] text-lg">check_circle</span>
+                            <span className="text-sm font-medium">{successMessage}</span>
+                        </div>
+                    )}
+
+                    {/* Error Toast */}
+                    {errorMessage && (
+                        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-[#1c2127] border border-red-500/30 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+                            <span className="material-symbols-outlined text-red-500 text-lg">error</span>
+                            <span className="text-sm font-medium">{errorMessage}</span>
+                        </div>
+                    )}
+
+                    <div className="h-full overflow-y-auto p-4 pr-2 custom-scrollbar">
+                        {loading ? (
+                            <div className="h-full flex items-center justify-center">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#137fec]"></div>
+                                    <span className="text-sm text-gray-500">Yükleniyor...</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <MediaGrid
+                                files={filteredFiles}
+                                onDelete={(id) => handleAction(activeCategory === 'trash' ? 'permanent_delete' : 'soft_delete', id)}
+                                onCopyUrl={(url) => { navigator.clipboard.writeText(url); setSuccessMessage("URL Kopyalandı"); setTimeout(() => setSuccessMessage(""), 2000); }}
+                                isTrash={activeCategory === 'trash'}
+                                onRestore={(id) => handleAction('restore', id)}
+                                onPermanentDelete={(id) => handleAction('permanent_delete', id)}
+                                selectedIds={selectedIds}
+                                onToggleSelect={(id) => {
+                                    const newSet = new Set(selectedIds);
+                                    if (newSet.has(id)) {
+                                        newSet.delete(id);
+                                    } else {
+                                        newSet.add(id);
+                                    }
+                                    setSelectedIds(newSet);
+                                }}
+                                onPreview={(file) => setPreviewFile(file)}
+                            />
+                        )}
+                    </div>
+                </div>
+            </main>
+            <ConfirmationModal
+                isOpen={modalConfig.isOpen}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                isDanger={modalConfig.isDanger}
+                confirmText={modalConfig.confirmText}
+                onConfirm={confirmAction}
+                onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+            />
+            <ImagePreviewModal
+                isOpen={!!previewFile}
+                onClose={() => setPreviewFile(null)}
+                file={previewFile}
+                onCopyUrl={(url) => { navigator.clipboard.writeText(url); setSuccessMessage("URL Kopyalandı"); setTimeout(() => setSuccessMessage(""), 2000); }}
+                onDelete={(id) => { setPreviewFile(null); handleAction('soft_delete', id); }}
+                onUpdateAltText={async (id, altText) => {
+                    const res = await fetch(`/api/dashboard/media/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ altText })
+                    });
+                    if (res.ok) {
+                        setMediaFiles(prev => prev.map(f => f.id === id ? { ...f, altText } : f));
+                        setSuccessMessage("Alt text güncellendi");
+                        setTimeout(() => setSuccessMessage(""), 2000);
+                    }
+                }}
+                onCrop={(file) => setCropFile(file)}
+            />
+            <ImageEditorModal
+                isOpen={!!cropFile}
+                onClose={() => setCropFile(null)}
+                file={cropFile}
+                onSave={async (file, croppedBlob) => {
+                    const formData = new FormData();
+                    formData.append('file', croppedBlob, 'cropped.webp');
+
+                    const res = await fetch(`/api/dashboard/media/${file.id}/crop`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        setMediaFiles(prev => [data.mediaFile, ...prev]);
+                        setSuccessMessage("Görsel kırpıldı ve kaydedildi");
+                        setTimeout(() => setSuccessMessage(""), 3000);
+                    }
+                }}
+            />
         </div>
     );
 }
+

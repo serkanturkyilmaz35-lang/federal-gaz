@@ -423,12 +423,12 @@ export default function UsersPage() {
                         <button
                             onClick={handleExportExcel}
                             disabled={exporting}
-                            className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50"
+                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 disabled:opacity-50 transition-colors"
                         >
                             <span className="material-symbols-outlined text-base">
                                 {exporting ? "hourglass_empty" : "file_download"}
                             </span>
-                            {exporting ? "İndiriliyor..." : "Dışa Aktar"}
+                            {exporting ? "İndiriliyor..." : "Dışarı Aktar"}
                         </button>
 
                         <button

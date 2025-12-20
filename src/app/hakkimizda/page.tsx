@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
+import { usePageContent, getSectionValue } from "@/hooks/usePageContent";
 
 const translations = {
     TR: {
@@ -35,9 +36,39 @@ const translations = {
     }
 };
 
+// Default values for dynamic items
+const defaultValues = {
+    TR: [
+        { title: "Kalite", description: "En yüksek kalite standartlarında ürün ve hizmet sunuyoruz." },
+        { title: "Güvenilirlik", description: "Müşterilerimizin güvenini kazanmak ve korumak önceliğimizdir." },
+        { title: "Yenilikçilik", description: "Sürekli gelişim ve yenilikçi çözümlerle sektöre öncülük ediyoruz." }
+    ],
+    EN: [
+        { title: "Quality", description: "We provide products and services at the highest quality standards." },
+        { title: "Reliability", description: "Winning and maintaining our customers' trust is our priority." },
+        { title: "Innovation", description: "We lead the sector with continuous improvement and innovative solutions." }
+    ]
+};
+
 export default function HakkimizdaPage() {
     const { language } = useLanguage();
     const t = translations[language];
+
+    // CMS content integration
+    const { content: cmsContent } = usePageContent('/hakkimizda', language);
+
+    // Get CMS content with fallbacks
+    const headerTitle = getSectionValue(cmsContent, 'header', 'title', t.title) as string;
+    const headerSubtitle = getSectionValue(cmsContent, 'header', 'subtitle', t.subtitle) as string;
+
+    const missionTitle = getSectionValue(cmsContent, 'mission', 'title', t.missionTitle) as string;
+    const missionDesc = getSectionValue(cmsContent, 'mission', 'description', t.missionDesc) as string;
+
+    const visionTitle = getSectionValue(cmsContent, 'vision', 'title', t.visionTitle) as string;
+    const visionDesc = getSectionValue(cmsContent, 'vision', 'description', t.visionDesc) as string;
+
+    const valuesTitle = getSectionValue(cmsContent, 'values', 'title', t.valuesTitle) as string;
+    const valuesItems = getSectionValue(cmsContent, 'values', 'items', defaultValues[language]) as Array<{ title: string; description: string }>;
 
     return (
         <>
@@ -45,10 +76,10 @@ export default function HakkimizdaPage() {
             <section className="bg-secondary py-16 text-white">
                 <div className="mx-auto max-w-7xl px-4">
                     <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
-                        {t.title}
+                        {headerTitle}
                     </h1>
                     <p className="mt-4 text-lg text-white/80">
-                        {t.subtitle}
+                        {headerSubtitle}
                     </p>
                 </div>
             </section>
@@ -59,45 +90,35 @@ export default function HakkimizdaPage() {
                     <div className="grid gap-12 md:grid-cols-2">
                         <div>
                             <h2 className="text-3xl font-bold text-secondary dark:text-white">
-                                {t.missionTitle}
+                                {missionTitle}
                             </h2>
                             <p className="mt-4 text-lg leading-relaxed text-secondary/80 dark:text-white/70">
-                                {t.missionDesc}
+                                {missionDesc}
                             </p>
                         </div>
                         <div>
                             <h2 className="text-3xl font-bold text-secondary dark:text-white">
-                                {t.visionTitle}
+                                {visionTitle}
                             </h2>
                             <p className="mt-4 text-lg leading-relaxed text-secondary/80 dark:text-white/70">
-                                {t.visionDesc}
+                                {visionDesc}
                             </p>
                         </div>
                     </div>
 
                     <div className="mt-16">
                         <h2 className="text-3xl font-bold text-secondary dark:text-white">
-                            {t.valuesTitle}
+                            {valuesTitle}
                         </h2>
                         <div className="mt-8 grid gap-8 md:grid-cols-3">
-                            <div className="rounded-xl bg-white p-6 shadow-md dark:bg-background-dark">
-                                <h3 className="text-xl font-bold text-primary">{t.qualityTitle}</h3>
-                                <p className="mt-2 text-secondary/70 dark:text-white/60">
-                                    {t.qualityDesc}
-                                </p>
-                            </div>
-                            <div className="rounded-xl bg-white p-6 shadow-md dark:bg-background-dark">
-                                <h3 className="text-xl font-bold text-primary">{t.reliabilityTitle}</h3>
-                                <p className="mt-2 text-secondary/70 dark:text-white/60">
-                                    {t.reliabilityDesc}
-                                </p>
-                            </div>
-                            <div className="rounded-xl bg-white p-6 shadow-md dark:bg-background-dark">
-                                <h3 className="text-xl font-bold text-primary">{t.innovationTitle}</h3>
-                                <p className="mt-2 text-secondary/70 dark:text-white/60">
-                                    {t.innovationDesc}
-                                </p>
-                            </div>
+                            {valuesItems.map((value, index) => (
+                                <div key={index} className="rounded-xl bg-white p-6 shadow-md dark:bg-background-dark">
+                                    <h3 className="text-xl font-bold text-primary">{value.title}</h3>
+                                    <p className="mt-2 text-secondary/70 dark:text-white/60">
+                                        {value.description}
+                                    </p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         await connectToDatabase();
 
         const body = await request.json();
-        const { slug, slugEN, titleTR, titleEN, descTR, descEN, contentTR, contentEN, image, sortOrder } = body;
+        const { slug, slugEN, titleTR, titleEN, descTR, descEN, contentTR, contentEN, image, sortOrder, listIcon, ctaIcon } = body;
 
         if (!slug || !slugEN || !titleTR || !titleEN || !descTR || !descEN || !image) {
             return NextResponse.json({ error: 'Required fields missing' }, { status: 400 });
@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
             image,
             sortOrder: sortOrder || 0,
             isActive: true,
+            listIcon: listIcon || 'check',
+            ctaIcon: ctaIcon || 'contact_support',
         });
 
         return NextResponse.json({ product }, { status: 201 });

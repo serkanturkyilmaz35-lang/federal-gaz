@@ -9,6 +9,7 @@ import { useRecaptcha } from "@/hooks/useRecaptcha";
 import WarningModal from "@/components/WarningModal";
 import AuthChoiceModal from "@/components/AuthChoiceModal";
 import OrderSummaryModal from "@/components/OrderSummaryModal";
+import { parseIcon } from "@/utils/iconUtils";
 
 const translations = {
     TR: {
@@ -487,7 +488,10 @@ export default function SiparisPage() {
                     <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
                         <div className="mb-4 flex items-center gap-3">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                                <span className="material-symbols-outlined text-2xl text-primary">edit_note</span>
+                                {(() => {
+                                    const { name, color } = parseIcon(settings.order_form_icon_note || 'edit_note');
+                                    return <span className="material-symbols-outlined text-2xl" style={{ color: color || undefined }}>{name}</span>
+                                })()}
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">
@@ -642,7 +646,11 @@ export default function SiparisPage() {
                                             onClick={addToBasket}
                                             className="w-full rounded-lg bg-primary h-[50px] font-bold text-white transition-transform hover:scale-105 hover:bg-primary/90 flex items-center justify-center gap-1"
                                         >
-                                            <span className="material-symbols-outlined text-sm">add</span> {language === 'EN' ? t.addProductBtn : (settings.order_form_add_product_btn || t.addProductBtn)}
+                                            {(() => {
+                                                const { name, color } = parseIcon(settings.order_form_icon_add || 'add');
+                                                return <span className="material-symbols-outlined text-sm" style={{ color: color || undefined }}>{name}</span>
+                                            })()}
+                                            {language === 'EN' ? t.addProductBtn : (settings.order_form_add_product_btn || t.addProductBtn)}
                                         </button>
                                     </div>
                                 </div>
@@ -726,7 +734,10 @@ export default function SiparisPage() {
                                                             className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-full transition-colors"
                                                             title={t.delete}
                                                         >
-                                                            <span className="material-symbols-outlined text-xl">delete</span>
+                                                            {(() => {
+                                                                const { name, color } = parseIcon(settings.order_form_icon_delete || 'delete');
+                                                                return <span className="material-symbols-outlined text-xl" style={{ color: color || undefined }}>{name}</span>
+                                                            })()}
                                                         </button>
                                                     </div>
                                                 </div>

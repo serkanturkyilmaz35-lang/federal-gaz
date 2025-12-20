@@ -9,18 +9,20 @@ const websitePages = [
         id: 1,
         title: "Ana Sayfa",
         slug: "/",
-        type: "static",
+        type: "cms",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "home",
         description: "Web sitesinin ana sayfası",
     },
     {
         id: 2,
         title: "Hakkımızda",
         slug: "/hakkimizda",
-        type: "static",
+        type: "cms",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "hakkimizda",
         description: "Şirket hakkında bilgi sayfası",
     },
     {
@@ -30,69 +32,37 @@ const websitePages = [
         type: "dynamic",
         status: "published",
         editable: false,
-        description: "Ürün listeleme sayfası",
+        description: "Ürün listeleme sayfası (Ürünler menüsünden yönetilir)",
     },
     {
         id: 4,
         title: "Hizmetler",
         slug: "/hizmetler",
-        type: "static",
+        type: "cms",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "hizmetler",
         description: "Hizmetler ana sayfası",
     },
-    {
-        id: 5,
-        title: "Medikal Gazlar",
-        slug: "/hizmetler/medikal-gazlar",
-        type: "static",
-        status: "published",
-        editable: false,
-        description: "Medikal gaz hizmetleri",
-    },
-    {
-        id: 6,
-        title: "Kaynak Gazları",
-        slug: "/hizmetler/kaynak-gazlari",
-        type: "static",
-        status: "published",
-        editable: false,
-        description: "Kaynak gazları hizmetleri",
-    },
-    {
-        id: 7,
-        title: "Özel Gaz Karışımları",
-        slug: "/hizmetler/ozel-gaz-karisimlari",
-        type: "static",
-        status: "published",
-        editable: false,
-        description: "Özel gaz karışımları hizmetleri",
-    },
-    {
-        id: 8,
-        title: "Gıda Gazları",
-        slug: "/hizmetler/gida-gazlari",
-        type: "static",
-        status: "published",
-        editable: false,
-        description: "Gıda gazları hizmetleri",
-    },
+
     {
         id: 9,
         title: "Galeri",
         slug: "/galeri",
-        type: "static",
+        type: "cms",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "galeri",
         description: "Fotoğraf galerisi",
     },
     {
         id: 10,
         title: "İletişim",
         slug: "/iletisim",
-        type: "static",
+        type: "cms",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "iletisim",
         description: "İletişim sayfası",
     },
     {
@@ -102,33 +72,36 @@ const websitePages = [
         type: "dynamic",
         status: "published",
         editable: false,
-        description: "Online sipariş formu",
+        description: "Online sipariş formu (Form ayarlarından yönetilir)",
     },
     {
         id: 12,
         title: "Gizlilik Politikası",
         slug: "/gizlilik-politikasi",
-        type: "legal",
+        type: "cms",
         status: "published",
         editable: true,
+        editSlug: "gizlilik-politikasi",
         description: "Gizlilik politikası sayfası",
     },
     {
         id: 13,
         title: "KVKK Aydınlatma Metni",
         slug: "/kvkk",
-        type: "legal",
+        type: "cms",
         status: "published",
         editable: true,
+        editSlug: "kvkk",
         description: "KVKK aydınlatma metni",
     },
     {
         id: 14,
         title: "Çerez Politikası",
         slug: "/cerez-politikasi",
-        type: "legal",
+        type: "cms",
         status: "published",
         editable: true,
+        editSlug: "cerez-politikasi",
         description: "Çerez politikası sayfası",
     },
     {
@@ -137,7 +110,8 @@ const websitePages = [
         slug: "/giris",
         type: "auth",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "giris",
         description: "Üye giriş sayfası",
     },
     {
@@ -146,7 +120,8 @@ const websitePages = [
         slug: "/kayit-ol",
         type: "auth",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "kayit-ol",
         description: "Üyelik kayıt sayfası",
     },
     {
@@ -155,8 +130,19 @@ const websitePages = [
         slug: "/profil",
         type: "auth",
         status: "published",
-        editable: false,
+        editable: true,
+        editSlug: "profil",
         description: "Kullanıcı profil sayfası",
+    },
+    {
+        id: 18,
+        title: "Şifremi Unuttum",
+        slug: "/sifremi-unuttum",
+        type: "auth",
+        status: "published",
+        editable: true,
+        editSlug: "sifremi-unuttum",
+        description: "Şifre sıfırlama sayfası",
     },
 ];
 
@@ -173,6 +159,7 @@ export default function ContentPagesPage() {
 
     const getTypeLabel = (type: string) => {
         switch (type) {
+            case 'cms': return 'CMS';
             case 'legal': return 'Yasal';
             case 'static': return 'Statik';
             case 'dynamic': return 'Dinamik';
@@ -183,6 +170,7 @@ export default function ContentPagesPage() {
 
     const getTypeBadgeColor = (type: string) => {
         switch (type) {
+            case 'cms': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
             case 'legal': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
             case 'static': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
             case 'dynamic': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
@@ -195,29 +183,24 @@ export default function ContentPagesPage() {
         <div className="mx-auto max-w-7xl">
             {/* Page Header */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-3xl font-bold leading-tight tracking-tight text-[#292828] dark:text-white">
-                        Sayfa Yönetimi
-                    </h1>
-                    <p className="text-base font-normal leading-normal text-[#94847c]">
-                        Web sitesindeki tüm sayfaları görüntüleyin
-                    </p>
-                </div>
-            </div>
-
-            {/* Info Box */}
-            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-blue-500">info</span>
-                    <div>
-                        <p className="text-sm text-blue-800 dark:text-blue-300">
-                            Bu sayfada web sitenizde bulunan tüm sayfalar listelenmektedir.
-                            <strong className="text-purple-600"> Yasal</strong> olarak işaretli sayfaların içeriklerini
-                            Ayarlar → Yasal sekmesinden yönetebilirsiniz.
+                <div className="flex items-center gap-4">
+                    <Link
+                        href="/dashboard/content"
+                        className="flex items-center justify-center h-10 w-10 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#283039] dark:hover:bg-[#3b4754]"
+                    >
+                        <span className="material-symbols-outlined">arrow_back</span>
+                    </Link>
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-3xl font-bold leading-tight tracking-tight text-[#292828] dark:text-white">
+                            Sayfa Yönetimi
+                        </h1>
+                        <p className="text-base font-normal leading-normal text-[#94847c]">
+                            Web sitesindeki tüm sayfaları görüntüleyin
                         </p>
                     </div>
                 </div>
             </div>
+
 
             {/* Search & Filters */}
             <div className="mb-6 flex flex-wrap gap-4">
@@ -301,7 +284,7 @@ export default function ContentPagesPage() {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
                                         <a
-                                            href={page.slug}
+                                            href={`http://localhost:3000${page.slug === '/' ? '' : page.slug}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-[#94847c] hover:text-blue-500"
@@ -309,11 +292,20 @@ export default function ContentPagesPage() {
                                         >
                                             <span className="material-symbols-outlined">visibility</span>
                                         </a>
-                                        {page.editable && (
+                                        {page.editable && (page.type === 'cms' || page.type === 'auth') && page.editSlug && (
                                             <Link
-                                                href={`/dashboard/content/pages/${page.slug.replace('/', '')}`}
+                                                href={`/dashboard/content/pages/edit/${page.editSlug}`}
                                                 className="text-[#94847c] hover:text-[#b13329]"
                                                 title="İçeriği Düzenle"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </Link>
+                                        )}
+                                        {page.editable && page.type === 'legal' && (
+                                            <Link
+                                                href="/dashboard/settings#yasal"
+                                                className="text-[#94847c] hover:text-[#b13329]"
+                                                title="Yasal Sayfa Ayarları"
                                             >
                                                 <span className="material-symbols-outlined">edit</span>
                                             </Link>
@@ -332,22 +324,36 @@ export default function ContentPagesPage() {
                     Toplam <span className="font-medium text-[#292828] dark:text-white">{filteredPages.length}</span> sayfa
                 </p>
                 <div className="flex gap-4 text-xs text-[#94847c]">
-                    <span className="flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                        Statik: {websitePages.filter(p => p.type === 'static').length}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-orange-500"></span>
-                        Dinamik: {websitePages.filter(p => p.type === 'dynamic').length}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-purple-500"></span>
-                        Yasal: {websitePages.filter(p => p.type === 'legal').length}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                        Kimlik: {websitePages.filter(p => p.type === 'auth').length}
-                    </span>
+                    {websitePages.filter(p => p.type === 'cms').length > 0 && (
+                        <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                            CMS: {websitePages.filter(p => p.type === 'cms').length}
+                        </span>
+                    )}
+                    {websitePages.filter(p => p.type === 'static').length > 0 && (
+                        <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                            Statik: {websitePages.filter(p => p.type === 'static').length}
+                        </span>
+                    )}
+                    {websitePages.filter(p => p.type === 'dynamic').length > 0 && (
+                        <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+                            Dinamik: {websitePages.filter(p => p.type === 'dynamic').length}
+                        </span>
+                    )}
+                    {websitePages.filter(p => p.type === 'legal').length > 0 && (
+                        <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+                            Yasal: {websitePages.filter(p => p.type === 'legal').length}
+                        </span>
+                    )}
+                    {websitePages.filter(p => p.type === 'auth').length > 0 && (
+                        <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                            Kimlik: {websitePages.filter(p => p.type === 'auth').length}
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

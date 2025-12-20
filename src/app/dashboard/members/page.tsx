@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { useSearchParams } from "next/navigation";
 import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
 import { filterByDate } from "@/lib/dateFilterUtils";
+import XLSX from 'xlsx-js-style';
 
 interface Address {
     id: number;
@@ -118,11 +119,94 @@ export default function MembersPage() {
     // ESC key to close modal
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsModalOpen(false);
+            if (e.key === 'Escape') {
+                setIsModalOpen(false);
+                setIsAddModalOpen(false);
+                // Close Bulk Modal logic
+                setIsBulkModalOpen(false);
+                setUploadedFile(null);
+                setImportResults(null);
+                setBulkSendWelcomeEmail(false);
+            }
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
+
+    const handleExport = () => {
+        const data = filteredMembers.map(m => ({
+            'Müşteri Adı': m.name,
+            'E-posta': m.email,
+            'Telefon': m.phone,
+            'Katılma Tarihi': m.joinDate,
+            'Durum': m.isActive ? 'Aktif' : 'Pasif',
+            'Toplam Sipariş': m.totalOrders,
+            'Adres Sayısı': m.addresses.length,
+            'Varsayılan Adres': m.addresses.find(a => a.isDefault)?.address || (m.addresses[0]?.address || '-')
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        // Styling
+        const headerStyle = {
+            font: { bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "137FEC" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin", color: { auto: 1 } },
+                bottom: { style: "thin", color: { auto: 1 } },
+                left: { style: "thin", color: { auto: 1 } },
+                right: { style: "thin", color: { auto: 1 } }
+            }
+        };
+
+        const cellStyle = {
+            alignment: { vertical: "center" },
+            border: {
+                top: { style: "thin", color: { rgb: "E0E0E0" } },
+                bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+                left: { style: "thin", color: { rgb: "E0E0E0" } },
+                right: { style: "thin", color: { rgb: "E0E0E0" } }
+            }
+        };
+
+        // Apply column widths
+        const wscols = [
+            { wch: 25 }, // Name
+            { wch: 30 }, // Email
+            { wch: 15 }, // Phone
+            { wch: 15 }, // Date
+            { wch: 10 }, // Status
+            { wch: 15 }, // Orders
+            { wch: 12 }, // Address Count
+            { wch: 50 }  // Address
+        ];
+        ws['!cols'] = wscols;
+
+        // Apply styles to headers (Ref 'A1:H1')
+        const range = XLSX.utils.decode_range(ws['!ref'] || "A1:H1");
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const address = XLSX.utils.encode_cell({ r: 0, c: C });
+            if (!ws[address]) continue;
+            ws[address].s = headerStyle;
+        }
+
+        // Apply styles to data cells
+        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const address = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[address]) continue;
+                ws[address].s = cellStyle;
+            }
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Üyeler");
+
+        // Generate filename with date
+        const dateStr = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
+        XLSX.writeFile(wb, `federal-gaz-uyeler-${dateStr}.xlsx`);
+    };
 
     // Filter Logic
     const dateFilteredMembers = filterByDate(members, "joinDate", dateRange, customStartDate, customEndDate);
@@ -385,6 +469,13 @@ export default function MembersPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-[#137fec] text-white hover:bg-[#137fec]/90 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-base">file_download</span>
+                        Dışarı Aktar
+                    </button>
                     <button
                         onClick={() => setIsBulkModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors"

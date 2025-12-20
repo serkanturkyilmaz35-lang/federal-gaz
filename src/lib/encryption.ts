@@ -1,5 +1,11 @@
 import forge from 'node-forge';
 
+// Use globalThis to persist across hot-reloads in development
+declare global {
+    // eslint-disable-next-line no-var
+    var _keyManagerInstance: KeyManager | undefined;
+}
+
 class KeyManager {
     private static instance: KeyManager;
     private keyPair: forge.pki.KeyPair;
@@ -11,6 +17,15 @@ class KeyManager {
     }
 
     public static getInstance(): KeyManager {
+        // In development, use globalThis to persist across hot-reloads
+        if (process.env.NODE_ENV === 'development') {
+            if (!globalThis._keyManagerInstance) {
+                globalThis._keyManagerInstance = new KeyManager();
+            }
+            return globalThis._keyManagerInstance;
+        }
+
+        // In production, use regular singleton
         if (!KeyManager.instance) {
             KeyManager.instance = new KeyManager();
         }

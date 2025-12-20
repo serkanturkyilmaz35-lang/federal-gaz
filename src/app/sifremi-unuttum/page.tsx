@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useSettings } from "@/context/SettingsContext";
+import { parseIcon } from "@/utils/iconUtils";
 
-const translations = {
+// Default translations (fallback)
+const defaultTranslations = {
     TR: {
         title: "Şifremi Unuttum",
         subtitle: "E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.",
@@ -31,14 +34,61 @@ const translations = {
     }
 };
 
+interface FormField {
+    key: string;
+    label: string;
+    placeholder: string;
+}
+
+interface CMSContent {
+    header?: { title?: string; subtitle?: string };
+    formFields?: { fields?: FormField[] };
+    labels?: {
+        submitButton?: string;
+        sending?: string;
+        successMessage?: string;
+        backToLogin?: string;
+        rememberPassword?: string;
+    };
+}
+
 export default function ForgotPasswordPage() {
     const { language } = useLanguage();
-    const t = translations[language];
+    const { settings } = useSettings();
+    const t = defaultTranslations[language];
 
+    const [content, setContent] = useState<CMSContent>({});
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+
+    // Fetch CMS content
+    useEffect(() => {
+        const fetchContent = async () => {
+            try {
+                const res = await fetch(`/api/dashboard/page-content?slug=/sifremi-unuttum&language=${language}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const contentObj: CMSContent = {};
+                    data.sections?.forEach((section: { key: string; content: object }) => {
+                        contentObj[section.key as keyof CMSContent] = section.content as CMSContent[keyof CMSContent];
+                    });
+                    setContent(contentObj);
+                }
+            } catch (err) {
+                console.error('Error fetching CMS content:', err);
+            }
+        };
+        fetchContent();
+    }, [language]);
+
+    // Merge CMS content with defaults
+    const header = content.header || {};
+    const labels = content.labels || {};
+    const formFields = content.formFields?.fields || [];
+
+    const emailField = formFields.find(f => f.key === 'email') || null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,11 +119,13 @@ export default function ForgotPasswordPage() {
         <div className="flex flex-1 items-center justify-center py-12">
             <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg dark:bg-secondary">
                 <div className="mb-8 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                        <span className="material-symbols-outlined text-3xl text-primary">lock_reset</span>
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10" style={{ backgroundColor: parseIcon(settings?.auth_icon_forgot_password || 'lock_reset').color ? `${parseIcon(settings?.auth_icon_forgot_password || 'lock_reset').color}20` : undefined }}>
+                        <span className="material-symbols-outlined text-3xl text-primary" style={{ color: parseIcon(settings?.auth_icon_forgot_password || 'lock_reset').color }}>
+                            {parseIcon(settings?.auth_icon_forgot_password || 'lock_reset').name}
+                        </span>
                     </div>
-                    <h1 className="text-2xl font-bold text-secondary dark:text-white">{t.title}</h1>
-                    <p className="mt-2 text-sm text-secondary/60 dark:text-white/60">{t.subtitle}</p>
+                    <h1 className="text-2xl font-bold text-secondary dark:text-white">{header.title || t.title}</h1>
+                    <p className="mt-2 text-sm text-secondary/60 dark:text-white/60">{header.subtitle || t.subtitle}</p>
                 </div>
 
                 {error && (
@@ -88,14 +140,14 @@ export default function ForgotPasswordPage() {
                             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-500">
                                 <span className="material-symbols-outlined text-2xl text-white">check</span>
                             </div>
-                            <p className="text-sm text-green-700 dark:text-green-300">{t.success}</p>
+                            <p className="text-sm text-green-700 dark:text-green-300">{labels.successMessage || t.success}</p>
                         </div>
                         <Link
                             href="/giris"
                             className="inline-flex items-center gap-2 font-medium text-primary hover:underline"
                         >
                             <span className="material-symbols-outlined text-lg">arrow_back</span>
-                            {t.backToLogin}
+                            {labels.backToLogin || t.backToLogin}
                         </Link>
                     </div>
                 ) : (
@@ -103,7 +155,7 @@ export default function ForgotPasswordPage() {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-secondary dark:text-white">
-                                    {t.email}
+                                    {emailField?.label || t.email}
                                 </label>
                                 <input
                                     id="email"
@@ -112,7 +164,7 @@ export default function ForgotPasswordPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     className="mt-1 block w-full rounded-lg border border-secondary/20 bg-transparent px-4 py-2 text-secondary placeholder-secondary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-white/20 dark:text-white"
-                                    placeholder={t.emailPlaceholder}
+                                    placeholder={emailField?.placeholder || t.emailPlaceholder}
                                 />
                             </div>
 
@@ -121,14 +173,14 @@ export default function ForgotPasswordPage() {
                                 disabled={isLoading}
                                 className="w-full rounded-lg bg-primary py-3 text-center text-sm font-bold text-white transition-transform hover:scale-[1.02] hover:bg-primary/90 disabled:opacity-70 disabled:hover:scale-100"
                             >
-                                {isLoading ? t.sending : t.submitBtn}
+                                {isLoading ? (labels.sending || t.sending) : (labels.submitButton || t.submitBtn)}
                             </button>
                         </form>
 
                         <div className="mt-6 text-center text-sm text-secondary/60 dark:text-white/60">
-                            {t.rememberPassword}{" "}
+                            {labels.rememberPassword || t.rememberPassword}{" "}
                             <Link href="/giris" className="font-medium text-primary hover:underline">
-                                {t.backToLogin}
+                                {labels.backToLogin || t.backToLogin}
                             </Link>
                         </div>
                     </>

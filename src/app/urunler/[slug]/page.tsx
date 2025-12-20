@@ -1,8 +1,9 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
-import { useParams, notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 // Product Data Schema
 interface ProductContent {
@@ -11,16 +12,20 @@ interface ProductContent {
     longDescription: string;
     image: string;
     features: string[];
-    specs?: { label: string; value: string }[];
+    specs: { label: string; value: string }[];
+    listIcon?: string;
+    ctaIcon?: string;
 }
 
-const productData: Record<string, { TR: ProductContent; EN: ProductContent }> = {
+// Default Data (Matches Live Site EXACTLY)
+// Used as fallback if DB is empty or fails
+const defaultProductData: Record<string, { TR: ProductContent; EN: ProductContent }> = {
     "medikal-gazlar": {
         TR: {
             title: "Medikal Gazlar",
             description: "Hastaneler ve evde bakım için hayati öneme sahip yüksek saflıkta medikal gazlar.",
             longDescription: "Federal Gaz olarak, insan sağlığının önemini biliyor ve medikal gaz üretiminde en yüksek kalite standartlarını (Avrupa Farmakopesi) titizlikle uyguluyoruz. Hastaneler, klinikler ve evde bakım hastaları için kesintisiz ve güvenilir medikal oksijen, azot protoksit ve medikal hava tedariği sağlıyoruz. Üretimden doluma ve dağıtıma kadar tüm süreçlerimiz Sağlık Bakanlığı mevzuatlarına tam uyumludur.",
-            image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&auto=format&fit=crop&q=80",
+            image: "/products/medikal-gazlar-custom.jpg",
             features: [
                 "%99.5+ Saflıkta Medikal Oksijen",
                 "7/24 Acil Durum Tedariği",
@@ -37,7 +42,7 @@ const productData: Record<string, { TR: ProductContent; EN: ProductContent }> = 
             title: "Medical Gases",
             description: "Vital high-purity medical gases for hospitals and home care.",
             longDescription: "At Federal Gaz, we understand the critical importance of human health and strictly adhere to the highest quality standards (European Pharmacopoeia) in medical gas production. We provide uninterrupted and reliable supply of medical oxygen, nitrous oxide, and medical air for hospitals, clinics, and home care patients. All our processes from production to filling and distribution are fully compliant with Health Ministry regulations.",
-            image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&auto=format&fit=crop&q=80",
+            image: "/products/medikal-gazlar-custom.jpg",
             features: [
                 "99.5%+ Purity Medical Oxygen",
                 "24/7 Emergency Supply",
@@ -71,8 +76,8 @@ const productData: Record<string, { TR: ProductContent; EN: ProductContent }> = 
         },
         EN: {
             title: "Industrial Gases",
-            description: "High-quality industrial gases, the cornerstone of industrial production.",
-            longDescription: "We provide Oxygen, Nitrogen, Argon, and Carbon Dioxide gases needed by many sectors from metallurgy to chemistry, automotive to construction. We develop custom gas supply solutions (cylinders, manifolds, bulk liquid) to increase efficiency and reduce costs in your production processes.",
+            description: "High quality industrial gases - the cornerstone of industrial production.",
+            longDescription: "We provide Oxygen, Nitrogen, Argon, and Carbon Dioxide gases needed by many sectors from metallurgy to chemistry, automotive to construction. We develop custom gas supply solutions to increase efficiency and reduce costs in your production processes.",
             image: "/products/endustriyel-gazlar-custom.jpg",
             features: [
                 "High Purity Industrial Gases",
@@ -119,16 +124,14 @@ const productData: Record<string, { TR: ProductContent; EN: ProductContent }> = 
     }
 };
 
-// English to Turkish slug mapping
+// Slug mapping
 const slugMapping: Record<string, string> = {
-    // English slugs -> Turkish keys
     'medical-gases': 'medikal-gazlar',
     'industrial-gases': 'endustriyel-gazlar',
     'welding-gases': 'kaynak-gazlari',
     'food-gases': 'gida-gazlari',
     'special-gases': 'ozel-gazlar',
     'cryogenic-liquids': 'kriyojenik-sivilar',
-    // Turkish slugs map to themselves
     'medikal-gazlar': 'medikal-gazlar',
     'endustriyel-gazlar': 'endustriyel-gazlar',
     'kaynak-gazlari': 'kaynak-gazlari',
@@ -141,12 +144,50 @@ export default function ProductDetailPage() {
     const { language } = useLanguage();
     const params = useParams();
     const slug = params.slug as string;
+    const searchSlug = slugMapping[slug] || slug;
 
-    // Map English slugs to Turkish keys, or use the slug directly if it's already Turkish
-    const productKey = slugMapping[slug] || slug;
-    const product = productData[productKey];
+    // Use default data initially (server-like rendering)
+    const [content, setContent] = useState<ProductContent | null>(() => {
+        const defaultData = defaultProductData[searchSlug];
+        return defaultData ? defaultData[language] : null;
+    });
 
-    if (!product) {
+    // Try to fetch updated data from DB
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const res = await fetch(`/api/products/${searchSlug}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.product && data.product.isActive) {
+                        const p = data.product;
+                        setContent({
+                            title: language === 'TR' ? p.titleTR : p.titleEN,
+                            description: language === 'TR' ? p.descTR : p.descEN,
+                            longDescription: language === 'TR' ? p.contentTR : p.contentEN,
+                            image: p.heroImage || p.image, // Prefer hero image if available
+                            features: (language === 'TR' ? p.featuresTR : p.featuresEN)?.split('\n').filter((f: string) => f.trim()) || [],
+                            listIcon: p.listIcon || 'check',
+                            ctaIcon: p.ctaIcon || 'contact_support',
+                            specs: (() => {
+                                try {
+                                    const specsStr = language === 'TR' ? p.specsTR : p.specsEN;
+                                    return specsStr ? JSON.parse(specsStr) : [];
+                                } catch {
+                                    return [];
+                                }
+                            })()
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch product, using static fallback", error);
+            }
+        };
+        fetchProduct();
+    }, [searchSlug, language]);
+
+    if (!content) {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
@@ -160,11 +201,9 @@ export default function ProductDetailPage() {
         );
     }
 
-    const content = product[language];
-
     return (
         <main className="min-h-screen bg-background-light dark:bg-background-dark">
-            {/* Hero Section - Full Width Image with Overlay */}
+            {/* Hero Section - Matching Live Site Structure Exactly */}
             <section className="relative h-[50vh] min-h-[400px] w-full overflow-hidden">
                 <div className="absolute inset-0 bg-secondary/50" /> {/* Dark overlay */}
                 <img
@@ -184,7 +223,7 @@ export default function ProductDetailPage() {
             <section className="py-16">
                 <div className="container mx-auto px-4">
                     <div className="grid gap-12 lg:grid-cols-3">
-                        {/* Left Column: Description */}
+                        {/* Left Column: Description & Features */}
                         <div className="lg:col-span-2">
                             <div className="rounded-2xl bg-white p-8 shadow-sm dark:bg-[#1a1a1a]">
                                 <h2 className="mb-6 text-2xl font-bold text-secondary dark:text-white">
@@ -194,25 +233,30 @@ export default function ProductDetailPage() {
                                     {content.longDescription}
                                 </p>
 
-                                <h3 className="mt-8 mb-4 text-xl font-bold text-secondary dark:text-white">
-                                    {language === 'TR' ? 'Öne Çıkan Özellikler' : 'Key Features'}
-                                </h3>
-                                <ul className="grid gap-4 sm:grid-cols-2">
-                                    {content.features.map((feature, idx) => (
-                                        <li key={idx} className="flex items-center gap-3">
-                                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                                <span className="material-symbols-outlined text-sm">check</span>
-                                            </span>
-                                            <span className="text-secondary/80 dark:text-white/80">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                {content.features.length > 0 && (
+                                    <>
+                                        <h3 className="mt-8 mb-4 text-xl font-bold text-secondary dark:text-white">
+                                            {language === 'TR' ? 'Öne Çıkan Özellikler' : 'Key Features'}
+                                        </h3>
+                                        <ul className="grid gap-4 sm:grid-cols-2">
+                                            {content.features.map((feature, idx) => (
+                                                <li key={idx} className="flex items-center gap-3">
+                                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                        <span className="material-symbols-outlined text-sm">{content.listIcon || 'check'}</span>
+                                                    </span>
+                                                    <span className="text-secondary/80 dark:text-white/80">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                )}
                             </div>
                         </div>
 
                         {/* Right Column: Specs Card & CTA */}
                         <div className="space-y-8">
-                            {content.specs && (
+                            {/* Specs Box - Dark Background (matches live) */}
+                            {content.specs && content.specs.length > 0 && (
                                 <div className="rounded-2xl bg-secondary p-8 text-white shadow-lg">
                                     <h3 className="mb-6 text-xl font-bold">
                                         {language === 'TR' ? 'Teknik Özellikler' : 'Technical Specifications'}
@@ -228,8 +272,9 @@ export default function ProductDetailPage() {
                                 </div>
                             )}
 
+                            {/* Offer Box - White Background */}
                             <div className="rounded-2xl bg-white p-8 text-center shadow-sm border border-secondary/10 dark:bg-[#1a1a1a] dark:border-white/10">
-                                <span className="material-symbols-outlined mb-4 text-4xl text-primary">contact_support</span>
+                                <span className="material-symbols-outlined mb-4 text-4xl text-primary">{content.ctaIcon || 'contact_support'}</span>
                                 <h3 className="mb-2 text-xl font-bold text-secondary dark:text-white">
                                     {language === 'TR' ? 'Teklif Alın' : 'Get a Quote'}
                                 </h3>

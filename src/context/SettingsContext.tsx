@@ -20,12 +20,25 @@ export interface SiteSettingsData {
     contact_phone_3_label?: string;
     contact_email: string;
 
+    // Contact Icons
+    contact_icon_address?: string;
+    contact_icon_phone?: string;
+    contact_icon_gsm?: string;
+    contact_icon_email?: string;
+    contact_icon_directions?: string;
+
     // Social
     instagram_url: string;
     facebook_url: string;
     twitter_url: string;
     linkedin_url: string;
     youtube_url: string;
+
+    // Auth & Profile Icons
+    auth_icon_forgot_password?: string;
+    auth_icon_login?: string;
+    auth_icon_register?: string;
+    auth_icon_profile?: string;
 
     // Homepage
     homepage_marquee_text?: string;
@@ -82,8 +95,12 @@ export interface SiteSettingsData {
     order_form_other_not_added?: string;
     order_form_other_popup_title?: string;
     order_form_other_popup_subtitle?: string;
+
     order_form_other_popup_label?: string;
     order_form_other_popup_placeholder?: string;
+    order_form_icon_add?: string;
+    order_form_icon_delete?: string;
+    order_form_icon_note?: string;
 
     // Global Visibility Control
     system_disabled_keys?: string; // JSON Array of keys that are disabled (passive)
@@ -103,11 +120,22 @@ const defaultSettings: SiteSettingsData = {
     contact_phone_2: "(+90) 543 455 45 63",
     contact_phone_3: "(+90) 532 422 45 15",
     contact_email: "federal.gaz@hotmail.com",
+    contact_icon_address: "location_on|#b13329",
+    contact_icon_phone: "phone|#137fec",
+    contact_icon_gsm: "smartphone|#137fec",
+    contact_icon_email: "mail|#b13329",
+    contact_icon_directions: "directions|#ffffff",
     instagram_url: "https://www.instagram.com/federal_gaz/",
     facebook_url: "",
     twitter_url: "",
     linkedin_url: "",
     youtube_url: "",
+
+    // Auth Icons Defaults
+    auth_icon_forgot_password: "lock_reset|#b13329",
+    auth_icon_login: "",
+    auth_icon_register: "",
+    auth_icon_profile: "",
     homepage_marquee_text: "Önemli Duyuru: Federal Gaz sipariş ve destek talepleriniz için 7/24 iletişim e-posta adresimiz federal.gaz@hotmail.com",
     contact_map_lat: "39.9876",
     contact_map_lng: "32.7543",
@@ -162,6 +190,9 @@ const defaultSettings: SiteSettingsData = {
     order_form_other_popup_subtitle: "'Diğer' seçeneği için detay giriniz",
     order_form_other_popup_label: "Hangi ürünü istiyorsunuz? *",
     order_form_other_popup_placeholder: "Örn: 10 adet 50 litrelik helyum tüpü, balon dolumu için...",
+    order_form_icon_add: "add|#ffffff",
+    order_form_icon_delete: "delete|#ef4444",
+    order_form_icon_note: "edit_note|#ef4444",
 };
 
 interface SettingsContextType {

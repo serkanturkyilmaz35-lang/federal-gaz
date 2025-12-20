@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SettingFieldWrapper from "@/components/dashboard/SettingFieldWrapper";
 import DynamicFieldBuilder, { FormField } from "@/components/dashboard/DynamicFieldBuilder";
+import { DASHBOARD_ICONS, ICON_COLORS } from "@/constants/dashboardIcons";
+import { parseIcon, formatIcon } from "@/utils/iconUtils";
 
 // Default settings structure
 const defaultSettings = {
@@ -23,6 +25,13 @@ const defaultSettings = {
     contact_phone_3: "(+90) 532 422 45 15",
     contact_phone_3_label: "Bayram Tıraş",
     contact_email: "federal.gaz@hotmail.com",
+
+    // Contact Icons (Format: icon_name|color)
+    contact_icon_address: "location_on|#b13329",
+    contact_icon_phone: "phone|#137fec",
+    contact_icon_gsm: "smartphone|#137fec",
+    contact_icon_email: "mail|#b13329",
+    contact_icon_directions: "directions|#ffffff",
 
     // Social Media
     instagram_url: "https://www.instagram.com/federal_gaz/",
@@ -79,6 +88,8 @@ const defaultSettings = {
     order_form_add_product_btn: "Ürün Ekle",
     order_form_basket_title: "Sipariş Sepeti",
     order_form_empty_basket: "Henüz ürün eklenmedi.",
+    order_form_icon_add: "add|#ffffff",
+    order_form_icon_delete: "delete|#ef4444",
     order_form_submitting: "Gönderiliyor...",
     order_form_success_title: "🎉 Siparişiniz Alındı!",
     order_form_success_message: "Siparişiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz.",
@@ -87,6 +98,12 @@ const defaultSettings = {
     order_form_fill_product_error: "Lütfen ürün, miktar ve birim seçiniz.",
     order_form_other_note_required: "'Diğer' seçeneği için lütfen Ek Notlar alanına hangi ürünü istediğinizi detaylı olarak yazın.",
     order_form_other_not_added: "'Diğer' ürünü henüz sepete eklenmedi! Lütfen önce 'Ürün Ekle' butonuna tıklayın.",
+
+    // Auth & Profile Icons
+    auth_icon_forgot_password: "lock_reset|#b13329",
+    auth_icon_login: "",
+    auth_icon_register: "",
+    auth_icon_profile: "",
     order_form_other_popup_title: "Ürün Detayı Gerekli",
     order_form_other_popup_subtitle: "'Diğer' seçeneği için detay giriniz",
     order_form_other_popup_label: "Hangi ürünü istiyorsunuz? *",
@@ -102,6 +119,22 @@ const defaultSettings = {
     legal_privacy_page_enabled: "true",
     legal_kvkk_page_enabled: "true",
     legal_cookie_policy_page_enabled: "true",
+
+    // Cookie Consent Texts (TR)
+    cookie_banner_description: "Web sitemiz, deneyiminizi geliştirmek ve site trafiğini analiz etmek için çerezler kullanmaktadır.",
+    cookie_banner_accept_all: "Tümünü Kabul Et",
+    cookie_banner_reject_all: "Tümünü Reddet",
+    cookie_banner_customize: "Tercihleri Yönet",
+    cookie_modal_title: "Çerez Tercihleriniz",
+    cookie_modal_save: "Tercihleri Kaydet",
+    cookie_necessary_title: "Zorunlu Çerezler",
+    cookie_necessary_desc: "Sitenin çalışması için gereklidir. Kapatılamaz.",
+    cookie_analytics_title: "Analitik Çerezler",
+    cookie_analytics_desc: "Site kullanımını anlamamıza yardımcı olur.",
+    cookie_marketing_title: "Pazarlama Çerezleri",
+    cookie_marketing_desc: "Kişiselleştirilmiş reklamlar için kullanılır.",
+    cookie_functional_title: "Fonksiyonel Çerezler",
+    cookie_functional_desc: "Gelişmiş özellikler ve tercihleri hatırlar.",
 };
 type SettingsKey = keyof typeof defaultSettings;
 
@@ -123,7 +156,7 @@ export default function SettingsPage() {
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo' | 'legal'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'content' | 'contactForm' | 'orderForm' | 'social' | 'seo' | 'legal' | 'auth'>('general');
     const [saving, setSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -216,10 +249,11 @@ export default function SettingsPage() {
         try {
             // Prepare array using currentSettings (which includes updated system_disabled_keys)
             const settingsArray = Object.entries(currentSettings).map(([key, value]) => {
-                let category: 'general' | 'contact' | 'social' | 'seo' = 'general';
+                let category: 'general' | 'contact' | 'social' | 'seo' | 'auth' = 'general';
                 if (key.startsWith('contact_') || key.startsWith('order_form_') || key === 'contact_form_fields' || key === 'order_form_fields') category = 'contact';
                 else if (key.startsWith('seo_')) category = 'seo';
                 else if (['instagram_url', 'facebook_url', 'twitter_url', 'linkedin_url', 'youtube_url'].includes(key)) category = 'social';
+                else if (key.startsWith('auth_')) category = 'auth';
                 else category = 'general';
 
                 return { key, value: String(value ?? ""), category };
@@ -260,6 +294,99 @@ export default function SettingsPage() {
         if (saveStatus !== 'idle') setSaveStatus('idle');
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, settingKey: SettingsKey) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const btnId = `upload-btn-${settingKey}`;
+        const btnLabel = document.getElementById(btnId);
+        if (btnLabel) btnLabel.innerText = "Yükleniyor...";
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/dashboard/media', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await res.json();
+
+            if (res.ok && data.mediaFile) {
+                updateSetting(settingKey, data.mediaFile.url);
+            } else {
+                alert('Upload failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Upload error');
+        } finally {
+            if (btnLabel) btnLabel.innerText = "Yükle";
+            e.target.value = '';
+        }
+    };
+
+    // Helper for Icon Selection
+    const renderIconPicker = (settingKey: SettingsKey, label: string) => {
+        if (disabledKeys.includes(settingKey as string)) return null;
+
+        const currentValue = settings[settingKey] as string || '';
+        const { name: currentName, color: currentColor } = parseIcon(currentValue);
+
+        return (
+            <div className="p-4 bg-white/5 rounded-xl border border-white/5 mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-3">{label}</label>
+
+                {/* Color Picker */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {ICON_COLORS.map((c) => {
+                        const isSelected = (c.value === "" && !currentColor) || (c.value === currentColor);
+                        return (
+                            <button
+                                key={c.name}
+                                onClick={() => updateSetting(settingKey, formatIcon(currentName || 'check', c.value))}
+                                className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'border-white scale-110' : 'border-transparent'}`}
+                                style={{ backgroundColor: c.value || '#9ca3af' }}
+                                title={c.name}
+                            >
+                                {isSelected && <span className="material-symbols-outlined text-black text-[10px] font-bold">check</span>}
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {/* Icon Grid (Compact) */}
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border border-[#3b4754] rounded-lg bg-[#1c2127]">
+                    {DASHBOARD_ICONS.map((icon) => {
+                        const isSelected = currentName === icon;
+                        return (
+                            <button
+                                key={icon}
+                                onClick={() => updateSetting(settingKey, formatIcon(icon, currentColor))}
+                                className={`p-1.5 rounded-md transition-all flex items-center justify-center ${isSelected
+                                    ? 'bg-[#283039] border border-white/20'
+                                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                                    }`}
+                                title={icon}
+                            >
+                                <span
+                                    className="material-symbols-outlined text-xl"
+                                    style={{ color: isSelected ? (currentColor || undefined) : undefined }}
+                                >
+                                    {icon}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Seçilen: {currentValue}</span>
+                    <span className="material-symbols-outlined text-xl" style={{ color: currentColor }}>{currentName}</span>
+                </div>
+            </div>
+        );
+    };
+
     const tabs = [
         { id: 'general', label: 'Genel', icon: 'settings' },
         { id: 'contact', label: 'İletişim Bilgileri', icon: 'phone' },
@@ -269,6 +396,7 @@ export default function SettingsPage() {
         { id: 'social', label: 'Sosyal Medya', icon: 'public' },
         { id: 'seo', label: 'SEO', icon: 'search' },
         { id: 'legal', label: 'Yasal', icon: 'gavel' },
+        { id: 'auth', label: 'Üyelik & Profil', icon: 'badge' },
     ];
 
     if (loading) {
@@ -388,12 +516,29 @@ export default function SettingsPage() {
                                         enabled={!disabledKeys.includes('logo_url')}
                                         onToggle={handleToggle}
                                     >
-                                        <input
-                                            type="text"
-                                            value={settings.logo_url}
-                                            onChange={(e) => updateSetting('logo_url', e.target.value)}
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={settings.logo_url}
+                                                onChange={(e) => updateSetting('logo_url', e.target.value)}
+                                                className="flex-1 px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                            />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleImageUpload(e, 'logo_url')}
+                                                className="hidden"
+                                                id="upload-logo-url"
+                                            />
+                                            <label
+                                                id="upload-btn-logo_url"
+                                                htmlFor="upload-logo-url"
+                                                className="flex items-center gap-1 px-3 py-2 bg-[#283039] hover:bg-[#3b4754] text-white rounded-lg cursor-pointer transition-colors border border-[#3b4754] text-xs whitespace-nowrap"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">upload_file</span>
+                                                Yükle
+                                            </label>
+                                        </div>
                                     </SettingFieldWrapper>
                                     <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[14px]">info</span>
@@ -407,12 +552,29 @@ export default function SettingsPage() {
                                         enabled={!disabledKeys.includes('favicon_url')}
                                         onToggle={handleToggle}
                                     >
-                                        <input
-                                            type="text"
-                                            value={settings.favicon_url}
-                                            onChange={(e) => updateSetting('favicon_url', e.target.value)}
-                                            className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
-                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={settings.favicon_url}
+                                                onChange={(e) => updateSetting('favicon_url', e.target.value)}
+                                                className="flex-1 px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
+                                            />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleImageUpload(e, 'favicon_url')}
+                                                className="hidden"
+                                                id="upload-favicon-url"
+                                            />
+                                            <label
+                                                id="upload-btn-favicon_url"
+                                                htmlFor="upload-favicon-url"
+                                                className="flex items-center gap-1 px-3 py-2 bg-[#283039] hover:bg-[#3b4754] text-white rounded-lg cursor-pointer transition-colors border border-[#3b4754] text-xs whitespace-nowrap"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">upload_file</span>
+                                                Yükle
+                                            </label>
+                                        </div>
                                     </SettingFieldWrapper>
                                     <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[14px]">info</span>
@@ -444,7 +606,7 @@ export default function SettingsPage() {
                     {/* Contact Settings */}
                     {activeTab === 'contact' && (
                         <div className="space-y-6 max-w-4xl">
-                            <div>
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                                 <SettingFieldWrapper
                                     settingKey="contact_address"
                                     label="Adres"
@@ -458,7 +620,13 @@ export default function SettingsPage() {
                                         className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:ring-2 focus:ring-[#137fec]/20 focus:border-[#137fec] transition-all"
                                     />
                                 </SettingFieldWrapper>
-                                <p className="text-xs text-gray-500 mt-1.5">Footer ve İletişim sayfasında görünür.</p>
+                                <div className="mt-4 pt-4 border-t border-white/5">
+                                    <h3 className="text-sm font-bold text-yellow-500 mb-2 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">stars</span>
+                                        İKON AYARLARI
+                                    </h3>
+                                    {renderIconPicker('contact_icon_address', 'Adres İkonu')}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 rounded-xl border border-white/5">
@@ -588,9 +756,19 @@ export default function SettingsPage() {
                                 </SettingFieldWrapper>
                                 <p className="text-xs text-gray-500 mt-1.5">Footer ve İletişim sayfasında görünür.</p>
                             </div>
+
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-sm font-bold text-yellow-500 mb-2 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">stars</span>
+                                    İLETİŞİM SAYFASI İKONLARI
+                                </h3>
+                                {renderIconPicker('contact_icon_phone', 'Telefon İkonu')}
+                                {renderIconPicker('contact_icon_gsm', 'GSM İkonu')}
+                                {renderIconPicker('contact_icon_email', 'E-posta İkonu')}
+                                {renderIconPicker('contact_icon_directions', 'Yol Tarifi İkonu')}
+                            </div>
                         </div>
                     )}
-
                     {/* Social Media Settings */}
                     {activeTab === 'social' && (
                         <div className="space-y-6 max-w-4xl">
@@ -1035,6 +1213,16 @@ export default function SettingsPage() {
                                         <input type="text" value={settings.order_form_submitting} onChange={(e) => updateSetting('order_form_submitting', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
                                     </SettingFieldWrapper>
                                 </div>
+
+                                {/* Order Form Button Icons */}
+                                <div className="mt-4 border-t border-white/5 pt-4">
+                                    <h4 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm text-yellow-500">stars</span>
+                                        Buton İkonları
+                                    </h4>
+                                    {renderIconPicker('order_form_icon_add', 'Ürün Ekle Buton İkonu')}
+                                    {renderIconPicker('order_form_icon_delete', 'Silme Butonu İkonu')}
+                                </div>
                             </div>
 
                             {/* Success & Error Messages */}
@@ -1112,6 +1300,37 @@ export default function SettingsPage() {
                                             <input type="text" value={settings.order_form_other_not_added} onChange={(e) => updateSetting('order_form_other_not_added', e.target.value)} className="w-full px-4 py-2.5 bg-[#1c2127] border border-[#3b4754] rounded-lg text-white focus:border-[#137fec]" />
                                         </SettingFieldWrapper>
                                     </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-white/5">
+                                    <h4 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm text-yellow-500">stars</span>
+                                        Popup İkonu
+                                    </h4>
+                                    {renderIconPicker('order_form_icon_note', 'Popup Başlık İkonu')}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Auth & Profile Settings */}
+                    {activeTab === 'auth' && (
+                        <div className="space-y-6 max-w-4xl">
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                <h3 className="text-sm font-bold text-yellow-500 mb-4 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">stars</span>
+                                    ÜYELİK VE PROFİL İKONLARI
+                                </h3>
+
+                                <div className="space-y-6">
+                                    {renderIconPicker('auth_icon_forgot_password', 'Şifremi Unuttum İkonu')}
+                                    {renderIconPicker('auth_icon_login', 'Giriş Sayfası Başlık İkonu')}
+                                    {renderIconPicker('auth_icon_register', 'Kayıt Sayfası Başlık İkonu')}
+                                    {renderIconPicker('auth_icon_profile', 'Profil Resmi (Avatar) İkonu')}
+                                </div>
+                                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
+                                    <p className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">info</span>
+                                        Not: Giriş, Kayıt ve Profil ikonları seçilmediği sürece sayfalarda gösterilmez veya varsayılan (baş harf vb.) kullanılır.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -1255,6 +1474,181 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
+                            {/* Cookie Consent Texts */}
+                            {settings.legal_cookie_banner_enabled === 'true' && (
+                                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                    <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-yellow-500">edit_note</span>
+                                        Çerez Banner Metinleri
+                                    </h3>
+                                    <p className="text-sm text-gray-400 mb-4">Banner ve modal pencerede görünen tüm metinleri buradan düzenleyebilirsiniz.</p>
+
+                                    {/* Banner Texts */}
+                                    <div className="space-y-4 mb-6">
+                                        <div>
+                                            <label className="block text-xs text-gray-400 mb-1">Banner Açıklama Metni</label>
+                                            <textarea
+                                                value={settings.cookie_banner_description || ''}
+                                                onChange={(e) => updateSetting('cookie_banner_description', e.target.value)}
+                                                rows={2}
+                                                className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-xs text-gray-400 mb-1">Tümünü Kabul Et Butonu</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_banner_accept_all || ''}
+                                                    onChange={(e) => updateSetting('cookie_banner_accept_all', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-400 mb-1">Tümünü Reddet Butonu</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_banner_reject_all || ''}
+                                                    onChange={(e) => updateSetting('cookie_banner_reject_all', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-400 mb-1">Tercihleri Yönet Butonu</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_banner_customize || ''}
+                                                    onChange={(e) => updateSetting('cookie_banner_customize', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Modal Texts */}
+                                    <h4 className="text-sm text-gray-300 mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">tune</span>
+                                        Tercih Modalı
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div>
+                                            <label className="block text-xs text-gray-400 mb-1">Modal Başlığı</label>
+                                            <input
+                                                type="text"
+                                                value={settings.cookie_modal_title || ''}
+                                                onChange={(e) => updateSetting('cookie_modal_title', e.target.value)}
+                                                className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-400 mb-1">Kaydet Butonu</label>
+                                            <input
+                                                type="text"
+                                                value={settings.cookie_modal_save || ''}
+                                                onChange={(e) => updateSetting('cookie_modal_save', e.target.value)}
+                                                className="w-full px-3 py-2 bg-[#1c2127] border border-[#3b4754] rounded-lg text-sm text-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Cookie Types */}
+                                    <h4 className="text-sm text-gray-300 mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">cookie</span>
+                                        Çerez Türleri
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {/* Necessary */}
+                                        <div className="grid grid-cols-3 gap-3 p-3 bg-[#1c2127] rounded-lg">
+                                            <div className="col-span-1">
+                                                <label className="block text-xs text-gray-400 mb-1">Zorunlu - Başlık</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_necessary_title || ''}
+                                                    onChange={(e) => updateSetting('cookie_necessary_title', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs text-gray-400 mb-1">Zorunlu - Açıklama</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_necessary_desc || ''}
+                                                    onChange={(e) => updateSetting('cookie_necessary_desc', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Analytics */}
+                                        <div className="grid grid-cols-3 gap-3 p-3 bg-[#1c2127] rounded-lg">
+                                            <div className="col-span-1">
+                                                <label className="block text-xs text-gray-400 mb-1">Analitik - Başlık</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_analytics_title || ''}
+                                                    onChange={(e) => updateSetting('cookie_analytics_title', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs text-gray-400 mb-1">Analitik - Açıklama</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_analytics_desc || ''}
+                                                    onChange={(e) => updateSetting('cookie_analytics_desc', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Marketing */}
+                                        <div className="grid grid-cols-3 gap-3 p-3 bg-[#1c2127] rounded-lg">
+                                            <div className="col-span-1">
+                                                <label className="block text-xs text-gray-400 mb-1">Pazarlama - Başlık</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_marketing_title || ''}
+                                                    onChange={(e) => updateSetting('cookie_marketing_title', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs text-gray-400 mb-1">Pazarlama - Açıklama</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_marketing_desc || ''}
+                                                    onChange={(e) => updateSetting('cookie_marketing_desc', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Functional */}
+                                        <div className="grid grid-cols-3 gap-3 p-3 bg-[#1c2127] rounded-lg">
+                                            <div className="col-span-1">
+                                                <label className="block text-xs text-gray-400 mb-1">Fonksiyonel - Başlık</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_functional_title || ''}
+                                                    onChange={(e) => updateSetting('cookie_functional_title', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs text-gray-400 mb-1">Fonksiyonel - Açıklama</label>
+                                                <input
+                                                    type="text"
+                                                    value={settings.cookie_functional_desc || ''}
+                                                    onChange={(e) => updateSetting('cookie_functional_desc', e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#111418] border border-[#3b4754] rounded-lg text-sm text-white"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Info Box */}
                             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                                 <div className="flex items-start gap-3">
@@ -1271,7 +1665,7 @@ export default function SettingsPage() {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
