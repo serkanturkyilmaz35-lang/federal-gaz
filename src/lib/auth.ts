@@ -45,7 +45,7 @@ export const verifyAuth = async (request: Request): Promise<{ authenticated: boo
             return acc;
         }, {} as Record<string, string>);
 
-        const token = cookies['auth-token'];
+        const token = cookies['auth_token'];
         if (!token) {
             return { authenticated: false };
         }
