@@ -87,7 +87,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
             {hideSearchBar && <div className="flex-1" />}
 
             <div className="flex items-center gap-2 lg:gap-4">
-                {/* Notification Bell */}
+                {/* HIDDEN: Notification Bell - disabled to save Netlify credits */}
+                {/* 
                 <Link href="/dashboard/notifications" className="relative p-2 text-gray-400 hover:text-white transition-colors">
                     <span className="material-symbols-outlined">notifications</span>
                     {unreadCount > 0 && (
@@ -96,6 +97,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                         </span>
                     )}
                 </Link>
+                */}
 
                 {/* Separator - hidden on mobile */}
                 <div className="hidden lg:block h-8 w-px bg-gray-700 mx-2" />

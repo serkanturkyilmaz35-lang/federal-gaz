@@ -23,6 +23,7 @@ interface NotificationContextType {
     clearAll: () => void;
     clearRead: () => void;
     playNotificationSound: () => void;
+    refreshNotifications: () => Promise<void>;
     loading: boolean;
     sessionExpired: boolean;
 }
@@ -91,10 +92,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // No automatic fetching to save Netlify credits
+    // Notifications are only fetched when user clicks the bell icon
     useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(fetchNotifications, 60000); // 60 seconds - optimized for Vercel limits
-        return () => clearInterval(interval);
+        setLoading(false);
     }, []);
 
     const markAsRead = async (id: string) => {
@@ -180,6 +181,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             clearAll,
             clearRead,
             playNotificationSound,
+            refreshNotifications: fetchNotifications,
             loading,
             sessionExpired
         }}>    {children}

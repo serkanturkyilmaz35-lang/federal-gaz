@@ -81,13 +81,8 @@ export default function AnalyticsPage() {
         }
     }, [customStart, customEnd]);
 
-    // Real-time polling (every 30 seconds)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (dateRange !== 'custom') fetchData();
-        }, 30000);
-        return () => clearInterval(interval);
-    }, [dateRange]);
+    // REMOVED: Real-time polling to save Netlify credits
+    // Data refreshes when user changes date filter
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);

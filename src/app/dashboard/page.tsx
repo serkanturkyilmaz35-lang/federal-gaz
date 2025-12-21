@@ -151,45 +151,8 @@ export default function DashboardPage() {
         fetchAnalytics(dateRange, customStartDate, customEndDate);
     }, [dateRange, customStartDate, customEndDate]);
 
-    // Separate interval for background refresh (doesn't show loading)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            fetchOrders();
-            // Silent refresh - don't set loading state
-            const params = new URLSearchParams();
-            params.set('dateRange', dateRange);
-            if (dateRange === 'custom' && customStartDate && customEndDate) {
-                params.set('customStart', customStartDate);
-                params.set('customEnd', customEndDate);
-            }
-            fetch(`/api/dashboard/analytics?${params.toString()}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        setRealTimeStats(data.realTime);
-                        setActivePages(data.activePages);
-                        setTopPages(data.topPages);
-                        setDbStats({
-                            totalOrders: data.stats.totalOrders,
-                            dailyOrders: data.stats.dailyOrders || 0,
-                            filteredOrders: data.stats.filteredOrders || 0,
-                            totalUsers: data.stats.totalUsers,
-                            totalContacts: data.stats.totalContacts,
-                            dailyContacts: data.stats.dailyContacts || 0,
-                            filteredContacts: data.stats.filteredContacts || 0,
-                            totalPageViews: data.stats.totalPageViews || 0
-                        });
-                        if (data.orderBreakdown) setOrderBreakdown(data.orderBreakdown);
-                        if (data.dailyOrderBreakdown) setDailyOrderBreakdown(data.dailyOrderBreakdown);
-                        if (data.contactBreakdown) setContactBreakdown(data.contactBreakdown);
-                        if (data.dailyContactBreakdown) setDailyContactBreakdown(data.dailyContactBreakdown);
-                        if (data.chartData) setChartData(data.chartData);
-                    }
-                })
-                .catch(err => console.error("Background refresh failed", err));
-        }, 180000); // 3 minutes - optimized for Vercel limits
-        return () => clearInterval(interval);
-    }, [dateRange, customStartDate, customEndDate]);
+    // REMOVED: Background polling to save Netlify credits
+    // Data refreshes when user changes date filter or navigates to page
 
     // Set page title
     useEffect(() => {

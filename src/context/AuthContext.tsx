@@ -63,15 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         refreshUser();
-
-        // Periodic session check when on dashboard (every 2 minutes - optimized for Vercel limits)
-        const interval = setInterval(() => {
-            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
-                refreshUser();
-            }
-        }, 120000);
-
-        return () => clearInterval(interval);
+        // REMOVED: Periodic session polling to save Netlify credits
+        // Session is checked on initial page load only
     }, []);
 
     const login = (userData: User) => {
