@@ -19,7 +19,22 @@ export function middleware(request: NextRequest) {
         const token = request.cookies.get('auth_token')?.value;
         const pathname = url.pathname;
 
-        // Determine effective path for checking (mimic the rewrite logic temporarily for check)
+        // Special handling for login paths on dashboard subdomain
+        // Map /giris to /dashboard/login for Turkish URL compatibility
+        const isGirisPath = pathname === '/giris' || pathname.startsWith('/giris/');
+        const isLoginPath = pathname === '/login' || pathname.startsWith('/login/');
+
+        if (isGirisPath || isLoginPath) {
+            // Rewrite to dashboard login
+            if (pathname.includes('/verify')) {
+                url.pathname = '/dashboard/login/verify';
+            } else {
+                url.pathname = '/dashboard/login';
+            }
+            return NextResponse.rewrite(url);
+        }
+
+        // Determine effective path for checking
         let targetPath = pathname;
         if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
             if (pathname === '/') targetPath = '/dashboard';
@@ -35,12 +50,8 @@ export function middleware(request: NextRequest) {
             return NextResponse.redirect(url);
         }
 
-        // Remove /dashboard prefix check - subdomain IS the dashboard
-        // const pathname = url.pathname; // (Already declared above)
-
-        // If path doesn't start with /dashboard, add it for internal routing, but exclude static files (with extensions)
+        // If path doesn't start with /dashboard, add it for internal routing
         if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/_next') && !pathname.startsWith('/api') && !pathname.includes('.')) {
-            // Rewrite /login to /dashboard/login, / to /dashboard, etc.
             if (pathname === '/') {
                 url.pathname = '/dashboard';
             } else {
