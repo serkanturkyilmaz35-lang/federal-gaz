@@ -79,7 +79,15 @@ export async function GET(req: Request) {
             }))
         ];
 
-        return NextResponse.json({ success: true, results });
+        // Cache search results for 30 seconds to reduce repeated queries
+        return NextResponse.json(
+            { success: true, results },
+            {
+                headers: {
+                    'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+                }
+            }
+        );
 
     } catch (error) {
         console.error("Search failed:", error);
