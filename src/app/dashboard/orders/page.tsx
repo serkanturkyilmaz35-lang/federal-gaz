@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
 import { filterByDate } from "@/lib/dateFilterUtils";
 import CancellationModal from "@/components/dashboard/CancellationModal";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 
 // Set page title
 const PAGE_TITLE = "Siparişler";
@@ -36,7 +37,6 @@ export default function OrdersPage() {
     const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
     const [exporting, setExporting] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     // Cancellation Modal State
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -53,90 +53,96 @@ export default function OrdersPage() {
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
 
-    // Fetch Orders
-    const fetchOrders = async () => {
-        setIsLoading(true);
-        try {
-            const res = await fetch('/api/orders');
-            const data = await res.json();
-            if (data.success) {
-                const mappedOrders: Order[] = data.orders.map((o: any) => {
-                    const details = o.details;
-                    let customerName = "Bilinmiyor";
-                    let customerEmail = "-";
-                    let customerPhone = "-";
-                    let address = "-";
-                    let products = "-";
-                    let notes = "-";
+    // Map raw API response to Order format
+    const mapOrderData = useCallback((orderData: any[]): Order[] => {
+        return orderData.map((o: any) => {
+            const details = o.details;
+            let customerName = "Bilinmiyor";
+            let customerEmail = "-";
+            let customerPhone = "-";
+            let address = "-";
+            let products = "-";
+            let notes = "-";
 
-                    // Logic to extract data from JSON vs Legacy String
-                    if (details.customer) {
-                        // NEW JSON FORMAT
-                        customerName = details.customer.name || "-";
-                        customerEmail = details.customer.email || "-";
-                        customerPhone = details.customer.phone || "-";
-                        address = details.customer.address || "-";
-                        notes = details.notes || "";
+            // Logic to extract data from JSON vs Legacy String
+            if (details.customer) {
+                // NEW JSON FORMAT
+                customerName = details.customer.name || "-";
+                customerEmail = details.customer.email || "-";
+                customerPhone = details.customer.phone || "-";
+                address = details.customer.address || "-";
+                notes = details.notes || "";
 
-                        if (Array.isArray(details.items)) {
-                            products = details.items.map((i: any) => `${i.product} (${i.amount} ${i.unit})`).join(', ');
-                        }
-                    } else if (details.raw) {
-                        // LEGACY STRING FORMAT
-                        // Parse manually: "Müşteri: Ahmet\n..."
-                        const lines = details.raw.split('\n');
-                        const map: any = {};
-                        lines.forEach((l: string) => {
-                            const parts = l.split(':');
-                            if (parts.length >= 2) {
-                                map[parts[0].trim()] = parts.slice(1).join(':').trim();
-                            }
-                        });
-                        customerName = map['Müşteri'] || "-";
-                        customerEmail = map['E-posta'] || "-";
-                        customerPhone = map['Telefon'] || "-";
-                        address = map['Adres'] || "-";
-                        products = `${map['Ürün'] || ''} ${map['Miktar'] || ''}`;
-                        notes = map['Notlar'] || "";
-                    } else {
-                        // Fallback mechanism if details has direct properties (unlikely based on my code, but safe)
-                        customerName = details.name || "-";
+                if (Array.isArray(details.items)) {
+                    products = details.items.map((i: any) => `${i.product} (${i.amount} ${i.unit})`).join(', ');
+                }
+            } else if (details.raw) {
+                // LEGACY STRING FORMAT
+                const lines = details.raw.split('\n');
+                const map: any = {};
+                lines.forEach((l: string) => {
+                    const parts = l.split(':');
+                    if (parts.length >= 2) {
+                        map[parts[0].trim()] = parts.slice(1).join(':').trim();
                     }
-
-                    // Format Date Manually to ensure DD.MM.YYYY consistency
-                    const d = new Date(o.createdAt);
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const year = d.getFullYear();
-                    const formattedDate = `${day}.${month}.${year}`;
-
-                    return {
-                        id: o.id,
-                        orderNumber: `#${10000 + o.id}`,
-                        customerName,
-                        customerEmail,
-                        customerPhone,
-                        address,
-                        products,
-                        notes,
-                        date: formattedDate,
-                        status: o.status,
-                        rawDetails: details,
-                        userId: o.userId
-                    };
                 });
-                setOrders(mappedOrders);
+                customerName = map['Müşteri'] || "-";
+                customerEmail = map['E-posta'] || "-";
+                customerPhone = map['Telefon'] || "-";
+                address = map['Adres'] || "-";
+                products = `${map['Ürün'] || ''} ${map['Miktar'] || ''}`;
+                notes = map['Notlar'] || "";
+            } else {
+                customerName = details.name || "-";
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
-    useEffect(() => {
-        fetchOrders();
+            // Format Date Manually to ensure DD.MM.YYYY consistency
+            const d = new Date(o.createdAt);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            const formattedDate = `${day}.${month}.${year}`;
+
+            return {
+                id: o.id,
+                orderNumber: `#${10000 + o.id}`,
+                customerName,
+                customerEmail,
+                customerPhone,
+                address,
+                products,
+                notes,
+                date: formattedDate,
+                status: o.status,
+                rawDetails: details,
+                userId: o.userId
+            };
+        });
     }, []);
+
+    // Fetcher function for cached fetch
+    const fetchOrders = useCallback(async () => {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        if (data.success) {
+            return data.orders;
+        }
+        return [];
+    }, []);
+
+    // Use cached fetch - 5 minute TTL
+    const { data: rawOrders, loading: isLoading, refresh: refreshOrders, isCached } = useCachedFetch(
+        'dashboard-orders',
+        fetchOrders,
+        { ttl: 5 * 60 * 1000 } // 5 minutes
+    );
+
+    // Map orders when raw data changes
+    useEffect(() => {
+        if (rawOrders) {
+            setOrders(mapOrderData(rawOrders));
+        }
+    }, [rawOrders, mapOrderData]);
 
     // Set page title
     useEffect(() => {
@@ -471,8 +477,24 @@ export default function OrdersPage() {
 
             <div className="bg-[#111418] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 lg:px-5 py-3 border-b border-[#3b4754] gap-3">
-                    <h1 className="text-xl lg:text-2xl font-bold text-white leading-normal">Toplam {filteredOrders.length} Sipariş</h1>
+                    <h1 className="text-xl lg:text-2xl font-bold text-white leading-normal">
+                        Toplam {filteredOrders.length} Sipariş
+                        {isCached && <span className="ml-2 text-xs font-normal text-gray-500">(önbellek)</span>}
+                    </h1>
                     <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                        {/* Refresh Button */}
+                        <button
+                            onClick={() => refreshOrders()}
+                            disabled={isLoading}
+                            className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-[#3b4754] text-gray-300 hover:bg-[#1c2127] disabled:opacity-50 transition-colors no-print"
+                            title="Verileri yenile"
+                        >
+                            <span className={`material-symbols-outlined text-base ${isLoading ? 'animate-spin' : ''}`}>
+                                refresh
+                            </span>
+                            <span className="hidden sm:inline">Yenile</span>
+                        </button>
+
                         {/* Date Filter */}
                         <DateFilter
                             dateRange={dateRange}
