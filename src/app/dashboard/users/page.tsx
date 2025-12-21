@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import DataTable, { Column } from "@/components/dashboard/DataTable";
 import * as XLSX from "xlsx";
@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
 import ConfirmationModal from '@/components/dashboard/ConfirmationModal';
 import { filterByDate } from "@/lib/dateFilterUtils";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 
 interface User {
     id: number;
@@ -33,7 +34,6 @@ export default function UsersPage() {
     // Modal & Form
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -46,39 +46,40 @@ export default function UsersPage() {
     // Search & Date Filter State
     const searchParams = useSearchParams();
     const searchTerm = searchParams.get("q") || "";
-    // Removed local searchTerm state
 
     const [dateRange, setDateRange] = useState<DateRangeOption>("all");
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
 
-    // FETCH USERS (unchanged)
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/users');
-            const data = await res.json();
-            if (data.success) {
-                const formattedUsers = data.users.map((u: any) => ({
-                    id: u.id,
-                    name: u.name,
-                    email: u.email,
-                    role: u.role || 'user',
-                    status: 'active', // Default status for now
-                    joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR')
-                }));
-                setUsers(formattedUsers);
-            }
-        } catch (error) {
-            console.error("Failed to fetch users", error);
-        } finally {
-            setLoading(false);
+    // Cached fetch for users - 5 minute TTL
+    const fetchUsersFn = useCallback(async () => {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if (data.success) {
+            return data.users.map((u: any) => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                role: u.role || 'user',
+                status: 'active',
+                joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR')
+            }));
         }
-    };
-
-    useEffect(() => {
-        fetchUsers();
+        return [];
     }, []);
+
+    const { data: rawUsers, loading, refresh: refreshUsers, isCached } = useCachedFetch<User[]>(
+        'dashboard-users',
+        fetchUsersFn,
+        { ttl: 5 * 60 * 1000 }
+    );
+
+    // Map users when raw data changes
+    useEffect(() => {
+        if (rawUsers) {
+            setUsers(rawUsers);
+        }
+    }, [rawUsers]);
 
     // Set page title
     useEffect(() => {
@@ -371,7 +372,7 @@ export default function UsersPage() {
             const data = await res.json();
             if (data.success) {
                 setShowModal(false);
-                fetchUsers();
+                refreshUsers(); // Use cached refresh
             } else {
                 alert("Hata: " + (data.error || "Bilinmeyen hata"));
             }

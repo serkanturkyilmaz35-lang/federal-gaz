@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { DASHBOARD_ICONS, ICON_COLORS } from "@/constants/dashboardIcons";
 import { parseIcon, formatIcon } from "@/utils/iconUtils";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 
 interface Product {
     id: number;
@@ -50,16 +51,11 @@ const emptyProduct: Omit<Product, 'id'> = {
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNew, setIsNew] = useState(false);
     const [saving, setSaving] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
-
-    useEffect(() => {
-        fetchProducts();
-    }, []);
 
     const getImageUrl = (url: string) => {
         if (!url) return '';
@@ -76,17 +72,25 @@ export default function ProductsPage() {
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
-    const fetchProducts = async () => {
-        try {
-            const res = await fetch('/api/dashboard/products');
-            const data = await res.json();
-            setProducts(data.products || []);
-        } catch (error) {
-            console.error('Failed to fetch products:', error);
-        } finally {
-            setLoading(false);
+    // Cached fetch for products - 5 minute TTL
+    const fetchProductsFn = useCallback(async () => {
+        const res = await fetch('/api/dashboard/products');
+        const data = await res.json();
+        return data.products || [];
+    }, []);
+
+    const { data: rawProducts, loading, refresh: refreshProducts, isCached } = useCachedFetch<Product[]>(
+        'dashboard-products',
+        fetchProductsFn,
+        { ttl: 5 * 60 * 1000 }
+    );
+
+    // Map products when raw data changes
+    useEffect(() => {
+        if (rawProducts) {
+            setProducts(rawProducts);
         }
-    };
+    }, [rawProducts]);
 
 
 
@@ -119,7 +123,7 @@ export default function ProductsPage() {
             if (res.ok) {
                 setSuccessMessage(isNew ? "Ürün eklendi!" : "Ürün güncellendi!");
                 setIsModalOpen(false);
-                fetchProducts();
+                refreshProducts(); // Use cached refresh
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
@@ -136,7 +140,7 @@ export default function ProductsPage() {
             const res = await fetch(`/api/dashboard/products?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setSuccessMessage("Ürün silindi!");
-                fetchProducts();
+                refreshProducts(); // Use cached refresh
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {

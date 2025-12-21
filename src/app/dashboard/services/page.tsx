@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { DASHBOARD_ICONS, ICON_COLORS } from "@/constants/dashboardIcons";
 import { parseIcon, formatIcon } from "@/utils/iconUtils";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 
 interface Service {
     id: number;
@@ -192,7 +193,6 @@ export default function ServicesPage() {
     const t = translations[language];
 
     const [services, setServices] = useState<Service[]>([]);
-    const [loading, setLoading] = useState(true);
     const [editingService, setEditingService] = useState<Service | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNew, setIsNew] = useState(false);
@@ -202,9 +202,25 @@ export default function ServicesPage() {
     const [activeTab, setActiveTab] = useState<'general' | 'header' | 'content' | 'features'>('general');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        fetchServices();
+    // Cached fetch for services - 5 minute TTL
+    const fetchServicesFn = useCallback(async () => {
+        const res = await fetch('/api/dashboard/services');
+        const data = await res.json();
+        return data.services || [];
     }, []);
+
+    const { data: rawServices, loading, refresh: refreshServices, isCached } = useCachedFetch<Service[]>(
+        'dashboard-services',
+        fetchServicesFn,
+        { ttl: 5 * 60 * 1000 }
+    );
+
+    // Map services when raw data changes
+    useEffect(() => {
+        if (rawServices) {
+            setServices(rawServices);
+        }
+    }, [rawServices]);
 
     // ESC key to close modal
     useEffect(() => {
@@ -214,18 +230,6 @@ export default function ServicesPage() {
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
-
-    const fetchServices = async () => {
-        try {
-            const res = await fetch('/api/dashboard/services');
-            const data = await res.json();
-            setServices(data.services || []);
-        } catch (error) {
-            console.error('Failed to fetch services:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleEdit = (service: Service) => {
         setEditingService({ ...service });
@@ -256,7 +260,7 @@ export default function ServicesPage() {
             if (res.ok) {
                 setSuccessMessage(isNew ? t.serviceAdded : t.serviceUpdated);
                 setIsModalOpen(false);
-                fetchServices();
+                refreshServices(); // Use cached refresh
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
@@ -273,7 +277,7 @@ export default function ServicesPage() {
             const res = await fetch(`/api/dashboard/services?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setSuccessMessage(t.serviceDeleted);
-                fetchServices();
+                refreshServices(); // Use cached refresh
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import DateFilter, { DateRangeOption } from "@/components/dashboard/DateFilter";
 import { filterByDate } from "@/lib/dateFilterUtils";
 import XLSX from 'xlsx-js-style';
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 
 interface Address {
     id: number;
@@ -35,7 +36,6 @@ interface Member {
 
 export default function MembersPage() {
     const [members, setMembers] = useState<Member[]>([]);
-    const [loading, setLoading] = useState(true);
     const [editingMember, setEditingMember] = useState<Member | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModal, setIsDetailModal] = useState(false);
@@ -85,36 +85,38 @@ export default function MembersPage() {
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
 
-    const fetchMembers = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/members');
-            const data = await res.json();
-            if (data.success) {
-                const formattedMembers = data.members.map((u: any) => ({
-                    id: u.id,
-                    name: u.name,
-                    email: u.email,
-                    phone: u.phone || "-",
-                    isActive: u.isActive !== false, // Default to true
-                    joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR'),
-                    // Sort addresses: Default first
-                    addresses: (u.addresses || []).sort((a: Address, b: Address) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0)),
-                    orders: u.orders || [],
-                    totalOrders: u.totalOrders || 0
-                }));
-                setMembers(formattedMembers);
-            }
-        } catch (error) {
-            console.error("Failed to fetch members", error);
-        } finally {
-            setLoading(false);
+    // Cached fetch for members - 5 minute TTL
+    const fetchMembersFn = useCallback(async () => {
+        const res = await fetch('/api/members');
+        const data = await res.json();
+        if (data.success) {
+            return data.members.map((u: any) => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                phone: u.phone || "-",
+                isActive: u.isActive !== false,
+                joinDate: new Date(u.createdAt).toLocaleDateString('tr-TR'),
+                addresses: (u.addresses || []).sort((a: Address, b: Address) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0)),
+                orders: u.orders || [],
+                totalOrders: u.totalOrders || 0
+            }));
         }
-    };
-
-    useEffect(() => {
-        fetchMembers();
+        return [];
     }, []);
+
+    const { data: rawMembers, loading, refresh: refreshMembers, isCached } = useCachedFetch<Member[]>(
+        'dashboard-members',
+        fetchMembersFn,
+        { ttl: 5 * 60 * 1000 }
+    );
+
+    // Map members when raw data changes
+    useEffect(() => {
+        if (rawMembers) {
+            setMembers(rawMembers);
+        }
+    }, [rawMembers]);
 
     // ESC key to close modal
     useEffect(() => {
@@ -253,7 +255,7 @@ export default function MembersPage() {
             if (res.ok) {
                 setSuccessMessage("Üye bilgileri güncellendi!");
                 setIsModalOpen(false);
-                fetchMembers();
+                refreshMembers(); // Use cached refresh
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
@@ -268,7 +270,7 @@ export default function MembersPage() {
             const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 setSuccessMessage("Üye silindi!");
-                fetchMembers();
+                refreshMembers(); // Use cached refresh
                 setTimeout(() => setSuccessMessage(""), 3000);
             }
         } catch (error) {
@@ -379,7 +381,7 @@ export default function MembersPage() {
                 setSuccessMessage(data.message || "Üye başarıyla eklendi!");
                 setIsAddModalOpen(false);
                 setAddFormData({ name: "", email: "", phone: "", sendWelcomeEmail: false });
-                fetchMembers();
+                refreshMembers(); // Use cached refresh
             } else {
                 setSuccessMessage(data.error || "Üye eklenirken hata oluştu.");
             }
@@ -428,7 +430,7 @@ export default function MembersPage() {
             if (data.success) {
                 setImportResults(data.result);
                 setSuccessMessage(data.message);
-                fetchMembers();
+                refreshMembers(); // Use cached refresh
             } else {
                 setSuccessMessage(data.error || "İçe aktarma başarısız.");
             }
