@@ -7,11 +7,13 @@ import crypto from 'crypto';
 
 export async function POST(request: Request) {
     try {
-        const { email, otp } = await request.json();
+        let { email, otp } = await request.json();
 
         if (!email || !otp) {
             return NextResponse.json({ error: 'E-posta ve OTP gereklidir.' }, { status: 400 });
         }
+
+        email = email.trim().toLowerCase();
 
         // 1. Verify OTP and get User in PARALLEL for speed
         await connectToDatabase();

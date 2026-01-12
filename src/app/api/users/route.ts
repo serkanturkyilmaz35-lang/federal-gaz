@@ -28,11 +28,13 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         await connectToDatabase();
-        const { name, email, password, phone, role } = await req.json();
+        let { name, email, password, phone, role } = await req.json();
 
         if (!name || !email || !password) {
             return NextResponse.json({ error: "İsim, e-posta ve şifre alanları zorunludur." }, { status: 400 });
         }
+
+        email = email.trim().toLowerCase();
 
         const existing = await User.findOne({ where: { email } });
         if (existing) {

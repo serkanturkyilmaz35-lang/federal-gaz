@@ -24,12 +24,14 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
 
         // Dashboard frontend sends plain JSON
         const body = await req.json();
-        const { name, email, role, password, phone, addresses, deletedAddressIds } = body;
+        let { name, email, role, password, phone, addresses, deletedAddressIds } = body;
 
         const user = await User.findByPk(id);
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
+
+        if (email) email = email.trim().toLowerCase();
 
         user.name = name || user.name;
         user.email = email || user.email;

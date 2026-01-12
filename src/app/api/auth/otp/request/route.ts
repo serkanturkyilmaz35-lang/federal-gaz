@@ -18,10 +18,11 @@ export async function POST(request: Request) {
     const t0 = Date.now();
 
     try {
-        const { email } = await request.json();
+        let { email } = await request.json();
         if (!email) {
             return NextResponse.json({ error: 'E-posta adresi gereklidir' }, { status: 400 });
         }
+        email = email.trim().toLowerCase();
 
         // DB connection
         await connectToDatabase();
@@ -51,18 +52,19 @@ export async function POST(request: Request) {
         });
         console.log(`[OTP] Token Save: ${Date.now() - t0}ms`);
 
-        // Send email via SMTP in background - DO NOT AWAIT
-        // This promise floats and will complete after response is sent
-        sendEmail({
+        // Send email via Brevo - AWAIT for reliability in serverless
+        // Backgrounding without await in Cloudflare/Netlify often leads to delays or failures
+        const emailResult = await sendEmail({
             to: email,
             subject: 'Doğrulama Kodu - Federal Gaz',
             html: getMinimalOTPHtml(user.name, otp),
-        }).then(result => {
-            // Log success silently
-            if (!result.success) console.error('[OTP] Background Email Failed:', result.error);
-        }).catch(err => {
-            console.error('[OTP] Background Email Error:', err);
         });
+
+        if (!emailResult.success) {
+            console.error('[OTP] Email delivery failed:', emailResult.error);
+            // We still return success to the user as the OTP is in the DB, 
+            // but we'll know about the failure in logs.
+        }
 
         console.log(`[OTP] Total API Time: ${Date.now() - t0}ms`);
         return NextResponse.json({ message: 'Doğrulama kodu e-posta adresinize gönderildi.' });
