@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { User, Address, connectToDatabase } from '@/lib/models';
+import { User, AdminUser, Address, connectToDatabase } from '@/lib/models';
 
 export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
     try {
@@ -31,7 +31,21 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        if (email) email = email.trim().toLowerCase();
+        if (email) {
+            email = email.trim().toLowerCase();
+
+            // Check if email changed and if it's taken by someone else
+            if (email !== user.email) {
+                const [existingUser, existingAdmin] = await Promise.all([
+                    User.findOne({ where: { email } }),
+                    AdminUser.findOne({ where: { email } })
+                ]);
+
+                if (existingUser || existingAdmin) {
+                    return NextResponse.json({ error: "Bu e-posta adresi başka bir kullanıcı tarafından kullanılıyor." }, { status: 409 });
+                }
+            }
+        }
 
         user.name = name || user.name;
         user.email = email || user.email;

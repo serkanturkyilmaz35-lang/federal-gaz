@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { User, connectToDatabase } from '@/lib/models';
+import { User, AdminUser, connectToDatabase } from '@/lib/models';
 import { Op } from 'sequelize';
 
 // GET: All Users (excluding 'user' role/members)
@@ -7,12 +7,7 @@ export async function GET() {
     try {
         await connectToDatabase();
         const users = await User.findAll({
-            where: {
-                [Op.or]: [
-                    { role: { [Op.ne]: 'user' } }, // Exclude members
-                    { email: 'serkanturkyilmaz35@gmail.com' } // Force show main admin
-                ]
-            },
+            // Show all users so that ones with 'user' role are not hidden in the dashboard
             attributes: { exclude: ['password_hash'] },
             order: [['createdAt', 'DESC']],
             raw: true
@@ -36,9 +31,18 @@ export async function POST(req: Request) {
 
         email = email.trim().toLowerCase();
 
-        const existing = await User.findOne({ where: { email } });
-        if (existing) {
-            return NextResponse.json({ error: "Bu e-posta adresi zaten kullanımda." }, { status: 409 });
+        // Check conflicts in both User and AdminUser tables
+        const [existingUser, existingAdmin] = await Promise.all([
+            User.findOne({ where: { email } }),
+            AdminUser.findOne({ where: { email } })
+        ]);
+
+        if (existingUser || existingAdmin) {
+            return NextResponse.json({
+                error: (existingUser && existingUser.role === 'user')
+                    ? "Bu e-posta adresi ile zaten bir üye kaydı var. Üyeyi bulup rolünü değiştirebilirsiniz."
+                    : "Bu e-posta adresi zaten kullanımda."
+            }, { status: 409 });
         }
 
         const newUser = await User.create({
