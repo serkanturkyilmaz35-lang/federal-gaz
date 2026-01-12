@@ -146,7 +146,7 @@ export default function UsersPage() {
             name: "",
             email: "",
             role: "editor",
-            password: "", // Mandatory for New User
+            password: "",
             phone: ""
         });
         setShowModal(true);
@@ -332,12 +332,13 @@ export default function UsersPage() {
 
     const handleEditClick = (user: User) => {
         setEditingUser(user);
+        const rawUser = rawUsers?.find(u => u.id === user.id) as any;
         setFormData({
             name: user.name,
             email: user.email,
             role: user.role,
-            password: "", // Empty for update unless changing
-            phone: "" // Not in table but in model?
+            password: "",
+            phone: rawUser?.phone || ""
         });
         setShowModal(true);
     };
@@ -489,6 +490,16 @@ export default function UsersPage() {
 
 
                             <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Telefon</label>
+                                <input
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    className="w-full rounded-lg border border-[#3b4754] bg-[#111418] px-3 py-2 text-white focus:border-[#137fec] focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">Rol</label>
                                 <select
                                     value={formData.role}
@@ -497,7 +508,11 @@ export default function UsersPage() {
                                 >
                                     <option value="editor">Editör</option>
                                     <option value="admin">Yönetici</option>
+                                    <option value="user">Kullanıcı (Üye)</option>
                                 </select>
+                                <p className="mt-1 text-[10px] text-gray-500">
+                                    * Panel yönetimi için 'Yönetici' veya 'Editör' rolü gereklidir.
+                                </p>
                             </div>
                         </div>
 

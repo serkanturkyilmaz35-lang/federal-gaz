@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { User, Address, connectToDatabase } from '@/lib/models';
-import { decryptRequest, encryptResponse } from '@/lib/server-secure';
 
 export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
     try {
@@ -10,7 +9,7 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
 
         await User.destroy({ where: { id } });
 
-        return await encryptResponse({ success: true });
+        return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Delete user failed:", error);
         return NextResponse.json({ success: false, error: "Delete failed" }, { status: 500 });
@@ -23,8 +22,8 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         const params = await props.params;
         const id = params.id;
 
-        // Decrypt the request body
-        const body = await decryptRequest(req);
+        // Dashboard frontend sends plain JSON
+        const body = await req.json();
         const { name, email, role, password, phone, addresses, deletedAddressIds } = body;
 
         const user = await User.findByPk(id);
@@ -35,7 +34,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         user.name = name || user.name;
         user.email = email || user.email;
         user.role = role || user.role;
-        if (phone) user.phone = phone;
+        if (phone !== undefined) user.phone = phone;
 
         if (password) {
             user.password_hash = password; // Hook will hash
@@ -95,7 +94,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         }
 
         const { password_hash, ...safeUser } = user.toJSON();
-        return await encryptResponse({ success: true, user: safeUser });
+        return NextResponse.json({ success: true, user: safeUser });
 
     } catch (error) {
         console.error("Update user failed:", error);

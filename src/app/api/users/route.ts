@@ -31,12 +31,12 @@ export async function POST(req: Request) {
         const { name, email, password, phone, role } = await req.json();
 
         if (!name || !email || !password) {
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+            return NextResponse.json({ error: "İsim, e-posta ve şifre alanları zorunludur." }, { status: 400 });
         }
 
         const existing = await User.findOne({ where: { email } });
         if (existing) {
-            return NextResponse.json({ error: "Email exists" }, { status: 409 });
+            return NextResponse.json({ error: "Bu e-posta adresi zaten kullanımda." }, { status: 409 });
         }
 
         const newUser = await User.create({
@@ -52,6 +52,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, user: safeUser });
     } catch (error) {
         console.error("Create user failed:", error);
-        return NextResponse.json({ success: false, error: "Create failed" }, { status: 500 });
+        return NextResponse.json({ success: false, error: "Kullanıcı oluşturulurken bir hata oluştu." }, { status: 500 });
     }
 }
